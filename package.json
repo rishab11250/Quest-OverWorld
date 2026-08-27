@@ -1,0 +1,9 @@
+{
+  "name": "quest-overworld",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "server": "pnpm --filter server run dev",
+    "app": "pnpm --filter app run start"
+  }
+}
