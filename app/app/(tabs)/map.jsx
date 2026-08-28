@@ -139,6 +139,15 @@ export default function MapScreen() {
                   <MaterialCommunityIcons name="radar" size={16} color={colors.accent.gold} />
                   <Text style={styles.gpsText}>Search Radius: {currentClue.radius}m</Text>
                 </View>
+
+                <TouchableOpacity
+                  style={styles.scanTargetButton}
+                  onPress={() => router.push('/camera/scanner')}
+                  activeOpacity={0.8}
+                >
+                  <MaterialCommunityIcons name="qrcode-scan" size={16} color={colors.bg.dusk} />
+                  <Text style={styles.scanTargetButtonText}>SCAN QR</Text>
+                </TouchableOpacity>
               </View>
             </View>
           ) : quest?.isCompleted ? (
@@ -264,6 +273,24 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
     borderTopWidth: 1,
     borderTopColor: '#3D3560',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  scanTargetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.accent.gold,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  scanTargetButtonText: {
+    ...typography.caption,
+    fontWeight: '900',
+    color: colors.bg.dusk,
+    letterSpacing: 0.8,
   },
   gpsRow: {
     flexDirection: 'row',

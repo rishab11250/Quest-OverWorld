@@ -155,10 +155,18 @@ export default function HomeScreen() {
           <View style={styles.actionGrid}>
             <TouchableOpacity
               style={styles.primaryButton}
+              onPress={() => router.push('/camera/scanner')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.primaryButtonText}>📷 Scan QR Checkpoint</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryButton}
               onPress={() => router.push('/(tabs)/map')}
               activeOpacity={0.8}
             >
-              <Text style={styles.primaryButtonText}>🗺️ View Overworld Map</Text>
+              <Text style={styles.secondaryButtonText}>🗺️ View Overworld Map</Text>
             </TouchableOpacity>
           </View>
 
@@ -286,6 +294,7 @@ const styles = StyleSheet.create({
   },
   actionGrid: {
     marginTop: spacing.xs,
+    gap: spacing.sm,
   },
   primaryButton: {
     backgroundColor: colors.accent.gold,
