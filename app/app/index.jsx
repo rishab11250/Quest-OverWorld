@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { getToken } from '../lib/secureStore';
+import { getToken, getUserData } from '../lib/secureStore';
 import colors from '../theme/colors';
 
 export default function Index() {
@@ -14,10 +14,15 @@ export default function Index() {
     async function checkAuth() {
       try {
         const token = await getToken();
+        const user = await getUserData();
         if (!isMounted) return;
 
         if (token) {
-          router.replace('/(tabs)/home');
+          if (user?.isAdmin || user?.role === 'admin') {
+            router.replace('/admin/dashboard');
+          } else {
+            router.replace('/(tabs)/home');
+          }
         } else {
           router.replace('/(auth)/login');
         }

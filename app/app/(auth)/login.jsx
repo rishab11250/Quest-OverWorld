@@ -42,7 +42,11 @@ export default function LoginScreen() {
       await setToken(response.token);
       await setUserData(response.user);
 
-      router.replace('/(tabs)/home');
+      if (response.user?.isAdmin || response.user?.role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/(tabs)/home');
+      }
     } catch (err) {
       setError(err.message || 'Login failed. Please verify credentials.');
     } finally {

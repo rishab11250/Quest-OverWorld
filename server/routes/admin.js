@@ -16,6 +16,10 @@ const {
   createChallenge,
   updateChallenge,
   deleteChallenge,
+  getPendingSubmissions,
+  approveSubmission,
+  rejectSubmission,
+  reseedDemoData,
 } = require('../controllers/adminController');
 
 // All admin routes require JWT auth and admin role
@@ -42,5 +46,13 @@ router.get('/challenges', getAllAdminChallenges);
 router.post('/challenges', createChallenge);
 router.put('/challenges/:id', updateChallenge);
 router.delete('/challenges/:id', deleteChallenge);
+
+// Submission Review Queue
+router.get('/submissions/pending', getPendingSubmissions);
+router.post('/submissions/:id/approve', approveSubmission);
+router.post('/submissions/:id/reject', rejectSubmission);
+
+// System Operations
+router.post('/system/reseed', reseedDemoData);
 
 module.exports = router;
