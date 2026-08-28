@@ -11,11 +11,16 @@
       "resizeMode": "contain",
       "backgroundColor": "#1E1A33"
     },
+    "android": {
+      "usesCleartextTraffic": true
+    },
     "web": {
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font",
+      "expo-secure-store"
     ]
   }
 }

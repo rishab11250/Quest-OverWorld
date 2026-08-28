@@ -15,9 +15,10 @@ const generateToken = (user) => {
 // @access  Public
 const register = async (req, res) => {
   try {
-    const { name, email, password, avatar } = req.body;
+    const { name, username, email, password, avatar } = req.body;
+    const finalName = name || username;
 
-    if (!name || !email || !password) {
+    if (!finalName || !email || !password) {
       return res.status(400).json({ message: 'Please provide name, email, and password' });
     }
 
@@ -31,7 +32,7 @@ const register = async (req, res) => {
     const passwordHash = await User.hashPassword(password);
 
     const user = await User.create({
-      name: name.trim(),
+      name: finalName.trim(),
       email: emailNormalized,
       passwordHash,
       avatar: avatar || '',
