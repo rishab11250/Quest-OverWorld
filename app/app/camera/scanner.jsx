@@ -10,6 +10,9 @@ import {
   Dimensions,
   Animated,
   Easing,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
@@ -246,23 +249,78 @@ export default function ScannerScreen() {
             </View>
           ) : null}
 
-          {/* Manual Entry Fallback */}
-          {!manualMode ? (
-            <Pressable style={styles.manualToggle} onPress={() => setManualMode(true)}>
-              <Text style={styles.manualToggleText}>Keyboard Entry Fallback ›</Text>
-            </Pressable>
-          ) : (
-            <View style={styles.manualContainer}>
-              <TextInput
-                style={styles.manualInput}
-                placeholder="e.g. QST-CHK-01-OAK"
-                placeholderTextColor="#7E75A0"
-                value={manualCode}
-                onChangeText={setManualCode}
-                autoCapitalize="characters"
-              />
+          {/* Manual Entry Fallback Button */}
+          <TouchableOpacity
+            style={styles.manualToggle}
+            onPress={() => {
+              setError('');
+              setManualMode(true);
+            }}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="keyboard-outline" size={18} color={colors.accent.gold} />
+            <Text style={styles.manualToggleText}>Enter Code Manually</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Manual Code Input Modal with Keyboard Avoidance */}
+      <Modal
+        visible={manualMode}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setManualMode(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.manualCard}>
+            <View style={styles.manualHeader}>
+              <MaterialCommunityIcons name="qrcode-scan" size={24} color={colors.accent.gold} />
+              <Text style={styles.manualTitle}>MANUAL CHECKPOINT ENTRY</Text>
+            </View>
+            <Text style={styles.manualSub}>
+              Type the physical checkpoint code inscribed on the marker plaque.
+            </Text>
+
+            {error ? (
+              <View style={styles.modalErrorBox}>
+                <MaterialCommunityIcons name="alert-circle" size={16} color={colors.accent.coral} />
+                <Text style={styles.modalErrorText}>{error}</Text>
+              </View>
+            ) : null}
+
+            <TextInput
+              style={styles.manualInputField}
+              placeholder="e.g. QST-CHK-01-OAK"
+              placeholderTextColor="#7E75A0"
+              value={manualCode}
+              onChangeText={(t) => {
+                setManualCode(t);
+                if (error) setError('');
+              }}
+              autoCapitalize="characters"
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleManualSubmit}
+            />
+
+            <View style={styles.manualActions}>
               <TouchableOpacity
-                style={styles.manualSubmit}
+                style={styles.modalCancelBtn}
+                onPress={() => {
+                  setError('');
+                  setManualMode(false);
+                }}
+                activeOpacity={0.8}
+                disabled={verifying}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalVerifyBtn}
                 onPress={handleManualSubmit}
                 disabled={verifying}
                 activeOpacity={0.8}
@@ -270,13 +328,13 @@ export default function ScannerScreen() {
                 {verifying ? (
                   <ActivityIndicator size="small" color={colors.bg.dusk} />
                 ) : (
-                  <Text style={styles.manualSubmitText}>VERIFY</Text>
+                  <Text style={styles.modalVerifyText}>Verify Code</Text>
                 )}
               </TouchableOpacity>
             </View>
-          )}
-        </View>
-      </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* Level-Up Reward Fanfare Modal */}
       {rewardData ? (
@@ -462,40 +520,113 @@ const styles = StyleSheet.create({
     color: colors.accent.coral,
   },
   manualToggle: {
-    paddingVertical: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: '#262040',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#3D3560',
+    marginTop: spacing.xs,
   },
   manualToggleText: {
-    ...typography.bodyMd,
+    ...typography.bodyMdBold,
     color: colors.accent.gold,
-    fontWeight: '700',
   },
-  manualContainer: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    width: '100%',
-  },
-  manualInput: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: '#1E1A33',
-    borderWidth: 1,
-    borderColor: '#4A4170',
-    borderRadius: 6,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    color: '#FFF',
-    ...typography.monoSm,
-    fontSize: 14,
-  },
-  manualSubmit: {
-    backgroundColor: colors.accent.gold,
-    borderRadius: 6,
-    paddingHorizontal: spacing.md,
+    backgroundColor: 'rgba(15, 12, 28, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: spacing.screenPadding,
   },
-  manualSubmitText: {
+  manualCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: colors.bg.duskRaised,
+    borderRadius: 12,
+    padding: spacing.cardPadding,
+    borderWidth: 1.5,
+    borderColor: colors.accent.gold,
+    gap: spacing.sm,
+  },
+  manualHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  manualTitle: {
+    ...typography.displayPixelSm,
+    fontSize: 11,
+    color: colors.accent.gold,
+    letterSpacing: 1.2,
+  },
+  manualSub: {
     ...typography.caption,
-    fontWeight: '900',
+    color: colors.text.onDark.secondary,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+  modalErrorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(232, 102, 75, 0.15)',
+    borderWidth: 1,
+    borderColor: colors.accent.coral,
+    padding: spacing.xs,
+    borderRadius: 4,
+  },
+  modalErrorText: {
+    ...typography.captionBold,
+    color: colors.accent.coral,
+    flex: 1,
+  },
+  manualInputField: {
+    backgroundColor: '#1E1A33',
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    color: colors.accent.gold,
+    ...typography.monoSmBold,
+    fontSize: 16,
+    letterSpacing: 1.5,
+    textAlign: 'center',
+  },
+  manualActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#3D3560',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelText: {
+    ...typography.bodyMd,
+    color: colors.text.onDark.secondary,
+  },
+  modalVerifyBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 6,
+    backgroundColor: colors.accent.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalVerifyText: {
+    ...typography.bodyMdBold,
     color: colors.bg.dusk,
   },
   permissionTitle: {
