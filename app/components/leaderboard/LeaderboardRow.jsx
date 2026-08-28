@@ -47,7 +47,7 @@ export default function LeaderboardRow({ item, rank, isMyTeam }) {
           ) : null}
         </View>
         <Text style={styles.statsSubtitle}>
-          📍 {item.checkpointsCleared || 0} Stations • ⚡ {item.bountiesClaimed || 0} Bounties
+          📍 {item.checkpointsCount || 0} Stations • ⚡ {item.challengesCount || 0} Bounties
         </Text>
       </View>
 

@@ -1,6 +1,7 @@
 const Quest = require('../models/Quest');
 const Checkpoint = require('../models/Checkpoint');
 const Team = require('../models/Team');
+const Progress = require('../models/Progress');
 
 // @desc    Get all active quests
 // @route   GET /api/quests
@@ -50,19 +51,19 @@ const getActiveQuest = async (req, res) => {
     // Fetch all checkpoints in sequence order
     const allCheckpoints = await Checkpoint.find({ questId: quest._id }).sort({ order: 1 });
 
-    // Determine team progress based on score or completed checkpoints count
-    // Each checkpoint gives its points; calculate current order
+    // Determine team progress from the actual Progress collection
+    const completedProgress = await Progress.find({
+      teamId: team._id,
+      questId: quest._id,
+    }).select('checkpointId');
+
+    const completedIds = new Set(completedProgress.map((p) => p.checkpointId.toString()));
+
     let completedCheckpoints = [];
     let currentOrder = 1;
 
-    // Estimate current order based on checkpoints passed or default to 1
-    // (When verification PR is implemented, this pulls directly from Progress collection)
-    const pointsAccrued = team.score || 0;
-    let accumulated = 0;
-
     for (const cp of allCheckpoints) {
-      if (accumulated + cp.points <= pointsAccrued && pointsAccrued > 0) {
-        accumulated += cp.points;
+      if (completedIds.has(cp._id.toString())) {
         completedCheckpoints.push({
           _id: cp._id,
           title: cp.title,
@@ -71,6 +72,8 @@ const getActiveQuest = async (req, res) => {
           completed: true,
         });
         currentOrder = cp.order + 1;
+      } else {
+        break;
       }
     }
 

@@ -12,9 +12,10 @@ const CATEGORY_ICONS = {
 };
 
 export default function ChallengeCard({ challenge, onPress }) {
-  const isApproved = challenge.submissionStatus === 'approved';
-  const isPending = challenge.submissionStatus === 'pending';
-  const isRejected = challenge.submissionStatus === 'rejected';
+  const submissionStatus = challenge.submission?.status;
+  const isApproved = submissionStatus === 'approved';
+  const isPending = submissionStatus === 'pending';
+  const isRejected = submissionStatus === 'rejected';
 
   return (
     <TouchableOpacity

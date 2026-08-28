@@ -1,11 +1,6 @@
 module.exports = {
   root: true,
-  extends: [
-    'eslint:recommended',
-    'plugin:react/recommended',
-    'plugin:react/jsx-runtime',
-    'prettier',
-  ],
+  extends: ['eslint:recommended', 'prettier'],
   parserOptions: {
     ecmaFeatures: {
       jsx: true,
@@ -16,15 +11,8 @@ module.exports = {
   env: {
     node: true,
     es2021: true,
-    'react-native/react-native': true,
-  },
-  settings: {
-    react: {
-      version: 'detect',
-    },
   },
   rules: {
-    'react/prop-types': 'off',
     'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
   },
 };
