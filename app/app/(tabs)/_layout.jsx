@@ -28,6 +28,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="challenges"
+        options={{
+          title: 'Bounty',
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Hero',

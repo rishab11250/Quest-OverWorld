@@ -69,6 +69,14 @@ export default function QuestDetailScreen() {
     );
   }
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/home');
+    }
+  };
+
   return (
     <ScrollView
       style={styles.container}
@@ -84,8 +92,9 @@ export default function QuestDetailScreen() {
       {/* Top Nav Back */}
       <TouchableOpacity
         style={styles.navBack}
-        onPress={() => router.back()}
-        activeOpacity={0.8}
+        onPress={handleBack}
+        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        activeOpacity={0.7}
       >
         <Text style={styles.navBackText}>‹ BACK</Text>
       </TouchableOpacity>
@@ -141,10 +150,14 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   navBack: {
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   navBackText: {
-    ...typography.bodyMd,
+    ...typography.bodyLg,
     fontWeight: '800',
     color: colors.accent.gold,
   },
