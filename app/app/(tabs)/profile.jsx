@@ -180,6 +180,18 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Admin Console Shortcut (for Admin role) */}
+      {user?.isAdmin || user?.role === 'admin' ? (
+        <TouchableOpacity
+          style={styles.adminButton}
+          onPress={() => router.push('/admin/dashboard')}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="shield-crown" size={20} color={colors.accent.gold} />
+          <Text style={styles.adminButtonText}>Guild Master Admin Console</Text>
+        </TouchableOpacity>
+      ) : null}
+
       {/* Log Out Action */}
       <TouchableOpacity
         style={styles.logoutButton}
@@ -347,6 +359,24 @@ const styles = StyleSheet.create({
   settingSub: {
     ...typography.caption,
     color: colors.text.onDark.secondary,
+  },
+  adminButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: 'rgba(242, 200, 75, 0.1)',
+    borderWidth: 1.5,
+    borderColor: colors.accent.gold,
+    borderRadius: 8,
+    paddingVertical: spacing.md,
+    minHeight: spacing.minTouchTarget,
+    marginTop: spacing.xs,
+  },
+  adminButtonText: {
+    ...typography.bodyLg,
+    fontWeight: '800',
+    color: colors.accent.gold,
   },
   logoutButton: {
     flexDirection: 'row',

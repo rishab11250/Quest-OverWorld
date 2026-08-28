@@ -37,6 +37,7 @@ export default function RootLayout() {
         <Stack.Screen name="quest/[questId]" options={{ headerShown: false }} />
         <Stack.Screen name="camera/scanner" options={{ headerShown: false }} />
         <Stack.Screen name="challenge/[challengeId]" options={{ headerShown: false }} />
+        <Stack.Screen name="admin/dashboard" options={{ headerShown: false }} />
       </Stack>
     </View>
   );
