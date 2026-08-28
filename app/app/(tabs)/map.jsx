@@ -211,18 +211,21 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing.xs,
+    alignItems: 'center',
   },
   pixelTitle: {
-    ...typography.displayXl,
-    color: colors.text.onDark.primary,
+    ...typography.displayPixelLg,
+    fontSize: 16,
+    color: colors.accent.gold,
     letterSpacing: 2,
+    textAlign: 'center',
   },
   subtitle: {
-    ...typography.caption,
-    fontWeight: '800',
-    color: colors.accent.gold,
+    ...typography.captionBold,
+    color: colors.text.onDark.secondary,
     letterSpacing: 1.5,
-    marginTop: 2,
+    marginTop: 6,
+    textAlign: 'center',
   },
   emptyCard: {
     backgroundColor: colors.bg.duskRaised,

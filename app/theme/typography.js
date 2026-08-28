@@ -17,6 +17,26 @@ export const typography = {
     fontSize: 14,
     lineHeight: 24,
   },
+  displayPixelLg: {
+    fontFamily: fonts.pixel,
+    fontSize: 18,
+    lineHeight: 26,
+  },
+  displayPixelMd: {
+    fontFamily: fonts.pixel,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  displayPixelSm: {
+    fontFamily: fonts.pixel,
+    fontSize: 10,
+    lineHeight: 14,
+  },
+  displayPixelXs: {
+    fontFamily: fonts.pixel,
+    fontSize: 8,
+    lineHeight: 12,
+  },
   headingLg: {
     fontFamily: fonts.bodyBold,
     fontSize: 22,
@@ -32,8 +52,23 @@ export const typography = {
     fontSize: 16,
     lineHeight: 24,
   },
+  bodyLgBold: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 16,
+    lineHeight: 24,
+  },
   bodyMd: {
     fontFamily: fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  bodyMdSemiBold: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  bodyMdBold: {
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -42,7 +77,22 @@ export const typography = {
     fontSize: 12,
     lineHeight: 16,
   },
+  captionSemiBold: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  captionBold: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    lineHeight: 16,
+  },
   monoSm: {
+    fontFamily: fonts.mono,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  monoSmBold: {
     fontFamily: fonts.mono,
     fontSize: 13,
     lineHeight: 18,

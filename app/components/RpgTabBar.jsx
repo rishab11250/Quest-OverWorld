@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 const TAB_CONFIG = {
   home: {
@@ -158,15 +159,13 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   tabLabel: {
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.8,
+    fontFamily: fonts.pixel,
+    fontSize: 7.5,
+    letterSpacing: 0.5,
     color: '#7E75A0',
-    marginTop: 2,
+    marginTop: 3,
   },
   tabLabelActive: {
     color: colors.accent.gold,
-    fontWeight: '900',
   },
 });

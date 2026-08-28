@@ -186,97 +186,97 @@ export default function ScannerScreen() {
           barcodeTypes: ['qr'],
         }}
         onBarcodeScanned={scanned ? undefined : onBarcodeScanned}
-      >
-        {/* Darkened Mask Overlays */}
-        <View style={styles.maskContainer}>
-          <View style={styles.maskTop} />
+      />
 
-          <View style={styles.maskCenterRow}>
-            <View style={styles.maskSide} />
+      {/* Darkened Mask Overlays (Absolute Sibling) */}
+      <View style={[StyleSheet.absoluteFillObject, styles.maskContainer]}>
+        <View style={styles.maskTop} />
 
-            {/* Target Reticle Box */}
-            <View style={styles.scanBox}>
-              {/* Corner Accents */}
-              <View style={[styles.corner, styles.cornerTL]} />
-              <View style={[styles.corner, styles.cornerTR]} />
-              <View style={[styles.corner, styles.cornerBL]} />
-              <View style={[styles.corner, styles.cornerBR]} />
+        <View style={styles.maskCenterRow}>
+          <View style={styles.maskSide} />
 
-              {/* Animated Laser Line */}
-              <Animated.View
-                style={[
-                  styles.laserLine,
-                  {
-                    transform: [{ translateY: laserAnim }],
-                  },
-                ]}
-              />
+          {/* Target Reticle Box */}
+          <View style={styles.scanBox}>
+            {/* Corner Accents */}
+            <View style={[styles.corner, styles.cornerTL]} />
+            <View style={[styles.corner, styles.cornerTR]} />
+            <View style={[styles.corner, styles.cornerBL]} />
+            <View style={[styles.corner, styles.cornerBR]} />
 
-              {verifying ? (
-                <View style={styles.verifyingOverlay}>
-                  <ActivityIndicator size="large" color={colors.accent.gold} />
-                  <Text style={styles.verifyingText}>Verifying GPS & Key...</Text>
-                </View>
-              ) : null}
-            </View>
+            {/* Animated Laser Line */}
+            <Animated.View
+              style={[
+                styles.laserLine,
+                {
+                  transform: [{ translateY: laserAnim }],
+                },
+              ]}
+            />
 
-            <View style={styles.maskSide} />
-          </View>
-
-          <View style={styles.maskBottom}>
-            <Text style={styles.instructionText}>
-              Align campus checkpoint QR marker within the target frame
-            </Text>
-
-            {error ? (
-              <View style={styles.errorBox}>
-                <MaterialCommunityIcons name="alert-circle" size={18} color={colors.accent.coral} />
-                <Text style={styles.errorMsg}>{error}</Text>
-                <TouchableOpacity
-                  style={styles.retryButton}
-                  onPress={() => {
-                    setError('');
-                    setScanned(false);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.retryButtonText}>TAP TO RETRY</Text>
-                </TouchableOpacity>
+            {verifying ? (
+              <View style={styles.verifyingOverlay}>
+                <ActivityIndicator size="large" color={colors.accent.gold} />
+                <Text style={styles.verifyingText}>Verifying GPS & Key...</Text>
               </View>
             ) : null}
-
-            {/* Manual Entry Fallback */}
-            {!manualMode ? (
-              <Pressable style={styles.manualToggle} onPress={() => setManualMode(true)}>
-                <Text style={styles.manualToggleText}>Keyboard Entry Fallback ›</Text>
-              </Pressable>
-            ) : (
-              <View style={styles.manualContainer}>
-                <TextInput
-                  style={styles.manualInput}
-                  placeholder="e.g. QST-CHK-01-OAK"
-                  placeholderTextColor="#7E75A0"
-                  value={manualCode}
-                  onChangeText={setManualCode}
-                  autoCapitalize="characters"
-                />
-                <TouchableOpacity
-                  style={styles.manualSubmit}
-                  onPress={handleManualSubmit}
-                  disabled={verifying}
-                  activeOpacity={0.8}
-                >
-                  {verifying ? (
-                    <ActivityIndicator size="small" color={colors.bg.dusk} />
-                  ) : (
-                    <Text style={styles.manualSubmitText}>VERIFY</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
+
+          <View style={styles.maskSide} />
         </View>
-      </CameraView>
+
+        <View style={styles.maskBottom}>
+          <Text style={styles.instructionText}>
+            Align campus checkpoint QR marker within the target frame
+          </Text>
+
+          {error ? (
+            <View style={styles.errorBox}>
+              <MaterialCommunityIcons name="alert-circle" size={18} color={colors.accent.coral} />
+              <Text style={styles.errorMsg}>{error}</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => {
+                  setError('');
+                  setScanned(false);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.retryButtonText}>TAP TO RETRY</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          {/* Manual Entry Fallback */}
+          {!manualMode ? (
+            <Pressable style={styles.manualToggle} onPress={() => setManualMode(true)}>
+              <Text style={styles.manualToggleText}>Keyboard Entry Fallback ›</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.manualContainer}>
+              <TextInput
+                style={styles.manualInput}
+                placeholder="e.g. QST-CHK-01-OAK"
+                placeholderTextColor="#7E75A0"
+                value={manualCode}
+                onChangeText={setManualCode}
+                autoCapitalize="characters"
+              />
+              <TouchableOpacity
+                style={styles.manualSubmit}
+                onPress={handleManualSubmit}
+                disabled={verifying}
+                activeOpacity={0.8}
+              >
+                {verifying ? (
+                  <ActivityIndicator size="small" color={colors.bg.dusk} />
+                ) : (
+                  <Text style={styles.manualSubmitText}>VERIFY</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
 
       {/* Level-Up Reward Fanfare Modal */}
       {rewardData ? (
@@ -331,9 +331,9 @@ const styles = StyleSheet.create({
     color: colors.accent.gold,
   },
   hudTitle: {
-    ...typography.caption,
-    fontWeight: '900',
-    color: '#FFF',
+    ...typography.displayPixelSm,
+    fontSize: 10,
+    color: colors.accent.gold,
     letterSpacing: 1.2,
   },
   topRightActions: {

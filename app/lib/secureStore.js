@@ -80,3 +80,35 @@ export const clearAuth = async () => {
     console.error('Error clearing auth store:', error);
   }
 };
+
+const SETTINGS_PREFIX = 'quest_setting_';
+
+export const setSetting = async (key, value) => {
+  try {
+    const fullKey = `${SETTINGS_PREFIX}${key}`;
+    const stringVal = JSON.stringify(value);
+    if (Platform.OS === 'web') {
+      localStorage.setItem(fullKey, stringVal);
+    } else {
+      await SecureStore.setItemAsync(fullKey, stringVal);
+    }
+  } catch (error) {
+    console.error(`Error saving setting ${key}:`, error);
+  }
+};
+
+export const getSetting = async (key, defaultValue) => {
+  try {
+    const fullKey = `${SETTINGS_PREFIX}${key}`;
+    let val;
+    if (Platform.OS === 'web') {
+      val = localStorage.getItem(fullKey);
+    } else {
+      val = await SecureStore.getItemAsync(fullKey);
+    }
+    return val != null ? JSON.parse(val) : defaultValue;
+  } catch (error) {
+    console.error(`Error reading setting ${key}:`, error);
+    return defaultValue;
+  }
+};

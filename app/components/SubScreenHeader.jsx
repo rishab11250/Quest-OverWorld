@@ -45,8 +45,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   backBtnText: {
-    ...typography.bodyLg,
-    fontWeight: '800',
+    ...typography.displayPixelSm,
+    fontSize: 11,
     color: colors.accent.gold,
     letterSpacing: 0.8,
   },

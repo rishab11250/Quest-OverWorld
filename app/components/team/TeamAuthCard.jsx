@@ -128,14 +128,21 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing.xs,
+    alignItems: 'center',
   },
   title: {
-    ...typography.displayXl,
-    color: colors.text.onDark.primary,
+    ...typography.displayPixelLg,
+    fontSize: 16,
+    color: colors.accent.gold,
+    letterSpacing: 2,
+    textAlign: 'center',
   },
   subtitle: {
-    ...typography.bodyMd,
+    ...typography.captionBold,
     color: colors.text.onDark.secondary,
+    letterSpacing: 1.5,
+    marginTop: 6,
+    textAlign: 'center',
   },
   tabBar: {
     flexDirection: 'row',

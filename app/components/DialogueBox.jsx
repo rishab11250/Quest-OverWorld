@@ -75,8 +75,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   speakerText: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.captionBold,
     letterSpacing: 1.2,
     color: colors.accent.gold,
   },
@@ -84,7 +83,6 @@ const styles = StyleSheet.create({
     ...typography.bodyLg,
     color: colors.text.onLight.primary,
     lineHeight: 24,
-    fontWeight: '600',
   },
   footnoteText: {
     ...typography.monoSm,

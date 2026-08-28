@@ -71,12 +71,10 @@ export default function HomeScreen() {
 
       {/* Party Score & Level Progression Banner */}
       <View style={styles.pointsCard}>
-        <View style={styles.pointsTopRow}>
-          <View>
-            <Text style={styles.pointsLabel}>PARTY XP</Text>
-            <Text style={styles.pointsValue}>+{team?.score || 0} PTS</Text>
-          </View>
-          <PixelBadge label={`LVL ${level}`} variant="gold" icon="shield-crown" />
+        <Text style={styles.pointsLabel}>PARTY XP</Text>
+        <Text style={styles.pointsValue}>+{team?.score || 0} PTS</Text>
+        <View style={styles.badgeCentered}>
+          <PixelBadge label={`LVL ${level}`} variant="gold" />
         </View>
 
         {team ? (
@@ -172,57 +170,48 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing.xs,
+    alignItems: 'center',
   },
   pixelTitle: {
-    ...typography.displayXl,
-    color: colors.text.onDark.primary,
+    ...typography.displayPixelLg,
+    fontSize: 16,
+    color: colors.accent.gold,
     letterSpacing: 2,
+    textAlign: 'center',
   },
   pixelSubtitle: {
-    ...typography.caption,
-    fontWeight: '800',
-    color: colors.accent.gold,
+    ...typography.captionBold,
+    color: colors.text.onDark.secondary,
     letterSpacing: 1.5,
-    marginTop: 2,
+    marginTop: 6,
+    textAlign: 'center',
   },
   pointsCard: {
     backgroundColor: colors.bg.duskRaised,
     borderRadius: 8,
     padding: spacing.cardPadding,
-    borderWidth: 1,
-    borderColor: '#3D3560',
-    gap: spacing.sm,
-  },
-  pointsTopRow: {
-    flexDirection: 'row',
+    borderWidth: 1.5,
+    borderColor: colors.accent.gold,
+    gap: spacing.xs,
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   pointsLabel: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.captionBold,
     color: colors.text.onDark.secondary,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
+    textAlign: 'center',
   },
   pointsValue: {
-    ...typography.monoSm,
-    color: colors.accent.gold,
+    ...typography.displayPixelLg,
     fontSize: 22,
-    fontWeight: '900',
-  },
-  levelBadge: {
-    backgroundColor: '#322A54',
-    borderWidth: 1,
-    borderColor: colors.accent.gold,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  levelBadgeText: {
-    ...typography.caption,
-    fontWeight: '900',
+    lineHeight: 30,
     color: colors.accent.gold,
-    fontSize: 10,
+    textAlign: 'center',
+    marginVertical: 2,
+  },
+  badgeCentered: {
+    alignItems: 'center',
+    marginTop: 2,
   },
   emptyCard: {
     backgroundColor: colors.bg.duskRaised,
@@ -236,7 +225,6 @@ const styles = StyleSheet.create({
   emptyTitle: {
     ...typography.headingLg,
     color: colors.text.onDark.primary,
-    fontWeight: '800',
   },
   emptySubtitle: {
     ...typography.bodyMd,
@@ -252,8 +240,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   primaryButtonText: {
-    ...typography.bodyLg,
-    fontWeight: '900',
+    ...typography.bodyLgBold,
     color: colors.bg.dusk,
   },
   questContainer: {
@@ -279,20 +266,17 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   questTagText: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.captionBold,
     color: colors.accent.gold,
     fontSize: 10,
   },
   questPoints: {
-    ...typography.caption,
+    ...typography.captionSemiBold,
     color: colors.text.onDark.secondary,
-    fontWeight: '700',
   },
   questName: {
     ...typography.headingLg,
     color: colors.text.onDark.primary,
-    fontWeight: '800',
   },
   questDesc: {
     ...typography.bodyMd,
@@ -308,9 +292,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   stationCounterText: {
-    ...typography.caption,
+    ...typography.captionBold,
     color: colors.accent.gold,
-    fontWeight: '800',
   },
   clueCard: {
     backgroundColor: '#272044',
@@ -321,16 +304,14 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   clueHeading: {
-    ...typography.caption,
-    fontWeight: '900',
+    ...typography.captionBold,
     color: colors.accent.gold,
     letterSpacing: 1.2,
   },
   clueBody: {
-    ...typography.bodyLg,
+    ...typography.bodyLgSemiBold,
     color: '#FFF',
     lineHeight: 24,
-    fontWeight: '600',
   },
   scanButton: {
     backgroundColor: colors.accent.gold,
@@ -340,8 +321,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   scanButtonText: {
-    ...typography.bodyLg,
-    fontWeight: '900',
+    ...typography.bodyLgBold,
     color: colors.bg.dusk,
   },
 });

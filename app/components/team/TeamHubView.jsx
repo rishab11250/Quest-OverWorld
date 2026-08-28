@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   teamName: {
-    ...typography.displayXl,
+    ...typography.headingLg,
     color: colors.text.onDark.primary,
   },
   xpRow: {
@@ -139,10 +139,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   xpText: {
-    ...typography.monoSm,
+    ...typography.displayPixelLg,
     color: colors.accent.gold,
-    fontWeight: '900',
-    fontSize: 20,
+    fontSize: 18,
   },
   codeCard: {
     backgroundColor: colors.bg.duskRaised,
@@ -157,8 +156,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   codeLabel: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.captionBold,
     color: colors.accent.gold,
     letterSpacing: 1.2,
   },
@@ -167,11 +165,10 @@ const styles = StyleSheet.create({
     color: colors.text.onDark.secondary,
   },
   codeValue: {
-    ...typography.monoSm,
-    fontSize: 32,
-    fontWeight: '900',
-    color: colors.text.onDark.primary,
-    letterSpacing: 8,
+    ...typography.displayPixelLg,
+    fontSize: 24,
+    color: colors.accent.gold,
+    letterSpacing: 6,
     marginVertical: spacing.xs,
   },
   codeActions: {

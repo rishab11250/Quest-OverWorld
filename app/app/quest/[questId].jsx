@@ -150,18 +150,22 @@ const styles = StyleSheet.create({
     color: colors.bg.dusk,
   },
   header: {
-    gap: 4,
+    gap: 6,
     marginBottom: spacing.xs,
+    alignItems: 'center',
   },
   title: {
-    ...typography.displayXl,
-    color: colors.text.onDark.primary,
+    ...typography.displayPixelLg,
+    fontSize: 16,
+    color: colors.accent.gold,
+    letterSpacing: 2,
+    textAlign: 'center',
   },
   campusBadge: {
-    ...typography.caption,
-    fontWeight: '800',
-    color: colors.accent.gold,
-    letterSpacing: 1.2,
+    ...typography.captionBold,
+    color: colors.text.onDark.secondary,
+    letterSpacing: 1.5,
+    textAlign: 'center',
   },
   section: {
     gap: spacing.sm,
@@ -196,16 +200,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   orderText: {
-    ...typography.caption,
-    fontWeight: '900',
+    ...typography.displayPixelSm,
     color: colors.accent.gold,
   },
   checkpointInfo: {
     flex: 1,
   },
   checkpointTitle: {
-    ...typography.bodyLg,
-    fontWeight: '700',
+    ...typography.bodyLgBold,
     color: colors.text.onDark.primary,
   },
   checkpointClue: {
@@ -219,9 +221,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   pointsText: {
-    ...typography.monoSm,
-    fontWeight: '900',
+    ...typography.displayPixelXs,
     color: colors.accent.gold,
-    fontSize: 11,
   },
 });

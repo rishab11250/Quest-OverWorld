@@ -115,8 +115,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   categoryChipText: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.captionBold,
     color: colors.accent.gold,
     fontSize: 10,
   },
@@ -129,15 +128,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   pointsBadgeText: {
-    ...typography.monoSm,
-    fontWeight: '900',
+    ...typography.displayPixelXs,
     color: colors.accent.gold,
-    fontSize: 11,
   },
   title: {
     ...typography.headingLg,
     color: colors.text.onDark.primary,
-    fontWeight: '800',
   },
   description: {
     ...typography.bodyMd,
@@ -160,8 +156,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statusApprovedText: {
-    ...typography.caption,
-    fontWeight: '900',
+    ...typography.captionBold,
     color: colors.accent.green,
     fontSize: 10,
   },
@@ -171,8 +166,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statusPendingText: {
-    ...typography.caption,
-    fontWeight: '900',
+    ...typography.captionBold,
     color: colors.accent.gold,
     fontSize: 10,
   },
@@ -182,8 +176,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statusRejectedText: {
-    ...typography.caption,
-    fontWeight: '900',
+    ...typography.captionBold,
     color: colors.accent.coral,
     fontSize: 10,
   },
@@ -191,8 +184,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   statusOpenText: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.captionBold,
     color: colors.accent.gold,
     fontSize: 11,
   },

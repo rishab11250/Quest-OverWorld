@@ -184,13 +184,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    ...typography.displayXl,
-    color: colors.text.onDark.primary,
+    ...typography.displayPixelLg,
+    fontSize: 16,
+    color: colors.accent.gold,
+    letterSpacing: 2,
+    textAlign: 'center',
     marginBottom: spacing.xs,
   },
   subtitle: {
-    ...typography.bodyMd,
+    ...typography.captionBold,
     color: colors.text.onDark.secondary,
+    letterSpacing: 1.2,
     textAlign: 'center',
   },
   errorBanner: {

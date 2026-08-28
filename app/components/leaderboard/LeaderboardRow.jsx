@@ -105,10 +105,8 @@ const styles = StyleSheet.create({
     borderColor: '#3D3560',
   },
   rankNumText: {
-    ...typography.monoSm,
-    fontWeight: '900',
+    ...typography.displayPixelSm,
     color: colors.text.onDark.secondary,
-    fontSize: 12,
   },
   partyDetails: {
     flex: 1,
@@ -119,8 +117,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   partyName: {
-    ...typography.bodyLg,
-    fontWeight: '800',
+    ...typography.bodyLgBold,
     color: colors.text.onDark.primary,
   },
   youBadge: {
@@ -130,9 +127,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   youBadgeText: {
-    ...typography.caption,
+    ...typography.captionBold,
     fontSize: 9,
-    fontWeight: '900',
     color: colors.bg.dusk,
   },
   statsSubtitle: {
@@ -144,15 +140,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   scoreText: {
-    ...typography.monoSm,
-    fontSize: 16,
-    fontWeight: '900',
+    ...typography.displayPixelMd,
     color: colors.accent.gold,
   },
   scoreLabel: {
-    ...typography.caption,
+    ...typography.captionBold,
     fontSize: 9,
-    fontWeight: '800',
     color: colors.text.onDark.secondary,
   },
 });

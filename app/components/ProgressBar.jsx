@@ -62,16 +62,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    ...typography.caption,
+    ...typography.captionBold,
     fontSize: 9,
-    fontWeight: '800',
     color: colors.text.onDark.secondary,
     letterSpacing: 1,
   },
   counter: {
-    ...typography.monoSm,
-    fontSize: 10,
-    fontWeight: '900',
+    ...typography.displayPixelXs,
     color: colors.accent.gold,
   },
   track: {

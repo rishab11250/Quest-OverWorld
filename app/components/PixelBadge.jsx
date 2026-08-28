@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
-import typography from '../theme/typography';
+import { fonts } from '../theme/typography';
 
 export default function PixelBadge({
   label,
@@ -43,7 +43,7 @@ export default function PixelBadge({
   return (
     <View style={badgeStyles}>
       {icon ? (
-        <MaterialCommunityIcons name={icon} size={size === 'sm' ? 10 : 13} color={iconColor} />
+        <MaterialCommunityIcons name={icon} size={size === 'sm' ? 9 : 11} color={iconColor} />
       ) : null}
       <Text style={textStyles}>{label}</Text>
     </View>
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: 4,
     borderWidth: 1,
     borderColor: '#3D3560',
@@ -65,9 +65,9 @@ const styles = StyleSheet.create({
   },
   badgeSm: {
     paddingHorizontal: 6,
-    paddingVertical: 1,
+    paddingVertical: 2,
     borderRadius: 3,
-    gap: 2,
+    gap: 3,
   },
   badgeGold: {
     backgroundColor: 'rgba(242, 200, 75, 0.15)',
@@ -86,13 +86,12 @@ const styles = StyleSheet.create({
     borderColor: colors.accent.gold,
   },
   text: {
-    ...typography.caption,
-    fontWeight: '900',
-    fontSize: 10,
+    fontFamily: fonts.pixel,
+    fontSize: 9,
     letterSpacing: 0.5,
   },
   textSm: {
-    fontSize: 8.5,
+    fontSize: 7.5,
   },
   textGold: {
     color: colors.accent.gold,

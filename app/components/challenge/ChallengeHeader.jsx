@@ -57,14 +57,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   pointsChipText: {
-    ...typography.monoSm,
-    fontWeight: '900',
+    ...typography.displayPixelSm,
     color: colors.accent.gold,
   },
   title: {
-    ...typography.headingXl,
+    ...typography.headingLg,
     color: colors.text.onDark.primary,
-    fontWeight: '800',
   },
   objectiveCard: {
     backgroundColor: colors.bg.duskRaised,

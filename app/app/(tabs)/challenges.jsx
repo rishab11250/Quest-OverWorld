@@ -73,50 +73,69 @@ export default function ChallengesScreen() {
 
       <StatusBanner type="error" message={error} />
 
-      {/* Category Filter Chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryScroll}
-      >
-        {CATEGORIES.map((cat) => (
+      {/* No Team State */}
+      {!team ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>Party Required for Bounties</Text>
+          <Text style={styles.emptySub}>
+            Join or form an adventuring party to unlock side quests and submit photo bounties.
+          </Text>
           <TouchableOpacity
-            key={cat}
-            style={[styles.categoryPill, selectedCategory === cat && styles.categoryPillActive]}
-            onPress={() => setSelectedCategory(cat)}
+            style={styles.primaryButton}
+            onPress={() => router.push('/(tabs)/team')}
             activeOpacity={0.8}
           >
-            <Text
-              style={[
-                styles.categoryPillText,
-                selectedCategory === cat && styles.categoryPillTextActive,
-              ]}
-            >
-              {cat}
-            </Text>
+            <Text style={styles.primaryButtonText}>Head to Party HQ</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+        </View>
+      ) : (
+        <>
+          {/* Category Filter Chips */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryScroll}
+          >
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.categoryPill, selectedCategory === cat && styles.categoryPillActive]}
+                onPress={() => setSelectedCategory(cat)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.categoryPillText,
+                    selectedCategory === cat && styles.categoryPillTextActive,
+                  ]}
+                >
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-      {/* Challenges List */}
-      <View style={styles.listSection}>
-        {filteredChallenges.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No Bounties in Category</Text>
-            <Text style={styles.emptySub}>
-              Switch category filters or check back later for new guild challenges.
-            </Text>
+          {/* Challenges List */}
+          <View style={styles.listSection}>
+            {filteredChallenges.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyTitle}>No Bounties in Category</Text>
+                <Text style={styles.emptySub}>
+                  Switch category filters or check back later for new guild challenges.
+                </Text>
+              </View>
+            ) : (
+              filteredChallenges.map((challenge) => (
+                <ChallengeCard
+                  key={challenge._id}
+                  challenge={challenge}
+                  onPress={(id) => router.push(`/challenge/${id}`)}
+                />
+              ))
+            )}
           </View>
-        ) : (
-          filteredChallenges.map((challenge) => (
-            <ChallengeCard
-              key={challenge._id}
-              challenge={challenge}
-              onPress={(id) => router.push(`/challenge/${id}`)}
-            />
-          ))
-        )}
-      </View>
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -134,18 +153,21 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing.xs,
+    alignItems: 'center',
   },
   pixelTitle: {
-    ...typography.displayXl,
-    color: colors.text.onDark.primary,
+    ...typography.displayPixelLg,
+    fontSize: 16,
+    color: colors.accent.gold,
     letterSpacing: 2,
+    textAlign: 'center',
   },
   subtitle: {
-    ...typography.caption,
-    fontWeight: '800',
-    color: colors.accent.gold,
+    ...typography.captionBold,
+    color: colors.text.onDark.secondary,
     letterSpacing: 1.5,
-    marginTop: 2,
+    marginTop: 6,
+    textAlign: 'center',
   },
   categoryScroll: {
     gap: spacing.xs,
@@ -192,5 +214,17 @@ const styles = StyleSheet.create({
     ...typography.bodyMd,
     color: colors.text.onDark.secondary,
     textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+  primaryButton: {
+    backgroundColor: colors.accent.gold,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 12,
+    borderRadius: 6,
+    marginTop: spacing.xs,
+  },
+  primaryButtonText: {
+    ...typography.bodyLgBold,
+    color: colors.bg.dusk,
   },
 });
