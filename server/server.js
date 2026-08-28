@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const teamRoutes = require('./routes/teams');
 const questRoutes = require('./routes/quests');
+const checkpointRoutes = require('./routes/checkpoints');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/quests', questRoutes);
+app.use('/api/checkpoints', checkpointRoutes);
 
 // Base Route / Health Check
 app.get('/api/health', (req, res) => {
