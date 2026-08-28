@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import api from '../../lib/api';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
@@ -19,26 +19,28 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchActiveQuest = useCallback(async () => {
+  const fetchActiveQuest = useCallback(async (isSilent = false) => {
     try {
-      setError('');
+      if (!isSilent) setError('');
       const res = await api.get('/quests/active');
       setData(res);
     } catch (err) {
-      setError(err.message || 'Failed to load active quest.');
+      if (!isSilent) setError(err.message || 'Failed to load active quest.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchActiveQuest();
-  }, [fetchActiveQuest]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchActiveQuest(true);
+    }, [fetchActiveQuest])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchActiveQuest();
+    fetchActiveQuest(false);
   };
 
   if (loading && !refreshing) {

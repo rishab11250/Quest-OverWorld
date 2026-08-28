@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { StyleSheet, ScrollView, RefreshControl, Share } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import api from '../../lib/api';
 import colors from '../../theme/colors';
@@ -27,26 +28,28 @@ export default function TeamScreen() {
   const [leaveModalVisible, setLeaveModalVisible] = useState(false);
   const [contactsModalVisible, setContactsModalVisible] = useState(false);
 
-  const fetchMyTeam = useCallback(async () => {
+  const fetchMyTeam = useCallback(async (isSilent = false) => {
     try {
-      setError('');
+      if (!isSilent) setError('');
       const data = await api.get('/teams/me');
       setTeam(data.team);
     } catch (err) {
-      setError(err.message || 'Failed to load team data.');
+      if (!isSilent) setError(err.message || 'Failed to load team data.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchMyTeam();
-  }, [fetchMyTeam]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyTeam(true);
+    }, [fetchMyTeam])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchMyTeam();
+    fetchMyTeam(false);
   };
 
   const handleJoinTeam = async () => {

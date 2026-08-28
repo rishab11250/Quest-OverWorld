@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import OverworldMap from '../../components/OverworldMap';
 import api from '../../lib/api';
@@ -27,9 +27,9 @@ export default function MapScreen() {
   const [error, setError] = useState('');
   const [selectedPin, setSelectedPin] = useState(null);
 
-  const fetchMapData = useCallback(async () => {
+  const fetchMapData = useCallback(async (isSilent = false) => {
     try {
-      setError('');
+      if (!isSilent) setError('');
 
       // 1. Fast cache fetch for immediate position
       const cached = await getLastKnownLocation();
@@ -57,16 +57,20 @@ export default function MapScreen() {
         }
       }
     } catch (err) {
-      setError(err.message || 'Failed to load atlas data.');
+      if (!isSilent) setError(err.message || 'Failed to load atlas data.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchMapData();
+  useFocusEffect(
+    useCallback(() => {
+      fetchMapData(true);
+    }, [fetchMapData])
+  );
 
+  useEffect(() => {
     // Start live GPS stream subscription
     let watcherSub = null;
     startLocationWatcher((freshCoords) => {
@@ -81,11 +85,11 @@ export default function MapScreen() {
         watcherSub.remove();
       }
     };
-  }, [fetchMapData]);
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchMapData();
+    fetchMapData(false);
   };
 
   const handleRecenter = async () => {

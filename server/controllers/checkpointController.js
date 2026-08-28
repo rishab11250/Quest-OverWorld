@@ -75,31 +75,34 @@ const verifyCheckpoint = async (req, res) => {
       }
     }
 
-    // 5. Enforce Mandatory GPS Proximity (Anti-Cheat)
-    if (latitude == null || longitude == null || isNaN(latitude) || isNaN(longitude)) {
-      return res.status(400).json({
-        message:
-          'GPS location coordinates (latitude & longitude) are required for checkpoint verification. Please enable device location services.',
-      });
-    }
+    // 5. Enforce Mandatory GPS Proximity (Anti-Cheat, optional bypass in testing)
+    const isDevBypass = process.env.BYPASS_GEOFENCE === 'true';
+    if (!isDevBypass) {
+      if (latitude == null || longitude == null || isNaN(latitude) || isNaN(longitude)) {
+        return res.status(400).json({
+          message:
+            'GPS location coordinates (latitude & longitude) are required for checkpoint verification. Please enable device location services.',
+        });
+      }
 
-    const distance = getDistanceInMeters(
-      latitude,
-      longitude,
-      checkpoint.latitude,
-      checkpoint.longitude
-    );
+      const distance = getDistanceInMeters(
+        latitude,
+        longitude,
+        checkpoint.latitude,
+        checkpoint.longitude
+      );
 
-    const maxAllowedRadius = checkpoint.radius || 50; // default 50 meters
-    // Allow slight GPS inaccuracy buffer (+25m buffer)
-    const allowedWithBuffer = maxAllowedRadius + 25;
+      const maxAllowedRadius = checkpoint.radius || 50; // default 50 meters
+      // Allow slight GPS inaccuracy buffer (+25m buffer)
+      const allowedWithBuffer = maxAllowedRadius + 25;
 
-    if (distance == null || distance > allowedWithBuffer) {
-      return res.status(400).json({
-        message: `Too far from discovery site! You are ${distance ?? 'unknown'}m away (must be within ${maxAllowedRadius}m of ${checkpoint.title}). Move closer to landmark and re-scan.`,
-        distance,
-        allowedRadius: maxAllowedRadius,
-      });
+      if (distance == null || distance > allowedWithBuffer) {
+        return res.status(400).json({
+          message: `Too far from discovery site! You are ${distance ?? 'unknown'}m away (must be within ${maxAllowedRadius}m of ${checkpoint.title}). Move closer to landmark and re-scan.`,
+          distance,
+          allowedRadius: maxAllowedRadius,
+        });
+      }
     }
 
     // 6. Record Progress

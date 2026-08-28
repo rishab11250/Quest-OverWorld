@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import api from '../../lib/api';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
@@ -32,10 +33,13 @@ export default function LeaderboardScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    // Initial fetch
-    fetchLeaderboard();
+  useFocusEffect(
+    useCallback(() => {
+      fetchLeaderboard(true);
+    }, [fetchLeaderboard])
+  );
 
+  useEffect(() => {
     // Auto-refresh polling every 15s for live leaderboard changes
     const pollTimer = setInterval(() => {
       fetchLeaderboard(true);

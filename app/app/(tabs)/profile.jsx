@@ -11,7 +11,7 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../lib/api';
 import { getUserData, clearAuth, setUserData, getSetting, setSetting } from '../../lib/secureStore';
@@ -89,9 +89,11 @@ export default function ProfileScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+    }, [fetchProfile])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);

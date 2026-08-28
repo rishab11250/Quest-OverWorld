@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import api from '../../lib/api';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
@@ -21,27 +21,29 @@ export default function ChallengesScreen() {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [error, setError] = useState('');
 
-  const fetchChallenges = useCallback(async () => {
+  const fetchChallenges = useCallback(async (isSilent = false) => {
     try {
-      setError('');
+      if (!isSilent) setError('');
       const data = await api.get('/challenges');
       setChallenges(data.challenges || []);
       setTeam(data.team || null);
     } catch (err) {
-      setError(err.message || 'Failed to load bounties.');
+      if (!isSilent) setError(err.message || 'Failed to load bounties.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchChallenges();
-  }, [fetchChallenges]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchChallenges(true);
+    }, [fetchChallenges])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchChallenges();
+    fetchChallenges(false);
   };
 
   const filteredChallenges = challenges.filter((c) => {
