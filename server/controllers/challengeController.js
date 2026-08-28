@@ -1,6 +1,7 @@
 const Challenge = require('../models/Challenge');
 const Submission = require('../models/Submission');
 const Team = require('../models/Team');
+const { uploadImage } = require('../utils/cloudinary');
 
 // @desc    Get all active challenges with current team submission status
 // @route   GET /api/challenges
@@ -178,8 +179,13 @@ const submitChallenge = async (req, res) => {
       return res.status(400).json({ message: 'Photo proof is required for photo challenges.' });
     }
 
+    let hostedPhotoUrl = '';
+    if (photoUrl) {
+      hostedPhotoUrl = await uploadImage(photoUrl, 'quest_overworld_proofs');
+    }
+
     if (existingSub) {
-      existingSub.photoUrl = photoUrl || existingSub.photoUrl;
+      existingSub.photoUrl = hostedPhotoUrl || existingSub.photoUrl;
       existingSub.textResponse = textResponse || existingSub.textResponse;
       existingSub.status = 'pending';
       existingSub.submittedBy = req.user._id;
@@ -190,7 +196,7 @@ const submitChallenge = async (req, res) => {
         challengeId: challenge._id,
         teamId: team._id,
         submittedBy: req.user._id,
-        photoUrl: photoUrl || '',
+        photoUrl: hostedPhotoUrl || '',
         textResponse: textResponse || '',
         status: 'pending',
       });

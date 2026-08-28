@@ -9,6 +9,8 @@ import spacing from '../../theme/spacing';
 import LoadingScreen from '../../components/LoadingScreen';
 import StatusBanner from '../../components/StatusBanner';
 import DialogueBox from '../../components/DialogueBox';
+import ProgressBar from '../../components/ProgressBar';
+import PixelBadge from '../../components/PixelBadge';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -67,13 +69,23 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      {/* Party Score Banner */}
+      {/* Party Score & Level Progression Banner */}
       <View style={styles.pointsCard}>
-        <Text style={styles.pointsLabel}>PARTY XP</Text>
-        <Text style={styles.pointsValue}>+{team?.score || 0} PTS</Text>
-        <View style={styles.levelBadge}>
-          <Text style={styles.levelBadgeText}>LVL {level}</Text>
+        <View style={styles.pointsTopRow}>
+          <View>
+            <Text style={styles.pointsLabel}>PARTY XP</Text>
+            <Text style={styles.pointsValue}>+{team?.score || 0} PTS</Text>
+          </View>
+          <PixelBadge label={`LVL ${level}`} variant="gold" icon="shield-crown" />
         </View>
+
+        {team ? (
+          <ProgressBar
+            current={team?.score || 0}
+            max={250}
+            label={`NEXT LEVEL PROGRESS (LVL ${level + 1})`}
+          />
+        ) : null}
       </View>
 
       <StatusBanner type="error" message={error} />
@@ -179,6 +191,9 @@ const styles = StyleSheet.create({
     padding: spacing.cardPadding,
     borderWidth: 1,
     borderColor: '#3D3560',
+    gap: spacing.sm,
+  },
+  pointsTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

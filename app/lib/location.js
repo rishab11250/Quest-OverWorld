@@ -166,3 +166,47 @@ export const formatDistance = (meters) => {
   if (meters < 1000) return `${meters}m`;
   return `${(meters / 1000).toFixed(1)}km`;
 };
+
+/**
+ * Calculate compass bearing angle and cardinal direction from player to target landmark.
+ * @param {number} lat1 - Player latitude
+ * @param {number} lon1 - Player longitude
+ * @param {number} lat2 - Target landmark latitude
+ * @param {number} lon2 - Target landmark longitude
+ * @returns {{ bearing: number, direction: string, arrow: string, label: string } | null}
+ */
+export const getBearingAndDirection = (lat1, lon1, lat2, lon2) => {
+  if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
+    return null;
+  }
+
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  const θ = Math.atan2(y, x);
+  const bearingDegrees = ((θ * 180) / Math.PI + 360) % 360;
+
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const arrows = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];
+  const fullNames = [
+    'North',
+    'Northeast',
+    'East',
+    'Southeast',
+    'South',
+    'Southwest',
+    'West',
+    'Northwest',
+  ];
+  const index = Math.round(bearingDegrees / 45) % 8;
+
+  return {
+    bearing: Math.round(bearingDegrees),
+    direction: directions[index],
+    arrow: arrows[index],
+    label: fullNames[index],
+  };
+};

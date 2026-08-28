@@ -75,26 +75,31 @@ const verifyCheckpoint = async (req, res) => {
       }
     }
 
-    // 5. Verify GPS proximity (if coordinates provided)
-    if (latitude != null && longitude != null) {
-      const distance = getDistanceInMeters(
-        latitude,
-        longitude,
-        checkpoint.latitude,
-        checkpoint.longitude
-      );
+    // 5. Enforce Mandatory GPS Proximity (Anti-Cheat)
+    if (latitude == null || longitude == null || isNaN(latitude) || isNaN(longitude)) {
+      return res.status(400).json({
+        message:
+          'GPS location coordinates (latitude & longitude) are required for checkpoint verification. Please enable device location services.',
+      });
+    }
 
-      const maxAllowedRadius = checkpoint.radius || 50; // default 50 meters
-      // Allow slight GPS inaccuracy buffer (+20m buffer)
-      const allowedWithBuffer = maxAllowedRadius + 25;
+    const distance = getDistanceInMeters(
+      latitude,
+      longitude,
+      checkpoint.latitude,
+      checkpoint.longitude
+    );
 
-      if (distance != null && distance > allowedWithBuffer) {
-        return res.status(400).json({
-          message: `Too far from discovery site! You are ${distance}m away (must be within ${maxAllowedRadius}m). Move closer and re-scan.`,
-          distance,
-          allowedRadius: maxAllowedRadius,
-        });
-      }
+    const maxAllowedRadius = checkpoint.radius || 50; // default 50 meters
+    // Allow slight GPS inaccuracy buffer (+25m buffer)
+    const allowedWithBuffer = maxAllowedRadius + 25;
+
+    if (distance == null || distance > allowedWithBuffer) {
+      return res.status(400).json({
+        message: `Too far from discovery site! You are ${distance ?? 'unknown'}m away (must be within ${maxAllowedRadius}m of ${checkpoint.title}). Move closer to landmark and re-scan.`,
+        distance,
+        allowedRadius: maxAllowedRadius,
+      });
     }
 
     // 6. Record Progress

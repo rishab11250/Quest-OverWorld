@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+import PixelBadge from '../PixelBadge';
 
 export default function LeaderboardRow({ item, rank, isMyTeam }) {
   const renderMedal = (r) => {
@@ -40,11 +41,7 @@ export default function LeaderboardRow({ item, rank, isMyTeam }) {
       <View style={styles.partyDetails}>
         <View style={styles.partyNameRow}>
           <Text style={styles.partyName}>{item.name}</Text>
-          {isMyTeam ? (
-            <View style={styles.youBadge}>
-              <Text style={styles.youBadgeText}>YOU</Text>
-            </View>
-          ) : null}
+          {isMyTeam ? <PixelBadge label="YOU" variant="dusk" size="sm" /> : null}
         </View>
         <Text style={styles.statsSubtitle}>
           📍 {item.checkpointsCount || 0} Stations • ⚡ {item.challengesCount || 0} Bounties

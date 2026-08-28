@@ -16,14 +16,16 @@ export default function LeaderboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchLeaderboard = useCallback(async () => {
+  const fetchLeaderboard = useCallback(async (isSilent = false) => {
     try {
-      setError('');
+      if (!isSilent) setError('');
       const data = await api.get('/leaderboard');
       setRankings(data.rankings || []);
       setMyTeam(data.myTeam || null);
     } catch (err) {
-      setError(err.message || 'Failed to load rankings.');
+      if (!isSilent) {
+        setError(err.message || 'Failed to load rankings.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -31,12 +33,20 @@ export default function LeaderboardScreen() {
   }, []);
 
   useEffect(() => {
+    // Initial fetch
     fetchLeaderboard();
+
+    // Auto-refresh polling every 15s for live leaderboard changes
+    const pollTimer = setInterval(() => {
+      fetchLeaderboard(true);
+    }, 15000);
+
+    return () => clearInterval(pollTimer);
   }, [fetchLeaderboard]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchLeaderboard();
+    fetchLeaderboard(false);
   };
 
   if (loading && !refreshing) {

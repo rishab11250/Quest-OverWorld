@@ -47,3 +47,7 @@ server/build/
 # ── Misc ──
 .eslintcache
 *.tsbuildinfo
+
+# ── Uploads / Proof Media ──
+server/uploads/
+uploads/

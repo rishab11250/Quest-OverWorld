@@ -3,6 +3,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+import ProgressBar from '../ProgressBar';
+import PixelBadge from '../PixelBadge';
 
 export default function TeamHubView({
   team,
@@ -18,14 +20,21 @@ export default function TeamHubView({
   return (
     <View style={styles.container}>
       {/* Team Header & XP */}
-      <View style={styles.header}>
-        <Text style={styles.teamName}>{team.name}</Text>
+      <View style={styles.headerCard}>
+        <View style={styles.headerTop}>
+          <Text style={styles.teamName}>{team.name}</Text>
+          <PixelBadge label={`LVL ${level}`} variant="gold" icon="shield-crown" />
+        </View>
+
         <View style={styles.xpRow}>
           <Text style={styles.xpText}>+{team.score || 0} PTS</Text>
-          <View style={styles.lvlBadge}>
-            <Text style={styles.lvlBadgeText}>LVL {level}</Text>
-          </View>
         </View>
+
+        <ProgressBar
+          current={team.score || 0}
+          max={250}
+          label={`NEXT GUILD RANK (LVL ${level + 1})`}
+        />
       </View>
 
       {/* Invite / Join Code Card */}
@@ -107,8 +116,18 @@ const styles = StyleSheet.create({
   container: {
     gap: spacing.md,
   },
-  header: {
-    marginBottom: spacing.xs,
+  headerCard: {
+    backgroundColor: colors.bg.duskRaised,
+    borderRadius: 8,
+    padding: spacing.cardPadding,
+    borderWidth: 1,
+    borderColor: '#3D3560',
+    gap: spacing.xs,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   teamName: {
     ...typography.displayXl,
@@ -117,28 +136,13 @@ const styles = StyleSheet.create({
   xpRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
   },
   xpText: {
     ...typography.monoSm,
     color: colors.accent.gold,
-    fontWeight: '800',
-    fontSize: 16,
-  },
-  lvlBadge: {
-    backgroundColor: '#322A54',
-    borderWidth: 1,
-    borderColor: colors.accent.gold,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  lvlBadgeText: {
-    ...typography.caption,
     fontWeight: '900',
-    color: colors.accent.gold,
-    fontSize: 10,
+    fontSize: 20,
   },
   codeCard: {
     backgroundColor: colors.bg.duskRaised,

@@ -20,6 +20,10 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Static uploads folder
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/teams', teamRoutes);
@@ -28,6 +32,19 @@ app.use('/api/checkpoints', checkpointRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Image Upload Endpoint
+const { uploadImage } = require('./utils/cloudinary');
+app.post('/api/upload', async (req, res) => {
+  try {
+    const { image, folder } = req.body;
+    if (!image) return res.status(400).json({ message: 'Image data is required' });
+    const url = await uploadImage(image, folder || 'quest_overworld_proofs');
+    return res.status(200).json({ url });
+  } catch (err) {
+    return res.status(500).json({ message: err.message || 'Upload failed' });
+  }
+});
 
 // Base Route / Health Check
 app.get('/api/health', (req, res) => {
