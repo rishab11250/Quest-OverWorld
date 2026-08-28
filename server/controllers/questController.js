@@ -1,0 +1,172 @@
+const Quest = require('../models/Quest');
+const Checkpoint = require('../models/Checkpoint');
+const Team = require('../models/Team');
+
+// @desc    Get all active quests
+// @route   GET /api/quests
+// @access  Private
+const getAllQuests = async (req, res) => {
+  try {
+    const quests = await Quest.find({ status: 'active' }).select(
+      'name description campus totalPoints checkpoints status'
+    );
+    return res.status(200).json({ quests });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error fetching quests' });
+  }
+};
+
+// @desc    Get active quest for user's team with server-authoritative clue delivery
+// @route   GET /api/quests/active
+// @access  Private
+const getActiveQuest = async (req, res) => {
+  try {
+    const team = await Team.findOne({ members: req.user._id });
+    if (!team) {
+      return res.status(200).json({
+        quest: null,
+        message: 'Join or create a party to access quests.',
+      });
+    }
+
+    let quest = null;
+    if (team.questId) {
+      quest = await Quest.findById(team.questId);
+    }
+
+    // Default to the first active quest if not specifically bound
+    if (!quest) {
+      quest = await Quest.findOne({ status: 'active' });
+      if (quest) {
+        team.questId = quest._id;
+        await team.save();
+      }
+    }
+
+    if (!quest) {
+      return res.status(200).json({ quest: null, message: 'No active quest found.' });
+    }
+
+    // Fetch all checkpoints in sequence order
+    const allCheckpoints = await Checkpoint.find({ questId: quest._id }).sort({ order: 1 });
+
+    // Determine team progress based on score or completed checkpoints count
+    // Each checkpoint gives its points; calculate current order
+    let completedCheckpoints = [];
+    let currentOrder = 1;
+
+    // Estimate current order based on checkpoints passed or default to 1
+    // (When verification PR is implemented, this pulls directly from Progress collection)
+    const pointsAccrued = team.score || 0;
+    let accumulated = 0;
+
+    for (const cp of allCheckpoints) {
+      if (accumulated + cp.points <= pointsAccrued && pointsAccrued > 0) {
+        accumulated += cp.points;
+        completedCheckpoints.push({
+          _id: cp._id,
+          title: cp.title,
+          points: cp.points,
+          order: cp.order,
+          completed: true,
+        });
+        currentOrder = cp.order + 1;
+      }
+    }
+
+    const currentCheckpoint = allCheckpoints.find((cp) => cp.order === currentOrder);
+    const isQuestCompleted = currentOrder > allCheckpoints.length;
+
+    return res.status(200).json({
+      quest: {
+        _id: quest._id,
+        name: quest.name,
+        description: quest.description,
+        campus: quest.campus,
+        totalPoints: quest.totalPoints,
+        totalCheckpoints: allCheckpoints.length,
+        currentOrder,
+        isCompleted: isQuestCompleted,
+        currentClue: currentCheckpoint
+          ? {
+              _id: currentCheckpoint._id,
+              order: currentCheckpoint.order,
+              title: currentCheckpoint.title,
+              clue: currentCheckpoint.clue,
+              points: currentCheckpoint.points,
+              radius: currentCheckpoint.radius,
+            }
+          : null,
+        completedCheckpoints,
+      },
+      team: {
+        _id: team._id,
+        name: team.name,
+        score: team.score,
+        code: team.code,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error fetching active quest' });
+  }
+};
+
+// @desc    Get quest by ID
+// @route   GET /api/quests/:id
+// @access  Private
+const getQuestById = async (req, res) => {
+  try {
+    const quest = await Quest.findById(req.params.id);
+    if (!quest) {
+      return res.status(404).json({ message: 'Quest not found' });
+    }
+
+    const checkpoints = await Checkpoint.find({ questId: quest._id })
+      .sort({ order: 1 })
+      .select('title clue points order radius');
+
+    return res.status(200).json({
+      quest: {
+        _id: quest._id,
+        name: quest.name,
+        description: quest.description,
+        campus: quest.campus,
+        totalPoints: quest.totalPoints,
+        checkpoints,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error fetching quest' });
+  }
+};
+
+// @desc    Bind team to quest
+// @route   POST /api/quests/:id/join
+// @access  Private
+const joinQuest = async (req, res) => {
+  try {
+    const quest = await Quest.findById(req.params.id);
+    if (!quest) {
+      return res.status(404).json({ message: 'Quest not found' });
+    }
+
+    const team = await Team.findOne({ members: req.user._id });
+    if (!team) {
+      return res.status(400).json({ message: 'You must join or create a team first.' });
+    }
+
+    team.questId = quest._id;
+    await team.save();
+
+    return res.status(200).json({ message: 'Joined quest successfully', questId: quest._id });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error joining quest' });
+  }
+};
+
+module.exports = {
+  getAllQuests,
+  getActiveQuest,
+  getQuestById,
+  joinQuest,
+};

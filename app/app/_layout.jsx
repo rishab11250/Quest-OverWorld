@@ -34,6 +34,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="team/[teamId]" options={{ headerShown: false }} />
+        <Stack.Screen name="quest/[questId]" options={{ headerShown: false }} />
       </Stack>
     </View>
   );
