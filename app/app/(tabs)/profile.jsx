@@ -17,6 +17,7 @@ import api from '../../lib/api';
 import { getUserData, clearAuth, setUserData, getSetting, setSetting } from '../../lib/secureStore';
 import ConfirmModal from '../../components/ConfirmModal';
 import LoadingScreen from '../../components/LoadingScreen';
+import { triggerHaptic } from '../../lib/haptics';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
@@ -123,11 +124,13 @@ export default function ProfileScreen() {
       });
 
       if (res?.user) {
+        triggerHaptic('success');
         setUser(res.user);
         await setUserData(res.user);
       }
       setEditModalVisible(false);
     } catch (err) {
+      triggerHaptic('error');
       setEditError(err.message || 'Failed to update hero profile.');
     } finally {
       setSavingProfile(false);
@@ -135,16 +138,19 @@ export default function ProfileScreen() {
   };
 
   const handleToggleSetting = async (key, val, setter) => {
+    triggerHaptic('light');
     setter(val);
     await setSetting(key, val);
   };
 
   const handleClearCache = async () => {
+    triggerHaptic('medium');
     setCacheCleared(true);
     setTimeout(() => setCacheCleared(false), 2500);
   };
 
   const handleLogout = async () => {
+    triggerHaptic('warning');
     setLogoutModalVisible(false);
     await clearAuth();
     router.replace('/(auth)/login');
@@ -518,23 +524,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.accent.gold,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: 4,
     alignSelf: 'flex-start',
     marginTop: 4,
   },
   partyBadgeText: {
-    ...typography.caption,
-    fontWeight: '900',
+    ...typography.displayPixelXs,
     color: colors.accent.gold,
-    fontSize: 10,
+    fontSize: 8,
   },
   soloBadge: {
     backgroundColor: '#262040',
     borderColor: '#4A4170',
   },
   soloBadgeText: {
+    ...typography.displayPixelXs,
     color: colors.text.onDark.secondary,
+    fontSize: 8,
   },
   adminEntryCard: {
     flexDirection: 'row',
@@ -574,9 +581,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   cardHeader: {
-    ...typography.captionBold,
+    ...typography.displayPixelXs,
     color: colors.accent.gold,
     letterSpacing: 1.2,
+    fontSize: 9,
   },
   divider: {
     height: 1,
@@ -593,8 +601,7 @@ const styles = StyleSheet.create({
     color: colors.text.onDark.secondary,
   },
   infoVal: {
-    ...typography.bodyMd,
-    fontWeight: '700',
+    ...typography.bodyMdBold,
     color: colors.text.onDark.primary,
   },
   settingRow: {
@@ -621,7 +628,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 6,
     backgroundColor: '#262040',
     borderWidth: 1,
@@ -629,7 +636,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   cacheBtnText: {
-    ...typography.captionBold,
+    ...typography.displayPixelXs,
+    fontSize: 8,
     color: colors.accent.gold,
   },
   cacheBtnTextDone: {
@@ -648,7 +656,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   logoutText: {
-    ...typography.bodyMdBold,
+    ...typography.displayPixelSm,
+    fontSize: 10,
     color: colors.accent.coral,
   },
   modalOverlay: {
@@ -697,8 +706,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   inputLabel: {
-    ...typography.captionBold,
-    fontSize: 9,
+    ...typography.displayPixelXs,
+    fontSize: 8,
     color: colors.accent.gold,
     letterSpacing: 1,
   },
@@ -747,7 +756,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalCancelText: {
-    ...typography.bodyMd,
+    ...typography.displayPixelXs,
+    fontSize: 9,
     color: colors.text.onDark.secondary,
   },
   modalSaveBtn: {
@@ -759,7 +769,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalSaveText: {
-    ...typography.bodyMdBold,
+    ...typography.displayPixelSm,
+    fontSize: 10,
     color: colors.bg.dusk,
   },
 });

@@ -16,6 +16,8 @@ import spacing from '../../theme/spacing';
 
 import LoadingScreen from '../../components/LoadingScreen';
 import StatusBanner from '../../components/StatusBanner';
+import PixelCard from '../../components/PixelCard';
+import { triggerHaptic } from '../../lib/haptics';
 
 export default function MapScreen() {
   const router = useRouter();
@@ -147,6 +149,7 @@ export default function MapScreen() {
         <View style={styles.mapSection}>
           <OverworldMap
             checkpoints={quest?.checkpoints || []}
+            currentClue={currentClue}
             userLocation={location}
             currentOrder={quest?.currentOrder || 1}
             onSelectPin={setSelectedPin}
@@ -155,7 +158,7 @@ export default function MapScreen() {
 
           {/* Active Station Card below Map */}
           {currentClue ? (
-            <View style={styles.clueCard}>
+            <PixelCard variant="gold" glow style={styles.clueCard}>
               <View style={styles.clueHeaderRow}>
                 <View style={styles.orderBadge}>
                   <Text style={styles.orderBadgeText}>STATION #{quest.currentOrder}</Text>
@@ -181,13 +184,16 @@ export default function MapScreen() {
 
               <TouchableOpacity
                 style={styles.scanButton}
-                onPress={() => router.push('/camera/scanner')}
+                onPress={() => {
+                  triggerHaptic('medium');
+                  router.push('/camera/scanner');
+                }}
                 activeOpacity={0.8}
               >
                 <MaterialCommunityIcons name="qrcode-scan" size={18} color={colors.bg.dusk} />
                 <Text style={styles.scanButtonText}>Scan Station QR</Text>
               </TouchableOpacity>
-            </View>
+            </PixelCard>
           ) : (
             <View style={styles.emptyCard}>
               <Text style={styles.emptyTitle}>All Stations Unlocked!</Text>
@@ -259,8 +265,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   primaryButtonText: {
-    ...typography.bodyLg,
-    fontWeight: '900',
+    ...typography.displayPixelSm,
     color: colors.bg.dusk,
   },
   mapSection: {
@@ -284,19 +289,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.accent.gold,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: 4,
   },
   orderBadgeText: {
-    ...typography.caption,
-    fontWeight: '900',
+    ...typography.displayPixelXs,
     color: colors.accent.gold,
-    fontSize: 10,
+    fontSize: 9,
   },
   cluePoints: {
-    ...typography.caption,
-    color: colors.text.onDark.secondary,
-    fontWeight: '700',
+    ...typography.displayPixelSm,
+    color: colors.accent.gold,
   },
   clueTitle: {
     ...typography.headingLg,
@@ -335,8 +338,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   scanButtonText: {
-    ...typography.bodyLg,
-    fontWeight: '900',
+    ...typography.displayPixelSm,
+    fontSize: 11,
     color: colors.bg.dusk,
+    letterSpacing: 0.5,
   },
 });

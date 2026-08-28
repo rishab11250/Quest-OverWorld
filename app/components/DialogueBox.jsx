@@ -70,14 +70,17 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: colors.bg.dusk,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 4,
     marginBottom: 2,
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
   },
   speakerText: {
-    ...typography.captionBold,
-    letterSpacing: 1.2,
+    ...typography.displayPixelXs,
+    letterSpacing: 1,
     color: colors.accent.gold,
+    fontSize: 8,
   },
   bodyText: {
     ...typography.bodyLg,
@@ -85,9 +88,9 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   footnoteText: {
-    ...typography.monoSm,
+    ...typography.monoSmBold,
     color: colors.text.onLight.secondary,
     marginTop: spacing.xs,
-    fontSize: 12,
+    fontSize: 11,
   },
 });

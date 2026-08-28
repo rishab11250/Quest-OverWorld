@@ -9,6 +9,7 @@ import spacing from '../../theme/spacing';
 import LoadingScreen from '../../components/LoadingScreen';
 import StatusBanner from '../../components/StatusBanner';
 import ChallengeCard from '../../components/challenge/ChallengeCard';
+import { triggerHaptic } from '../../lib/haptics';
 
 const CATEGORIES = ['ALL', 'PHOTO', 'RIDDLE', 'TRIVIA', 'CREATIVE'];
 
@@ -102,7 +103,10 @@ export default function ChallengesScreen() {
               <TouchableOpacity
                 key={cat}
                 style={[styles.categoryPill, selectedCategory === cat && styles.categoryPillActive]}
-                onPress={() => setSelectedCategory(cat)}
+                onPress={() => {
+                  triggerHaptic('light');
+                  setSelectedCategory(cat);
+                }}
                 activeOpacity={0.8}
               >
                 <Text
@@ -188,8 +192,8 @@ const styles = StyleSheet.create({
     borderColor: colors.accent.gold,
   },
   categoryPillText: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.displayPixelXs,
+    fontSize: 8,
     color: colors.text.onDark.secondary,
   },
   categoryPillTextActive: {
@@ -226,7 +230,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   primaryButtonText: {
-    ...typography.bodyLgBold,
+    ...typography.displayPixelSm,
     color: colors.bg.dusk,
   },
 });

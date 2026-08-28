@@ -38,6 +38,8 @@ const TAB_CONFIG = {
   },
 };
 
+import { triggerHaptic } from '../lib/haptics';
+
 export default function RpgTabBar({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
 
@@ -61,6 +63,7 @@ export default function RpgTabBar({ state, descriptors, navigation }) {
           };
 
           const onPress = () => {
+            triggerHaptic('light');
             const event = navigation.emit({
               type: 'tabPress',
               target: route.key,

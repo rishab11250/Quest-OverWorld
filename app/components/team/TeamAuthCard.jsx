@@ -10,6 +10,8 @@ import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
 
+import { triggerHaptic } from '../../lib/haptics';
+
 export default function TeamAuthCard({
   activeTab,
   setActiveTab,
@@ -35,7 +37,10 @@ export default function TeamAuthCard({
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'join' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('join')}
+          onPress={() => {
+            triggerHaptic('light');
+            setActiveTab('join');
+          }}
           activeOpacity={0.8}
         >
           <Text style={[styles.tabButtonText, activeTab === 'join' && styles.tabButtonTextActive]}>
@@ -45,7 +50,10 @@ export default function TeamAuthCard({
 
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'create' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('create')}
+          onPress={() => {
+            triggerHaptic('light');
+            setActiveTab('create');
+          }}
           activeOpacity={0.8}
         >
           <Text
@@ -76,7 +84,10 @@ export default function TeamAuthCard({
 
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={onJoin}
+            onPress={() => {
+              triggerHaptic('medium');
+              onJoin();
+            }}
             disabled={submitting}
             activeOpacity={0.8}
           >
@@ -106,7 +117,10 @@ export default function TeamAuthCard({
 
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={onCreate}
+            onPress={() => {
+              triggerHaptic('medium');
+              onCreate();
+            }}
             disabled={submitting}
             activeOpacity={0.8}
           >
@@ -162,13 +176,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.gold,
   },
   tabButtonText: {
-    ...typography.bodyMd,
-    fontWeight: '700',
+    ...typography.displayPixelXs,
+    fontSize: 9,
     color: colors.text.onDark.secondary,
   },
   tabButtonTextActive: {
     color: colors.bg.dusk,
-    fontWeight: '800',
   },
   card: {
     backgroundColor: colors.bg.duskRaised,
@@ -195,8 +208,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     color: colors.accent.gold,
-    ...typography.monoSm,
-    fontSize: 22,
+    ...typography.displayPixelLg,
+    fontSize: 18,
     letterSpacing: 6,
     textAlign: 'center',
   },
@@ -217,8 +230,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryBtnText: {
-    ...typography.bodyLg,
-    fontWeight: '900',
+    ...typography.displayPixelSm,
+    fontSize: 11,
     color: colors.bg.dusk,
   },
 });

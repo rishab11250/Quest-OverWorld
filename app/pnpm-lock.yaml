@@ -35,6 +35,9 @@ importers:
       expo-font:
         specifier: ^14.0.12
         version: 14.0.12(expo@54.0.37)(react-native@0.81.5(@babel/core@7.29.7)(react@19.1.0))(react@19.1.0)
+      expo-haptics:
+        specifier: ^57.0.2
+        version: 57.0.2(expo@54.0.37)
       expo-image-picker:
         specifier: ~17.0.11
         version: 17.0.11(expo@54.0.37)
@@ -1950,6 +1953,11 @@ packages:
       expo: '*'
       react: '*'
       react-native: '*'
+
+  expo-haptics@57.0.2:
+    resolution: {integrity: sha512-vPths6zTxxaGaemC7D1GKbw1iOnOAAL5oAcCFVSgVNWnuLCBefL1LkhRBaJsepiMXRh2y3vwPiXkPaf6d16blA==}
+    peerDependencies:
+      expo: '*'
 
   expo-image-loader@6.0.0:
     resolution: {integrity: sha512-nKs/xnOGw6ACb4g26xceBD57FKLFkSwEUTDXEDF3Gtcu3MqF3ZIYd3YM+sSb1/z9AKV1dYT7rMSGVNgsveXLIQ==}
@@ -6102,6 +6110,10 @@ snapshots:
       fontfaceobserver: 2.3.0
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.29.7)(react@19.1.0)
+
+  expo-haptics@57.0.2(expo@54.0.37):
+    dependencies:
+      expo: 54.0.37(@babel/core@7.29.7)(@expo/dom-webview@57.0.1)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(react-native@0.81.5(@babel/core@7.29.7)(react@19.1.0))(react@19.1.0)
 
   expo-image-loader@6.0.0(expo@54.0.37):
     dependencies:

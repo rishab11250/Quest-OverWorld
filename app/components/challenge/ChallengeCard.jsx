@@ -28,6 +28,40 @@ export default function ChallengeCard({ challenge, onPress }) {
       onPress={() => onPress(challenge._id)}
       activeOpacity={0.8}
     >
+      {/* 8-Bit Gilded Corner Accents */}
+      <View
+        style={[
+          styles.corner,
+          styles.cornerTL,
+          isApproved && styles.cornerGreen,
+          isRejected && styles.cornerCoral,
+        ]}
+      />
+      <View
+        style={[
+          styles.corner,
+          styles.cornerTR,
+          isApproved && styles.cornerGreen,
+          isRejected && styles.cornerCoral,
+        ]}
+      />
+      <View
+        style={[
+          styles.corner,
+          styles.cornerBL,
+          isApproved && styles.cornerGreen,
+          isRejected && styles.cornerCoral,
+        ]}
+      />
+      <View
+        style={[
+          styles.corner,
+          styles.cornerBR,
+          isApproved && styles.cornerGreen,
+          isRejected && styles.cornerCoral,
+        ]}
+      />
+
       {/* Top Meta Row */}
       <View style={styles.topRow}>
         <View style={styles.categoryChip}>
@@ -87,6 +121,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#3D3560',
     gap: spacing.xs,
+    position: 'relative',
   },
   cardApproved: {
     borderColor: colors.accent.green,
@@ -99,6 +134,35 @@ const styles = StyleSheet.create({
   cardRejected: {
     borderColor: colors.accent.coral,
     backgroundColor: 'rgba(232, 102, 75, 0.05)',
+  },
+  corner: {
+    position: 'absolute',
+    width: 5,
+    height: 5,
+    backgroundColor: colors.accent.gold,
+    zIndex: 5,
+  },
+  cornerGreen: {
+    backgroundColor: colors.accent.green,
+  },
+  cornerCoral: {
+    backgroundColor: colors.accent.coral,
+  },
+  cornerTL: {
+    top: -1,
+    left: -1,
+  },
+  cornerTR: {
+    top: -1,
+    right: -1,
+  },
+  cornerBL: {
+    bottom: -1,
+    left: -1,
+  },
+  cornerBR: {
+    bottom: -1,
+    right: -1,
   },
   topRow: {
     flexDirection: 'row',
@@ -115,9 +179,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   categoryChipText: {
-    ...typography.captionBold,
+    ...typography.displayPixelXs,
     color: colors.accent.gold,
-    fontSize: 10,
+    fontSize: 7,
   },
   pointsBadge: {
     backgroundColor: 'rgba(242, 200, 75, 0.15)',
@@ -156,9 +220,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statusApprovedText: {
-    ...typography.captionBold,
+    ...typography.displayPixelXs,
     color: colors.accent.green,
-    fontSize: 10,
+    fontSize: 7,
   },
   statusPending: {
     flexDirection: 'row',
@@ -166,9 +230,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statusPendingText: {
-    ...typography.captionBold,
+    ...typography.displayPixelXs,
     color: colors.accent.gold,
-    fontSize: 10,
+    fontSize: 7,
   },
   statusRejected: {
     flexDirection: 'row',
@@ -176,16 +240,16 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statusRejectedText: {
-    ...typography.captionBold,
+    ...typography.displayPixelXs,
     color: colors.accent.coral,
-    fontSize: 10,
+    fontSize: 7,
   },
   statusOpen: {
     paddingVertical: 2,
   },
   statusOpenText: {
-    ...typography.captionBold,
+    ...typography.displayPixelXs,
     color: colors.accent.gold,
-    fontSize: 11,
+    fontSize: 8,
   },
 });

@@ -19,6 +19,7 @@ import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../lib/api';
 import { getCurrentLocation } from '../../lib/location';
+import { triggerHaptic } from '../../lib/haptics';
 import RewardModal from '../../components/RewardModal';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
@@ -96,6 +97,7 @@ export default function ScannerScreen() {
 
   const onBarcodeScanned = ({ data }) => {
     if (scanned || verifying) return;
+    triggerHaptic('success');
     setScanned(true);
     handleVerifyPayload(data);
   };
@@ -200,11 +202,21 @@ export default function ScannerScreen() {
 
           {/* Target Reticle Box */}
           <View style={styles.scanBox}>
-            {/* Corner Accents */}
+            {/* 8-Bit Tactical Corner Brackets */}
             <View style={[styles.corner, styles.cornerTL]} />
             <View style={[styles.corner, styles.cornerTR]} />
             <View style={[styles.corner, styles.cornerBL]} />
             <View style={[styles.corner, styles.cornerBR]} />
+
+            {/* Tactical Crosshair Reticle */}
+            <View style={styles.crosshairH} />
+            <View style={styles.crosshairV} />
+            <View style={styles.centerDot} />
+
+            {/* Reticle Telemetry Header */}
+            <View style={styles.reticleBadge}>
+              <Text style={styles.reticleBadgeText}>SCANNER RETICLE 1.0</Text>
+            </View>
 
             {/* Animated Laser Line */}
             <Animated.View
@@ -456,6 +468,41 @@ const styles = StyleSheet.create({
     right: 0,
     borderBottomWidth: 4,
     borderRightWidth: 4,
+  },
+  crosshairH: {
+    position: 'absolute',
+    width: 24,
+    height: 1,
+    backgroundColor: 'rgba(242, 200, 75, 0.4)',
+  },
+  crosshairV: {
+    position: 'absolute',
+    width: 1,
+    height: 24,
+    backgroundColor: 'rgba(242, 200, 75, 0.4)',
+  },
+  centerDot: {
+    position: 'absolute',
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.accent.gold,
+  },
+  reticleBadge: {
+    position: 'absolute',
+    top: 8,
+    backgroundColor: 'rgba(22, 19, 38, 0.75)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(242, 200, 75, 0.4)',
+  },
+  reticleBadgeText: {
+    ...typography.displayPixelXs,
+    fontSize: 7,
+    color: colors.accent.gold,
+    letterSpacing: 0.8,
   },
   laserLine: {
     position: 'absolute',

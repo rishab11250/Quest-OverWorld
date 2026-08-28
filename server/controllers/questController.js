@@ -101,6 +101,14 @@ const getActiveQuest = async (req, res) => {
             }
           : null,
         completedCheckpoints,
+        checkpoints: allCheckpoints.map((cp) => ({
+          _id: cp._id,
+          order: cp.order,
+          title: cp.title,
+          points: cp.points,
+          latitude: cp.latitude,
+          longitude: cp.longitude,
+        })),
       },
       team: {
         _id: team._id,

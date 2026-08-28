@@ -9,6 +9,7 @@ import spacing from '../../theme/spacing';
 import LoadingScreen from '../../components/LoadingScreen';
 import StatusBanner from '../../components/StatusBanner';
 import LeaderboardRow from '../../components/leaderboard/LeaderboardRow';
+import PixelCard from '../../components/PixelCard';
 
 export default function LeaderboardScreen() {
   const [rankings, setRankings] = useState([]);
@@ -81,7 +82,7 @@ export default function LeaderboardScreen() {
 
       {/* Sticky My Team Standing Banner */}
       {myTeam && myTeamRank > 0 ? (
-        <View style={styles.standingBanner}>
+        <PixelCard variant="gold" glow style={styles.standingBanner}>
           <View style={styles.standingLeft}>
             <Text style={styles.standingLabel}>YOUR PARTY STANDING</Text>
             <Text style={styles.standingName}>{myTeam.name}</Text>
@@ -90,7 +91,7 @@ export default function LeaderboardScreen() {
             <Text style={styles.standingRank}>#{myTeamRank}</Text>
             <Text style={styles.standingPoints}>+{myTeam.score || 0} PTS</Text>
           </View>
-        </View>
+        </PixelCard>
       ) : null}
 
       {/* Rankings Table */}
@@ -114,6 +115,35 @@ export default function LeaderboardScreen() {
           ))
         )}
       </View>
+
+      {/* Season 1 Realm League & Archives */}
+      <PixelCard variant="dusk" style={styles.leagueCard}>
+        <View style={styles.leagueHeader}>
+          <Text style={styles.leagueTitle}>SEASON 1 REALM EXPEDITION</Text>
+          <Text style={styles.leagueBadge}>ACTIVE</Text>
+        </View>
+
+        <View style={styles.leagueStatsGrid}>
+          <View style={styles.leagueStatBox}>
+            <Text style={styles.statLabel}>GUILDS</Text>
+            <Text style={styles.statVal}>{Math.max(rankings.length, 1)}</Text>
+          </View>
+          <View style={styles.leagueStatBox}>
+            <Text style={styles.statLabel}>WAYPOINTS</Text>
+            <Text style={styles.statVal}>4</Text>
+          </View>
+          <View style={styles.leagueStatBox}>
+            <Text style={styles.statLabel}>TOP SCORE</Text>
+            <Text style={styles.statVal}>{rankings[0]?.score || 0} XP</Text>
+          </View>
+        </View>
+
+        <View style={styles.leagueRulesBox}>
+          <Text style={styles.ruleItem}>🏆 Top guild claims the Mythic Grand Arch-Master Title.</Text>
+          <Text style={styles.ruleItem}>📍 Waypoint Discoveries: +100-250 PTS per station.</Text>
+          <Text style={styles.ruleItem}>⚡ Photo & Riddle Bounties: +100-300 PTS on verification.</Text>
+        </View>
+      </PixelCard>
     </ScrollView>
   );
 }
@@ -206,5 +236,68 @@ const styles = StyleSheet.create({
     ...typography.bodyMd,
     color: colors.text.onDark.secondary,
     textAlign: 'center',
+  },
+  leagueCard: {
+    backgroundColor: colors.bg.duskRaised,
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  leagueHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#362E52',
+    paddingBottom: 6,
+  },
+  leagueTitle: {
+    ...typography.displayPixelXs,
+    fontSize: 9,
+    color: colors.accent.gold,
+    letterSpacing: 1.2,
+  },
+  leagueBadge: {
+    ...typography.displayPixelXs,
+    fontSize: 8,
+    color: colors.accent.green,
+  },
+  leagueStatsGrid: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  leagueStatBox: {
+    flex: 1,
+    backgroundColor: '#1E1A33',
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#362E52',
+    alignItems: 'center',
+  },
+  statLabel: {
+    ...typography.displayPixelXs,
+    fontSize: 7,
+    color: colors.text.onDark.secondary,
+    letterSpacing: 0.8,
+  },
+  statVal: {
+    ...typography.displayPixelSm,
+    fontSize: 11,
+    color: colors.accent.gold,
+    marginTop: 4,
+  },
+  leagueRulesBox: {
+    backgroundColor: '#171329',
+    padding: spacing.sm,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#2F274D',
+    gap: 4,
+  },
+  ruleItem: {
+    ...typography.caption,
+    color: colors.text.onDark.secondary,
+    fontSize: 11,
+    lineHeight: 16,
   },
 });

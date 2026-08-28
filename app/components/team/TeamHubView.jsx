@@ -5,6 +5,8 @@ import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
 import ProgressBar from '../ProgressBar';
 import PixelBadge from '../PixelBadge';
+import PixelCard from '../PixelCard';
+import { triggerHaptic } from '../../lib/haptics';
 
 export default function TeamHubView({
   team,
@@ -20,7 +22,7 @@ export default function TeamHubView({
   return (
     <View style={styles.container}>
       {/* Team Header & XP */}
-      <View style={styles.headerCard}>
+      <PixelCard variant="gold" glow style={styles.headerCard}>
         <View style={styles.headerTop}>
           <Text style={styles.teamName}>{team.name}</Text>
           <PixelBadge label={`LVL ${level}`} variant="gold" icon="shield-crown" />
@@ -35,10 +37,10 @@ export default function TeamHubView({
           max={250}
           label={`NEXT GUILD RANK (LVL ${level + 1})`}
         />
-      </View>
+      </PixelCard>
 
       {/* Invite / Join Code Card */}
-      <View style={styles.codeCard}>
+      <PixelCard variant="dusk" style={styles.codeCard}>
         <View style={styles.codeHeader}>
           <Text style={styles.codeLabel}>PARTY INVITE CODE</Text>
           <Text style={styles.codeSub}>Share with friends to join your party</Text>
@@ -46,13 +48,23 @@ export default function TeamHubView({
         <Text style={styles.codeValue}>{team.code}</Text>
 
         <View style={styles.codeActions}>
-          <TouchableOpacity style={styles.actionBtn} onPress={onCopyCode} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => {
+              triggerHaptic('success');
+              onCopyCode();
+            }}
+            activeOpacity={0.8}
+          >
             <Text style={styles.actionBtnText}>{copied ? 'COPIED!' : 'COPY CODE'}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionBtn, styles.actionBtnOutline]}
-            onPress={onShareCode}
+            onPress={() => {
+              triggerHaptic('light');
+              onShareCode();
+            }}
             activeOpacity={0.8}
           >
             <Text style={styles.actionBtnTextOutline}>SHARE</Text>
@@ -60,17 +72,20 @@ export default function TeamHubView({
 
           <TouchableOpacity
             style={[styles.actionBtn, styles.actionBtnContacts]}
-            onPress={onInviteContacts}
+            onPress={() => {
+              triggerHaptic('light');
+              onInviteContacts();
+            }}
             activeOpacity={0.8}
           >
             <MaterialCommunityIcons name="contacts" size={14} color={colors.accent.gold} />
             <Text style={styles.actionBtnTextContacts}>CONTACTS</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </PixelCard>
 
       {/* Party Roster */}
-      <View style={styles.rosterCard}>
+      <PixelCard variant="dusk" style={styles.rosterCard}>
         <View style={styles.rosterHeader}>
           <Text style={styles.rosterTitle}>PARTY ROSTER</Text>
           <Text style={styles.memberCount}>{team.members?.length || 1} ADVENTURERS</Text>
@@ -96,13 +111,53 @@ export default function TeamHubView({
                       </View>
                     ) : null}
                   </View>
-                  <Text style={styles.memberEmail}>{member.email}</Text>
+                  <Text style={styles.memberRoleSub}>
+                    {isLeader ? 'Party Vanguard · Lead Scout' : 'Guild Companion · Active'}
+                  </Text>
                 </View>
               </View>
             );
           })}
         </View>
-      </View>
+      </PixelCard>
+
+      {/* Active Party Buffs & Guild Perks */}
+      <PixelCard variant="dusk" style={styles.perksCard}>
+        <View style={styles.rosterHeader}>
+          <Text style={styles.rosterTitle}>ACTIVE GUILD PERKS</Text>
+          <Text style={styles.memberCount}>3 BUFFS ACTIVE</Text>
+        </View>
+
+        <View style={styles.perksList}>
+          {[
+            {
+              icon: 'shield-sword',
+              name: 'Squad Telemetry Sync',
+              desc: 'Shared map discovery and instant waypoint unlocks',
+            },
+            {
+              icon: 'lightning-bolt-circle',
+              name: 'Guild XP Multiplier',
+              desc: '+10% XP bonus on all campus bounty board submissions',
+            },
+            {
+              icon: 'compass-rose',
+              name: 'High-Precision Radar',
+              desc: 'Sub-meter compass bearing & waypoint beacon lock',
+            },
+          ].map((buff, i) => (
+            <View key={i} style={styles.perkRow}>
+              <View style={styles.perkIconBox}>
+                <MaterialCommunityIcons name={buff.icon} size={16} color={colors.accent.gold} />
+              </View>
+              <View style={styles.perkInfo}>
+                <Text style={styles.perkName}>{buff.name}</Text>
+                <Text style={styles.perkDesc}>{buff.desc}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </PixelCard>
 
       {/* Leave Team Button */}
       <TouchableOpacity style={styles.leaveButton} onPress={onRequestLeave} activeOpacity={0.8}>
@@ -197,22 +252,19 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   actionBtnText: {
-    ...typography.caption,
-    fontWeight: '900',
+    ...typography.displayPixelXs,
+    fontSize: 9,
     color: colors.bg.dusk,
-    fontSize: 11,
   },
   actionBtnTextOutline: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.displayPixelXs,
+    fontSize: 9,
     color: colors.text.onDark.primary,
-    fontSize: 11,
   },
   actionBtnTextContacts: {
-    ...typography.caption,
-    fontWeight: '900',
+    ...typography.displayPixelXs,
+    fontSize: 9,
     color: colors.accent.gold,
-    fontSize: 11,
   },
   rosterCard: {
     backgroundColor: colors.bg.duskRaised,
@@ -228,13 +280,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rosterTitle: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.displayPixelXs,
+    fontSize: 9,
     color: colors.accent.gold,
     letterSpacing: 1.2,
   },
   memberCount: {
-    ...typography.caption,
+    ...typography.displayPixelXs,
+    fontSize: 8,
     color: colors.text.onDark.secondary,
   },
   membersList: {
@@ -261,8 +314,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarLetter: {
-    ...typography.bodyLg,
-    fontWeight: '900',
+    ...typography.bodyLgBold,
     color: colors.accent.gold,
   },
   memberDetails: {
@@ -274,8 +326,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   memberName: {
-    ...typography.bodyLg,
-    fontWeight: '700',
+    ...typography.bodyLgBold,
     color: colors.text.onDark.primary,
   },
   leaderBadge: {
@@ -283,18 +334,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.accent.gold,
     paddingHorizontal: 6,
-    paddingVertical: 1,
+    paddingVertical: 2,
     borderRadius: 3,
   },
   leaderBadgeText: {
-    ...typography.caption,
-    fontSize: 9,
-    fontWeight: '900',
+    ...typography.displayPixelXs,
+    fontSize: 7,
     color: colors.accent.gold,
   },
-  memberEmail: {
+  memberRoleSub: {
     ...typography.caption,
     color: colors.text.onDark.secondary,
+    fontSize: 11,
+    marginTop: 1,
   },
   leaveButton: {
     backgroundColor: 'rgba(232, 102, 75, 0.15)',
@@ -306,8 +358,49 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   leaveButtonText: {
-    ...typography.bodyMd,
-    fontWeight: '800',
+    ...typography.displayPixelSm,
+    fontSize: 10,
     color: colors.accent.coral,
+  },
+  perksCard: {
+    backgroundColor: colors.bg.duskRaised,
+    gap: spacing.sm,
+  },
+  perksList: {
+    gap: spacing.xs,
+  },
+  perkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E1A33',
+    padding: spacing.sm,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#362E52',
+    gap: spacing.sm,
+  },
+  perkIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#292147',
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  perkInfo: {
+    flex: 1,
+  },
+  perkName: {
+    ...typography.bodyMdBold,
+    color: colors.text.onDark.primary,
+    fontSize: 12,
+  },
+  perkDesc: {
+    ...typography.caption,
+    color: colors.text.onDark.secondary,
+    fontSize: 10,
+    marginTop: 1,
   },
 });

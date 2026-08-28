@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 import spacing from '../theme/spacing';
+import { triggerHaptic } from '../lib/haptics';
 
 export default function RewardModal({
   visible,
@@ -16,9 +17,11 @@ export default function RewardModal({
 }) {
   const scaleAnim = useRef(new Animated.Value(0.7)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+  const bounceAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
+      triggerHaptic('success');
       Animated.parallel([
         Animated.timing(opacityAnim, {
           toValue: 1,
@@ -32,11 +35,32 @@ export default function RewardModal({
           useNativeDriver: true,
         }),
       ]).start();
+
+      // Continuous floating loot bounce loop
+      const bounceLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(bounceAnim, {
+            toValue: -6,
+            duration: 900,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(bounceAnim, {
+            toValue: 0,
+            duration: 900,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      bounceLoop.start();
+      return () => bounceLoop.stop();
     } else {
       scaleAnim.setValue(0.7);
       opacityAnim.setValue(0);
+      bounceAnim.setValue(0);
     }
-  }, [visible, opacityAnim, scaleAnim]);
+  }, [visible, opacityAnim, scaleAnim, bounceAnim]);
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss}>
@@ -50,24 +74,44 @@ export default function RewardModal({
             },
           ]}
         >
+          {/* 8-Bit Pixel Gilded Corners */}
+          <View style={[styles.corner, styles.cornerTL]} />
+          <View style={[styles.corner, styles.cornerTR]} />
+          <View style={[styles.corner, styles.cornerBL]} />
+          <View style={[styles.corner, styles.cornerBR]} />
+
           {/* Top Pixel Crest */}
-          <View style={styles.crestCircle}>
+          <Animated.View
+            style={[
+              styles.crestCircle,
+              {
+                transform: [{ translateY: bounceAnim }],
+              },
+            ]}
+          >
             <MaterialCommunityIcons
               name={isQuestCompleted ? 'crown' : 'trophy-award'}
               size={40}
               color={colors.accent.gold}
             />
-          </View>
+          </Animated.View>
 
           {/* Celebration Header */}
           <Text style={styles.celebrationText}>
             {isQuestCompleted ? 'QUEST COMPLETE!' : 'CHECKPOINT CLEARED!'}
           </Text>
 
-          {/* Points Banner */}
-          <View style={styles.pointsBanner}>
+          {/* Floating Points Banner with Loot Particles */}
+          <Animated.View
+            style={[
+              styles.pointsBanner,
+              {
+                transform: [{ translateY: bounceAnim }],
+              },
+            ]}
+          >
             <Text style={styles.pointsText}>+{points} PTS</Text>
-          </View>
+          </Animated.View>
 
           {/* Cleared Title */}
           <Text style={styles.checkpointTitleText}>
@@ -79,7 +123,7 @@ export default function RewardModal({
             <View style={styles.nextClueBox}>
               <View style={styles.nextClueHeader}>
                 <Text style={styles.nextClueLabel}>NEXT CLUE UNLOCKED</Text>
-                <Text style={styles.nextClueOrder}>#{nextClue.order}</Text>
+                <Text style={styles.nextClueOrder}>STATION #{nextClue.order}</Text>
               </View>
               <Text style={styles.nextClueTitle}>{nextClue.title}</Text>
               <Text style={styles.nextClueText} numberOfLines={2}>
@@ -124,11 +168,35 @@ const styles = StyleSheet.create({
     borderColor: colors.accent.gold,
     alignItems: 'center',
     gap: spacing.md,
+    position: 'relative',
     elevation: 12,
     shadowColor: colors.accent.gold,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
+  },
+  corner: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    backgroundColor: colors.accent.gold,
+    zIndex: 10,
+  },
+  cornerTL: {
+    top: -2,
+    left: -2,
+  },
+  cornerTR: {
+    top: -2,
+    right: -2,
+  },
+  cornerBL: {
+    bottom: -2,
+    left: -2,
+  },
+  cornerBR: {
+    bottom: -2,
+    right: -2,
   },
   crestCircle: {
     width: 72,
@@ -142,21 +210,22 @@ const styles = StyleSheet.create({
     marginTop: -spacing.md,
   },
   celebrationText: {
-    ...typography.displayPixel,
-    fontSize: 15,
+    ...typography.displayPixelLg,
+    fontSize: 14,
     color: colors.accent.gold,
     textAlign: 'center',
+    letterSpacing: 1,
   },
   pointsBanner: {
     backgroundColor: 'rgba(242, 200, 75, 0.15)',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.accent.gold,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xs,
     borderRadius: 6,
   },
   pointsText: {
-    ...typography.displayPixel,
+    ...typography.displayPixelLg,
     fontSize: 20,
     color: colors.accent.gold,
   },
@@ -183,19 +252,17 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   nextClueLabel: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.displayPixelXs,
     color: colors.text.onLight.primary,
-    fontSize: 10,
+    fontSize: 8,
   },
   nextClueOrder: {
-    ...typography.caption,
-    fontWeight: '800',
-    color: colors.text.onLight.secondary,
+    ...typography.displayPixelXs,
+    color: colors.accent.gold,
+    fontSize: 8,
   },
   nextClueTitle: {
-    ...typography.bodyMd,
-    fontWeight: '700',
+    ...typography.bodyMdBold,
     color: colors.text.onLight.primary,
   },
   nextClueText: {
@@ -227,8 +294,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   continueButtonText: {
-    ...typography.bodyLg,
-    fontWeight: '800',
+    ...typography.displayPixelSm,
+    fontSize: 11,
     color: colors.bg.dusk,
+    letterSpacing: 0.5,
   },
 });
