@@ -1,4 +1,12 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
@@ -69,8 +77,8 @@ export default function ChallengeSubmissionForm({
           {challenge?.category === 'photo'
             ? 'Optional Note / Description'
             : challenge?.verificationType === 'auto_answer'
-            ? 'Answer Key / Solution'
-            : 'Adventurer Response'}
+              ? 'Answer Key / Solution'
+              : 'Adventurer Response'}
         </Text>
         <TextInput
           style={[
@@ -102,9 +110,7 @@ export default function ChallengeSubmissionForm({
           <ActivityIndicator size="small" color={colors.bg.dusk} />
         ) : (
           <Text style={styles.submitBtnText}>
-            {challenge?.verificationType === 'auto_answer'
-              ? 'Verify Answer'
-              : 'Submit for Review'}
+            {challenge?.verificationType === 'auto_answer' ? 'Verify Answer' : 'Submit for Review'}
           </Text>
         )}
       </TouchableOpacity>

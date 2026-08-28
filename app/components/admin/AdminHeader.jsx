@@ -22,11 +22,7 @@ export default function AdminHeader({ adminProfile, onLogout }) {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.adminLogoutBtn}
-          onPress={onLogout}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.adminLogoutBtn} onPress={onLogout} activeOpacity={0.8}>
           <MaterialCommunityIcons name="logout" size={16} color={colors.accent.coral} />
           <Text style={styles.adminLogoutText}>Sign Out</Text>
         </TouchableOpacity>

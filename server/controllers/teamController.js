@@ -127,9 +127,7 @@ const leaveTeam = async (req, res) => {
       return res.status(404).json({ message: 'Team not found' });
     }
 
-    const memberIndex = team.members.findIndex(
-      (m) => m.toString() === req.user._id.toString()
-    );
+    const memberIndex = team.members.findIndex((m) => m.toString() === req.user._id.toString());
 
     if (memberIndex === -1) {
       return res.status(400).json({ message: 'You are not a member of this team' });

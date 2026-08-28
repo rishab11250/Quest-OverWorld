@@ -99,7 +99,9 @@ const submitChallenge = async (req, res) => {
 
     const team = await Team.findOne({ members: req.user._id });
     if (!team) {
-      return res.status(400).json({ message: 'You must belong to an active party to submit challenges.' });
+      return res
+        .status(400)
+        .json({ message: 'You must belong to an active party to submit challenges.' });
     }
 
     const challenge = await Challenge.findById(req.params.id);
@@ -115,10 +117,14 @@ const submitChallenge = async (req, res) => {
 
     if (existingSub) {
       if (existingSub.status === 'approved') {
-        return res.status(400).json({ message: 'This challenge has already been approved and rewarded!' });
+        return res
+          .status(400)
+          .json({ message: 'This challenge has already been approved and rewarded!' });
       }
       if (existingSub.status === 'pending') {
-        return res.status(400).json({ message: 'Your party already has a submission pending review.' });
+        return res
+          .status(400)
+          .json({ message: 'Your party already has a submission pending review.' });
       }
     }
 

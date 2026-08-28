@@ -10,7 +10,8 @@ export const requestLocationPermission = async () => {
     if (status !== 'granted') {
       return {
         granted: false,
-        error: 'Location permission is required to navigate campus checkpoints and verify discoveries.',
+        error:
+          'Location permission is required to navigate campus checkpoints and verify discoveries.',
       };
     }
     return { granted: true };

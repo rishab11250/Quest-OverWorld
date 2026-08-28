@@ -4,11 +4,7 @@ import colors from '../theme/colors';
 import typography from '../theme/typography';
 import spacing from '../theme/spacing';
 
-export default function SubScreenHeader({
-  title,
-  fallbackRoute = '/(tabs)/home',
-  rightAction,
-}) {
+export default function SubScreenHeader({ title, fallbackRoute = '/(tabs)/home', rightAction }) {
   const router = useRouter();
 
   const handleBack = () => {

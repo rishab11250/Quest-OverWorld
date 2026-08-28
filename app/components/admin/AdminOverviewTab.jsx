@@ -31,7 +31,10 @@ export default function AdminOverviewTab({ stats, teams, onNavigateReviews }) {
           <Text style={styles.statLabel}>Total XP Generated</Text>
         </View>
         <TouchableOpacity
-          style={[styles.statCard, (stats?.pendingSubmissions || 0) > 0 && styles.statCardHighlight]}
+          style={[
+            styles.statCard,
+            (stats?.pendingSubmissions || 0) > 0 && styles.statCardHighlight,
+          ]}
           onPress={onNavigateReviews}
           activeOpacity={0.8}
         >

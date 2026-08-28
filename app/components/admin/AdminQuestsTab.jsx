@@ -31,7 +31,9 @@ export default function AdminQuestsTab({
           <View key={q._id} style={styles.questCardItem}>
             <View style={styles.questCardTop}>
               <View style={styles.questBadge}>
-                <Text style={styles.questBadgeText}>{(q.campus || 'Main Campus').toUpperCase()}</Text>
+                <Text style={styles.questBadgeText}>
+                  {(q.campus || 'Main Campus').toUpperCase()}
+                </Text>
               </View>
               <Text style={styles.questPointsLabel}>+{q.totalPoints || 700} PTS BUDGET</Text>
             </View>
@@ -42,11 +44,12 @@ export default function AdminQuestsTab({
               <Text style={styles.questStationsCount}>
                 📍 {q.checkpoints?.length || 0} Checkpoints Attached
               </Text>
-              <TouchableOpacity
-                onPress={() => onDeleteQuest(q._id)}
-                style={styles.deleteIconBtn}
-              >
-                <MaterialCommunityIcons name="trash-can-outline" size={18} color={colors.accent.coral} />
+              <TouchableOpacity onPress={() => onDeleteQuest(q._id)} style={styles.deleteIconBtn}>
+                <MaterialCommunityIcons
+                  name="trash-can-outline"
+                  size={18}
+                  color={colors.accent.coral}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -98,7 +101,11 @@ export default function AdminQuestsTab({
                 onPress={() => onDeleteCheckpoint(cp._id)}
                 style={styles.deleteIconBtn}
               >
-                <MaterialCommunityIcons name="trash-can-outline" size={18} color={colors.accent.coral} />
+                <MaterialCommunityIcons
+                  name="trash-can-outline"
+                  size={18}
+                  color={colors.accent.coral}
+                />
               </TouchableOpacity>
             </View>
           </View>

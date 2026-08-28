@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
   ScrollView,
   RefreshControl,
   TouchableOpacity,
@@ -15,6 +14,10 @@ import api from '../../lib/api';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+
+import SubScreenHeader from '../../components/SubScreenHeader';
+import StatusBanner from '../../components/StatusBanner';
+import LoadingScreen from '../../components/LoadingScreen';
 
 export default function TeamDetailScreen() {
   const { teamId } = useLocalSearchParams();
@@ -59,7 +62,7 @@ export default function TeamDetailScreen() {
     if (!team?.code) return;
     try {
       await Share.share({
-        message: `Join our Quest Overworld team "${team.name}" using code: ${team.code}!`,
+        message: `Join our Quest Overworld party "${team.name}" using code: ${team.code}!`,
       });
     } catch (err) {
       // Ignored
@@ -67,23 +70,19 @@ export default function TeamDetailScreen() {
   };
 
   if (loading && !refreshing) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={colors.accent.gold} />
-      </View>
-    );
+    return <LoadingScreen message="Inspecting Party Codex..." />;
   }
 
   if (error || !team) {
     return (
-      <View style={[styles.container, styles.center, { padding: spacing.screenPadding }]}>
+      <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{error || 'Team not found.'}</Text>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
           activeOpacity={0.8}
         >
-          <Text style={styles.backButtonText}>Go Back</Text>
+          <Text style={styles.backButtonText}>Return to Guild</Text>
         </TouchableOpacity>
       </View>
     );
@@ -91,14 +90,6 @@ export default function TeamDetailScreen() {
 
   const leaderId = typeof team.leader === 'object' ? team.leader._id : team.leader;
   const level = Math.floor((team.score || 0) / 250) + 1;
-
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)/team');
-    }
-  };
 
   return (
     <ScrollView
@@ -112,17 +103,9 @@ export default function TeamDetailScreen() {
         />
       }
     >
-      {/* Top Bar Back Button */}
-      <TouchableOpacity
-        style={styles.navBack}
-        onPress={handleBack}
-        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.navBackText}>‹ BACK</Text>
-      </TouchableOpacity>
+      <SubScreenHeader title="PARTY GUILD" fallbackRoute="/(tabs)/team" />
 
-      {/* Team Header */}
+      {/* Team Header & XP */}
       <View style={styles.header}>
         <Text style={styles.teamName}>{team.name}</Text>
         <View style={styles.xpRow}>
@@ -133,17 +116,18 @@ export default function TeamDetailScreen() {
         </View>
       </View>
 
-      {/* Code Card */}
+      <StatusBanner type="error" message={error} />
+
+      {/* Invite / Join Code Card */}
       <View style={styles.codeCard}>
-        <Text style={styles.codeLabel}>TEAM CODE</Text>
+        <View style={styles.codeHeader}>
+          <Text style={styles.codeLabel}>PARTY INVITE CODE</Text>
+          <Text style={styles.codeSub}>Share with adventurers to recruit into party</Text>
+        </View>
         <Text style={styles.codeValue}>{team.code}</Text>
 
         <View style={styles.codeActions}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={handleCopyCode}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={styles.actionBtn} onPress={handleCopyCode} activeOpacity={0.8}>
             <Text style={styles.actionBtnText}>{copied ? 'COPIED!' : 'COPY CODE'}</Text>
           </TouchableOpacity>
 
@@ -157,13 +141,11 @@ export default function TeamDetailScreen() {
         </View>
       </View>
 
-      {/* Roster Card */}
+      {/* Party Roster */}
       <View style={styles.rosterCard}>
         <View style={styles.rosterHeader}>
-          <Text style={styles.rosterTitle}>PARTY MEMBERS</Text>
-          <Text style={styles.memberCount}>
-            {team.members?.length || 1} PLAYERS
-          </Text>
+          <Text style={styles.rosterTitle}>PARTY ROSTER</Text>
+          <Text style={styles.memberCount}>{team.members?.length || 1} ADVENTURERS</Text>
         </View>
 
         <View style={styles.membersList}>
@@ -182,7 +164,7 @@ export default function TeamDetailScreen() {
                     <Text style={styles.memberName}>{member.name}</Text>
                     {isLeader ? (
                       <View style={styles.leaderBadge}>
-                        <Text style={styles.leaderBadgeText}>LEADER</Text>
+                        <Text style={styles.leaderBadgeText}>CAPTAIN</Text>
                       </View>
                     ) : null}
                   </View>
@@ -202,126 +184,125 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg.dusk,
   },
-  center: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   scrollContent: {
     padding: spacing.screenPadding,
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxxl,
-    gap: spacing.lg,
+    gap: spacing.md,
   },
-  navBack: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    alignSelf: 'flex-start',
-    minHeight: 44,
+  errorContainer: {
+    flex: 1,
+    backgroundColor: colors.bg.dusk,
     justifyContent: 'center',
-  },
-  navBackText: {
-    ...typography.bodyLg,
-    fontWeight: '800',
-    color: colors.accent.gold,
-  },
-  header: {
     alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  teamName: {
-    ...typography.displayXl,
-    color: colors.accent.gold,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  xpRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  xpText: {
-    ...typography.displayPixel,
-    color: colors.accent.gold,
-  },
-  lvlBadge: {
-    backgroundColor: colors.accent.gold,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  lvlBadgeText: {
-    ...typography.caption,
-    fontWeight: '800',
-    color: colors.bg.dusk,
+    padding: spacing.screenPadding,
+    gap: spacing.md,
   },
   errorText: {
     ...typography.bodyLg,
     color: colors.accent.coral,
     textAlign: 'center',
-    marginBottom: spacing.lg,
   },
   backButton: {
     backgroundColor: colors.accent.gold,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     borderRadius: 6,
   },
   backButtonText: {
     ...typography.bodyMd,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.bg.dusk,
+  },
+  header: {
+    marginBottom: spacing.xs,
+  },
+  teamName: {
+    ...typography.displayXl,
+    color: colors.text.onDark.primary,
+  },
+  xpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  xpText: {
+    ...typography.monoSm,
+    color: colors.accent.gold,
+    fontWeight: '800',
+    fontSize: 16,
+  },
+  lvlBadge: {
+    backgroundColor: '#322A54',
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  lvlBadgeText: {
+    ...typography.caption,
+    fontWeight: '900',
+    color: colors.accent.gold,
+    fontSize: 10,
   },
   codeCard: {
     backgroundColor: colors.bg.duskRaised,
     borderRadius: 8,
     padding: spacing.cardPadding,
     borderWidth: 1,
-    borderColor: colors.accent.goldDim,
+    borderColor: '#3D3560',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
+  },
+  codeHeader: {
+    alignItems: 'center',
   },
   codeLabel: {
     ...typography.caption,
     fontWeight: '800',
-    letterSpacing: 2,
     color: colors.accent.gold,
+    letterSpacing: 1.2,
+  },
+  codeSub: {
+    ...typography.caption,
+    color: colors.text.onDark.secondary,
   },
   codeValue: {
     ...typography.monoSm,
     fontSize: 32,
-    letterSpacing: 8,
-    fontWeight: '700',
+    fontWeight: '900',
     color: colors.text.onDark.primary,
+    letterSpacing: 8,
     marginVertical: spacing.xs,
   },
   codeActions: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
     width: '100%',
   },
   actionBtn: {
     flex: 1,
     backgroundColor: colors.accent.gold,
+    paddingVertical: 10,
     borderRadius: 6,
-    paddingVertical: spacing.sm,
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 40,
   },
   actionBtnOutline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: colors.accent.gold,
+    borderColor: '#4A4170',
   },
   actionBtnText: {
-    ...typography.bodyMd,
-    fontWeight: '700',
+    ...typography.caption,
+    fontWeight: '900',
     color: colors.bg.dusk,
   },
   actionBtnTextOutline: {
-    ...typography.bodyMd,
-    fontWeight: '700',
-    color: colors.accent.gold,
+    ...typography.caption,
+    fontWeight: '800',
+    color: colors.text.onDark.primary,
   },
   rosterCard: {
     backgroundColor: colors.bg.duskRaised,
@@ -329,47 +310,49 @@ const styles = StyleSheet.create({
     padding: spacing.cardPadding,
     borderWidth: 1,
     borderColor: '#3D3560',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   rosterHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#3D3560',
-    paddingBottom: spacing.sm,
   },
   rosterTitle: {
     ...typography.caption,
     fontWeight: '800',
-    letterSpacing: 1.5,
-    color: colors.text.onDark.primary,
+    color: colors.accent.gold,
+    letterSpacing: 1.2,
   },
   memberCount: {
     ...typography.caption,
-    color: colors.accent.gold,
-    fontWeight: '700',
+    color: colors.text.onDark.secondary,
   },
   membersList: {
-    gap: spacing.md,
+    gap: spacing.xs,
   },
   memberRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    backgroundColor: '#1E1A33',
+    padding: spacing.sm,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#362E52',
+    gap: spacing.sm,
   },
   avatarCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#3D3560',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#322A54',
     borderWidth: 1,
     borderColor: colors.accent.gold,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   avatarLetter: {
-    ...typography.headingMd,
+    ...typography.bodyLg,
+    fontWeight: '900',
     color: colors.accent.gold,
   },
   memberDetails: {
@@ -378,7 +361,7 @@ const styles = StyleSheet.create({
   memberNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   memberName: {
     ...typography.bodyLg,
@@ -386,18 +369,21 @@ const styles = StyleSheet.create({
     color: colors.text.onDark.primary,
   },
   leaderBadge: {
-    backgroundColor: colors.accent.gold,
+    backgroundColor: 'rgba(242, 200, 75, 0.15)',
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
     paddingHorizontal: 6,
     paddingVertical: 1,
-    borderRadius: 4,
+    borderRadius: 3,
   },
   leaderBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.bg.dusk,
+    ...typography.caption,
+    fontSize: 9,
+    fontWeight: '900',
+    color: colors.accent.gold,
   },
   memberEmail: {
-    ...typography.bodyMd,
+    ...typography.caption,
     color: colors.text.onDark.secondary,
   },
 });

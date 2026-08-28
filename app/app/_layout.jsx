@@ -26,9 +26,9 @@ export default function RootLayout() {
       <StatusBar style="light" />
       <Stack
         screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: colors.bg.dusk },
-      }}
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.bg.dusk },
+        }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />

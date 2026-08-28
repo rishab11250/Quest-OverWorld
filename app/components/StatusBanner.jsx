@@ -12,8 +12,8 @@ export default function StatusBanner({ type = 'error', message }) {
   const backgroundColor = isSuccess
     ? colors.accent.green
     : isWarning
-    ? colors.accent.gold
-    : colors.accent.coral;
+      ? colors.accent.gold
+      : colors.accent.coral;
 
   const textColor = isWarning ? colors.bg.dusk : '#FFFFFF';
 

@@ -1,4 +1,11 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
@@ -41,7 +48,9 @@ export default function TeamAuthCard({
           onPress={() => setActiveTab('create')}
           activeOpacity={0.8}
         >
-          <Text style={[styles.tabButtonText, activeTab === 'create' && styles.tabButtonTextActive]}>
+          <Text
+            style={[styles.tabButtonText, activeTab === 'create' && styles.tabButtonTextActive]}
+          >
             Create Party
           </Text>
         </TouchableOpacity>

@@ -5,7 +5,8 @@ const Challenge = require('../models/Challenge');
 const sampleChallenges = [
   {
     title: 'Campus Mascot Selfie',
-    description: 'Snap a group selfie with the bronze campus griffin mascot in the main quad center.',
+    description:
+      'Snap a group selfie with the bronze campus griffin mascot in the main quad center.',
     category: 'photo',
     points: 150,
     status: 'active',
@@ -13,7 +14,8 @@ const sampleChallenges = [
   },
   {
     title: 'Library Hidden Manuscript',
-    description: 'Solve the riddle: "I speak without a mouth and hear without ears." Locate the book titled "Chronicles of 1920" in the campus archives.',
+    description:
+      'Solve the riddle: "I speak without a mouth and hear without ears." Locate the book titled "Chronicles of 1920" in the campus archives.',
     category: 'riddle',
     points: 200,
     status: 'active',
@@ -21,7 +23,8 @@ const sampleChallenges = [
   },
   {
     title: 'Founding Year Trivia',
-    description: 'In what year was the first cornerstone of the north campus foundation building laid? (Enter 4-digit year)',
+    description:
+      'In what year was the first cornerstone of the north campus foundation building laid? (Enter 4-digit year)',
     category: 'trivia',
     points: 100,
     status: 'active',
@@ -49,7 +52,9 @@ const seedChallenges = async () => {
 
     for (const c of sampleChallenges) {
       const created = await Challenge.create(c);
-      console.log(`- Created Challenge: ${created.title} (${created.points} PTS) [${created.category}]`);
+      console.log(
+        `- Created Challenge: ${created.title} (${created.points} PTS) [${created.category}]`
+      );
     }
 
     console.log('Challenge seeding completed successfully!');

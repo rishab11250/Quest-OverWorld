@@ -63,7 +63,9 @@ const getAdminOverview = async (req, res) => {
       recentSubmissions,
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message || 'Server error fetching admin overview' });
+    return res
+      .status(500)
+      .json({ message: error.message || 'Server error fetching admin overview' });
   }
 };
 
@@ -114,7 +116,9 @@ const deleteQuest = async (req, res) => {
     const quest = await Quest.findByIdAndDelete(req.params.id);
     if (!quest) return res.status(404).json({ message: 'Quest not found' });
     await Checkpoint.deleteMany({ questId: req.params.id });
-    return res.status(200).json({ success: true, message: 'Quest and associated checkpoints deleted.' });
+    return res
+      .status(200)
+      .json({ success: true, message: 'Quest and associated checkpoints deleted.' });
   } catch (error) {
     return res.status(500).json({ message: error.message || 'Server error deleting quest' });
   }
@@ -137,7 +141,15 @@ const getAllAdminCheckpoints = async (req, res) => {
 const createCheckpoint = async (req, res) => {
   try {
     const { questId, title, clue, latitude, longitude, radius, qrCode, points, order } = req.body;
-    if (!questId || !title || !clue || latitude == null || longitude == null || !qrCode || order == null) {
+    if (
+      !questId ||
+      !title ||
+      !clue ||
+      latitude == null ||
+      longitude == null ||
+      !qrCode ||
+      order == null
+    ) {
       return res.status(400).json({ message: 'Please provide all required checkpoint fields.' });
     }
 
@@ -249,7 +261,9 @@ const getPendingSubmissions = async (req, res) => {
 
     return res.status(200).json({ submissions });
   } catch (error) {
-    return res.status(500).json({ message: error.message || 'Server error fetching pending submissions' });
+    return res
+      .status(500)
+      .json({ message: error.message || 'Server error fetching pending submissions' });
   }
 };
 
@@ -329,7 +343,8 @@ const reseedDemoData = async (req, res) => {
 
     const quest = await Quest.create({
       name: 'The Legend of Old Campus',
-      description: 'Journey across landmark halls, statues, and ancient clocktowers to uncover the founding lore of Old Campus.',
+      description:
+        'Journey across landmark halls, statues, and ancient clocktowers to uncover the founding lore of Old Campus.',
       campus: 'North Quadrant Campus',
       totalPoints: 700,
       status: 'active',
@@ -373,8 +388,8 @@ const reseedDemoData = async (req, res) => {
         questId: quest._id,
         title: 'Founders Memorial Hall',
         clue: 'The bronze plaque engraved with the names of the original arch-guild masters.',
-        latitude: 28.5480,
-        longitude: 77.1940,
+        latitude: 28.548,
+        longitude: 77.194,
         radius: 50,
         qrCode: 'QST-CHK-04-FOUNDERS',
         points: 250,
@@ -390,7 +405,8 @@ const reseedDemoData = async (req, res) => {
     const sampleChallenges = [
       {
         title: 'Campus Mascot Selfie',
-        description: 'Snap a group selfie with the bronze campus griffin mascot in the main quad center.',
+        description:
+          'Snap a group selfie with the bronze campus griffin mascot in the main quad center.',
         category: 'photo',
         points: 150,
         status: 'active',
@@ -398,7 +414,8 @@ const reseedDemoData = async (req, res) => {
       },
       {
         title: 'Library Hidden Manuscript',
-        description: 'Solve the riddle: "I speak without a mouth and hear without ears." Locate the book titled "Chronicles of 1920" in the campus archives.',
+        description:
+          'Solve the riddle: "I speak without a mouth and hear without ears." Locate the book titled "Chronicles of 1920" in the campus archives.',
         category: 'riddle',
         points: 200,
         status: 'active',
@@ -406,7 +423,8 @@ const reseedDemoData = async (req, res) => {
       },
       {
         title: 'Founding Year Trivia',
-        description: 'In what year was the first cornerstone of the north campus foundation building laid? (Enter 4-digit year)',
+        description:
+          'In what year was the first cornerstone of the north campus foundation building laid? (Enter 4-digit year)',
         category: 'trivia',
         points: 100,
         status: 'active',

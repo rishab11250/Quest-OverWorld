@@ -18,7 +18,9 @@ const verifyCheckpoint = async (req, res) => {
     // 1. Verify user's party membership
     const team = await Team.findOne({ members: req.user._id });
     if (!team) {
-      return res.status(400).json({ message: 'You must belong to an active party to verify checkpoints.' });
+      return res
+        .status(400)
+        .json({ message: 'You must belong to an active party to verify checkpoints.' });
     }
 
     if (!team.questId) {
@@ -47,7 +49,9 @@ const verifyCheckpoint = async (req, res) => {
     });
 
     if (existingProgress) {
-      return res.status(400).json({ message: 'This checkpoint has already been cleared by your party.' });
+      return res
+        .status(400)
+        .json({ message: 'This checkpoint has already been cleared by your party.' });
     }
 
     // 4. Enforce sequence order (must clear checkpoint n-1 before n)
@@ -138,7 +142,9 @@ const verifyCheckpoint = async (req, res) => {
     if (error.code === 11000) {
       return res.status(400).json({ message: 'Checkpoint was just verified by a teammate!' });
     }
-    return res.status(500).json({ message: error.message || 'Server error during checkpoint verification' });
+    return res
+      .status(500)
+      .json({ message: error.message || 'Server error during checkpoint verification' });
   }
 };
 

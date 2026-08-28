@@ -131,11 +131,7 @@ export default function ScannerScreen() {
         >
           <Text style={styles.primaryButtonText}>Grant Camera Permission</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.backLink}
-          onPress={() => router.back()}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.backLink} onPress={() => router.back()} activeOpacity={0.8}>
           <Text style={styles.backLinkText}>Go Back</Text>
         </TouchableOpacity>
       </View>
@@ -233,9 +229,7 @@ export default function ScannerScreen() {
                 </TouchableOpacity>
               </View>
             ) : (
-              <Text style={styles.hintText}>
-                Align checkpoint QR code inside target reticle
-              </Text>
+              <Text style={styles.hintText}>Align checkpoint QR code inside target reticle</Text>
             )}
 
             {/* Manual Code Entry Toggle */}

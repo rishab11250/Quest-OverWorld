@@ -4,18 +4,12 @@ import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
 
-export default function AdminReviewsTab({
-  pendingSubmissions,
-  onApprove,
-  onOpenRejectModal,
-}) {
+export default function AdminReviewsTab({ pendingSubmissions, onApprove, onOpenRejectModal }) {
   return (
     <View style={styles.container}>
       <View style={styles.cardSection}>
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>
-            PENDING REVIEWS ({pendingSubmissions.length})
-          </Text>
+          <Text style={styles.sectionTitle}>PENDING REVIEWS ({pendingSubmissions.length})</Text>
         </View>
 
         {pendingSubmissions.length === 0 ? (
@@ -40,15 +34,14 @@ export default function AdminReviewsTab({
                     <Text style={styles.reviewTitle}>{challenge?.title}</Text>
                   </View>
                   <View style={styles.reviewPointsChip}>
-                    <Text style={styles.reviewPointsText}>
-                      +{challenge?.points || 150} PTS
-                    </Text>
+                    <Text style={styles.reviewPointsText}>+{challenge?.points || 150} PTS</Text>
                   </View>
                 </View>
 
                 <View style={styles.reviewMetaRow}>
                   <Text style={styles.reviewMetaText}>
-                    Party: <Text style={styles.metaHighlight}>{team?.name || 'Adventurers'}</Text> ({team?.score || 0} PTS)
+                    Party: <Text style={styles.metaHighlight}>{team?.name || 'Adventurers'}</Text> (
+                    {team?.score || 0} PTS)
                   </Text>
                   <Text style={styles.reviewMetaText}>
                     By: <Text style={styles.metaHighlight}>{submitter?.name || 'Member'}</Text>
@@ -87,7 +80,11 @@ export default function AdminReviewsTab({
                     onPress={() => onApprove(sub._id)}
                     activeOpacity={0.8}
                   >
-                    <MaterialCommunityIcons name="check-circle-outline" size={18} color={colors.bg.dusk} />
+                    <MaterialCommunityIcons
+                      name="check-circle-outline"
+                      size={18}
+                      color={colors.bg.dusk}
+                    />
                     <Text style={styles.approveBtnText}>
                       Approve (+{challenge?.points || 150} PTS)
                     </Text>

@@ -36,9 +36,7 @@ export default function AdminBottomNav({ activeTab, onSelectTab, pendingCount })
                 </View>
               ) : null}
             </View>
-            <Text style={[styles.dockLabel, isActive && styles.dockLabelActive]}>
-              {tab.label}
-            </Text>
+            <Text style={[styles.dockLabel, isActive && styles.dockLabelActive]}>{tab.label}</Text>
           </TouchableOpacity>
         );
       })}

@@ -1,19 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import DialogueBox from '../../components/DialogueBox';
 import api from '../../lib/api';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+
+import SubScreenHeader from '../../components/SubScreenHeader';
+import StatusBanner from '../../components/StatusBanner';
+import LoadingScreen from '../../components/LoadingScreen';
+import DialogueBox from '../../components/DialogueBox';
 
 export default function QuestDetailScreen() {
   const { questId } = useLocalSearchParams();
@@ -47,35 +43,23 @@ export default function QuestDetailScreen() {
   };
 
   if (loading && !refreshing) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={colors.accent.gold} />
-      </View>
-    );
+    return <LoadingScreen message="Unrolling Quest Parchment..." />;
   }
 
   if (error || !quest) {
     return (
-      <View style={[styles.container, styles.center, { padding: spacing.screenPadding }]}>
+      <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{error || 'Quest not found.'}</Text>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
           activeOpacity={0.8}
         >
-          <Text style={styles.backButtonText}>Go Back</Text>
+          <Text style={styles.backButtonText}>Return to Realm</Text>
         </TouchableOpacity>
       </View>
     );
   }
-
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)/home');
-    }
-  };
 
   return (
     <ScrollView
@@ -89,42 +73,38 @@ export default function QuestDetailScreen() {
         />
       }
     >
-      {/* Top Nav Back */}
-      <TouchableOpacity
-        style={styles.navBack}
-        onPress={handleBack}
-        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.navBackText}>‹ BACK</Text>
-      </TouchableOpacity>
+      <SubScreenHeader title="CAMPUS QUESTS" fallbackRoute="/(tabs)/home" />
 
-      {/* Quest Header */}
       <View style={styles.header}>
         <Text style={styles.title}>{quest.name}</Text>
-        <Text style={styles.campus}>{quest.campus || 'Main Campus'}</Text>
+        <Text style={styles.campusBadge}>{quest.campus?.toUpperCase()}</Text>
       </View>
 
-      {/* Quest Description Dialogue Box */}
+      <StatusBanner type="error" message={error} />
+
       <DialogueBox
-        speaker="QUEST OBJECTIVE"
-        text={quest.description}
-        footnote={`Total Bounty: ${quest.totalPoints || 0} PTS`}
+        speaker="QUEST LOG"
+        text={quest.description || 'Journey forth across landmarks to discover ancient lore.'}
       />
 
       {/* Checkpoints Checklist */}
-      <View style={styles.checkpointsCard}>
-        <Text style={styles.sectionTitle}>CHECKPOINT LOG</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          WAYPOINT STATIONS ({quest.checkpoints?.length || 0})
+        </Text>
 
-        <View style={styles.checkpointsList}>
-          {quest.checkpoints?.map((cp, idx) => (
-            <View key={cp._id || idx} style={styles.checkpointRow}>
+        <View style={styles.checkpointList}>
+          {quest.checkpoints?.map((cp, index) => (
+            <View key={cp._id || index} style={styles.checkpointCard}>
               <View style={styles.orderBadge}>
-                <Text style={styles.orderBadgeText}>{cp.order || idx + 1}</Text>
+                <Text style={styles.orderText}>#{cp.order || index + 1}</Text>
               </View>
               <View style={styles.checkpointInfo}>
                 <Text style={styles.checkpointTitle}>{cp.title}</Text>
-                <Text style={styles.checkpointPoints}>+{cp.points} PTS</Text>
+                <Text style={styles.checkpointClue}>{cp.clue}</Text>
+              </View>
+              <View style={styles.pointsBadge}>
+                <Text style={styles.pointsText}>+{cp.points || 100} PTS</Text>
               </View>
             </View>
           ))}
@@ -139,112 +119,109 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg.dusk,
   },
-  center: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   scrollContent: {
     padding: spacing.screenPadding,
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxxl,
-    gap: spacing.lg,
+    gap: spacing.md,
   },
-  navBack: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    alignSelf: 'flex-start',
-    minHeight: 44,
+  errorContainer: {
+    flex: 1,
+    backgroundColor: colors.bg.dusk,
     justifyContent: 'center',
-  },
-  navBackText: {
-    ...typography.bodyLg,
-    fontWeight: '800',
-    color: colors.accent.gold,
-  },
-  header: {
-    marginBottom: spacing.xs,
-  },
-  title: {
-    ...typography.displayXl,
-    color: colors.text.onDark.primary,
-    marginBottom: spacing.xs,
-  },
-  campus: {
-    ...typography.bodyMd,
-    color: colors.accent.gold,
-    fontWeight: '700',
+    alignItems: 'center',
+    padding: spacing.screenPadding,
+    gap: spacing.md,
   },
   errorText: {
     ...typography.bodyLg,
     color: colors.accent.coral,
     textAlign: 'center',
-    marginBottom: spacing.lg,
   },
   backButton: {
     backgroundColor: colors.accent.gold,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     borderRadius: 6,
   },
   backButtonText: {
     ...typography.bodyMd,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.bg.dusk,
   },
-  checkpointsCard: {
+  header: {
+    gap: 4,
+    marginBottom: spacing.xs,
+  },
+  title: {
+    ...typography.displayXl,
+    color: colors.text.onDark.primary,
+  },
+  campusBadge: {
+    ...typography.caption,
+    fontWeight: '800',
+    color: colors.accent.gold,
+    letterSpacing: 1.2,
+  },
+  section: {
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    ...typography.caption,
+    fontWeight: '800',
+    color: colors.accent.gold,
+    letterSpacing: 1.2,
+  },
+  checkpointList: {
+    gap: spacing.xs,
+  },
+  checkpointCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.bg.duskRaised,
     borderRadius: 8,
     padding: spacing.cardPadding,
     borderWidth: 1,
     borderColor: '#3D3560',
-    gap: spacing.md,
-  },
-  sectionTitle: {
-    ...typography.caption,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    color: colors.text.onDark.primary,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3D3560',
-    paddingBottom: spacing.sm,
-  },
-  checkpointsList: {
-    gap: spacing.md,
-  },
-  checkpointRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   orderBadge: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#3D3560',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#322A54',
     borderWidth: 1,
     borderColor: colors.accent.gold,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  orderBadgeText: {
+  orderText: {
     ...typography.caption,
-    fontWeight: '800',
+    fontWeight: '900',
     color: colors.accent.gold,
   },
   checkpointInfo: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   checkpointTitle: {
     ...typography.bodyLg,
     fontWeight: '700',
     color: colors.text.onDark.primary,
   },
-  checkpointPoints: {
+  checkpointClue: {
+    ...typography.caption,
+    color: colors.text.onDark.secondary,
+  },
+  pointsBadge: {
+    backgroundColor: 'rgba(242, 200, 75, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  pointsText: {
     ...typography.monoSm,
+    fontWeight: '900',
     color: colors.accent.gold,
-    fontWeight: '700',
+    fontSize: 11,
   },
 });

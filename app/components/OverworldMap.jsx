@@ -26,12 +26,7 @@ const CAMPUS_ZONES = [
   { id: 'hall', name: 'FOUNDERS VAULT', x: 290, y: 300, icon: 'pillar' },
 ];
 
-export default function OverworldMap({
-  quest,
-  playerLocation,
-  onRecenter,
-  onSelectCheckpoint,
-}) {
+export default function OverworldMap({ quest, playerLocation, onRecenter, onSelectCheckpoint }) {
   const [zoomLevel, setZoomLevel] = useState(1);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -106,8 +101,18 @@ export default function OverworldMap({
         <View style={styles.gridOverlay} />
 
         {/* Pathways */}
-        <View style={[styles.pathway, { top: 95, left: 105, width: 110, transform: [{ rotate: '40deg' }] }]} />
-        <View style={[styles.pathway, { top: 220, left: 115, width: 100, transform: [{ rotate: '-45deg' }] }]} />
+        <View
+          style={[
+            styles.pathway,
+            { top: 95, left: 105, width: 110, transform: [{ rotate: '40deg' }] },
+          ]}
+        />
+        <View
+          style={[
+            styles.pathway,
+            { top: 220, left: 115, width: 100, transform: [{ rotate: '-45deg' }] },
+          ]}
+        />
         <View style={[styles.pathway, { top: 285, left: 130, width: 150 }]} />
 
         {/* Campus Landmark Zones */}
@@ -150,20 +155,10 @@ export default function OverworldMap({
                 activeOpacity={0.8}
               >
                 <MaterialCommunityIcons
-                  name={
-                    isCleared
-                      ? 'flag-checkered'
-                      : isActive
-                      ? 'shield-sword'
-                      : 'lock-outline'
-                  }
+                  name={isCleared ? 'flag-checkered' : isActive ? 'shield-sword' : 'lock-outline'}
                   size={16}
                   color={
-                    isCleared
-                      ? colors.accent.green
-                      : isActive
-                      ? colors.accent.gold
-                      : '#5A527A'
+                    isCleared ? colors.accent.green : isActive ? colors.accent.gold : '#5A527A'
                   }
                 />
               </TouchableOpacity>
@@ -182,7 +177,12 @@ export default function OverworldMap({
         <View style={[styles.playerNode, { left: playerX, top: playerY }]}>
           <View style={styles.playerRadar} />
           <View style={styles.playerAvatar}>
-            <MaterialCommunityIcons name="navigation" size={14} color="#FFF" style={styles.navArrow} />
+            <MaterialCommunityIcons
+              name="navigation"
+              size={14}
+              color="#FFF"
+              style={styles.navArrow}
+            />
           </View>
           <View style={styles.playerLabel}>
             <Text style={styles.playerLabelText}>YOU</Text>

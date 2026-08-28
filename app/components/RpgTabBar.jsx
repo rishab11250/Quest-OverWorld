@@ -76,10 +76,7 @@ export default function RpgTabBar({ state, descriptors, navigation }) {
               key={route.key}
               onPress={onPress}
               activeOpacity={0.7}
-              style={[
-                styles.tabSlot,
-                isFocused && styles.tabSlotActive,
-              ]}
+              style={[styles.tabSlot, isFocused && styles.tabSlotActive]}
             >
               {/* Active Hotbar Top Marker */}
               {isFocused ? <View style={styles.activeTopPip} /> : null}
@@ -92,13 +89,7 @@ export default function RpgTabBar({ state, descriptors, navigation }) {
               />
 
               {/* Slot RPG Label */}
-              <Text
-                style={[
-                  styles.tabLabel,
-                  isFocused && styles.tabLabelActive,
-                ]}
-                numberOfLines={1}
-              >
+              <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]} numberOfLines={1}>
                 {config.label}
               </Text>
             </TouchableOpacity>

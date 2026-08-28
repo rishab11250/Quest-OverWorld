@@ -22,20 +22,12 @@ export default function ConfirmModal({
   isDestructive = false,
 }) {
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <TouchableWithoutFeedback onPress={onCancel}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
             <View
-              style={[
-                styles.dialog,
-                isDestructive ? styles.destructiveBorder : styles.goldBorder,
-              ]}
+              style={[styles.dialog, isDestructive ? styles.destructiveBorder : styles.goldBorder]}
             >
               <Text style={styles.title}>{title}</Text>
               {message ? <Text style={styles.message}>{message}</Text> : null}
@@ -52,9 +44,7 @@ export default function ConfirmModal({
                 <TouchableOpacity
                   style={[
                     styles.confirmButton,
-                    isDestructive
-                      ? styles.destructiveButton
-                      : styles.goldButton,
+                    isDestructive ? styles.destructiveButton : styles.goldButton,
                   ]}
                   onPress={onConfirm}
                   activeOpacity={0.8}
@@ -62,9 +52,7 @@ export default function ConfirmModal({
                   <Text
                     style={[
                       styles.confirmButtonText,
-                      isDestructive
-                        ? styles.destructiveButtonText
-                        : styles.goldButtonText,
+                      isDestructive ? styles.destructiveButtonText : styles.goldButtonText,
                     ]}
                   >
                     {confirmText}

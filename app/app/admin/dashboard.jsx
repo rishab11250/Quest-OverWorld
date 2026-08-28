@@ -50,7 +50,12 @@ export default function AdminDashboardScreen() {
   const [rejectFeedback, setRejectFeedback] = useState('');
 
   // Form states
-  const [questForm, setQuestForm] = useState({ name: '', description: '', campus: 'Main Campus', totalPoints: '700' });
+  const [questForm, setQuestForm] = useState({
+    name: '',
+    description: '',
+    campus: 'Main Campus',
+    totalPoints: '700',
+  });
   const [checkpointForm, setCheckpointForm] = useState({
     questId: '',
     title: '',

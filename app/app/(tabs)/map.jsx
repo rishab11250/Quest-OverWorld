@@ -1,13 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import OverworldMap from '../../components/OverworldMap';
@@ -16,6 +8,9 @@ import { getCurrentLocation } from '../../lib/location';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+
+import LoadingScreen from '../../components/LoadingScreen';
+import StatusBanner from '../../components/StatusBanner';
 
 export default function MapScreen() {
   const router = useRouter();
@@ -59,11 +54,7 @@ export default function MapScreen() {
   };
 
   if (loading && !refreshing) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={colors.accent.gold} />
-      </View>
-    );
+    return <LoadingScreen message="Aligning Atlas Cartography..." />;
   }
 
   const quest = data?.quest;
@@ -86,100 +77,69 @@ export default function MapScreen() {
       <View style={styles.header}>
         <Text style={styles.pixelTitle}>OVERWORLD ATLAS</Text>
         <Text style={styles.subtitle}>
-          {quest ? quest.campus.toUpperCase() : 'CAMPUS EXPLORATION'}
+          {quest ? quest.campus?.toUpperCase() : 'CAMPUS EXPLORATION'}
         </Text>
       </View>
 
-      {error ? (
-        <View style={styles.errorBanner}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : null}
+      <StatusBanner type="error" message={error} />
 
       {/* No Team State */}
       {!team ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Party Required</Text>
+          <Text style={styles.emptyTitle}>Party Required for Waypoints</Text>
           <Text style={styles.emptySubtitle}>
-            Join an adventuring party to activate waypoint beacons and radar on the campus map.
+            Join or form an adventuring party to view waypoint radar and unlock secret coordinates.
           </Text>
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => router.push('/(tabs)/team')}
             activeOpacity={0.8}
           >
-            <Text style={styles.primaryButtonText}>Go to Party Headquarters</Text>
+            <Text style={styles.primaryButtonText}>Head to Party HQ</Text>
           </TouchableOpacity>
         </View>
       ) : (
-        <>
-          {/* Stylized Pixel RPG Map Canvas */}
+        /* Map Component */
+        <View style={styles.mapSection}>
           <OverworldMap
-            quest={quest}
-            playerLocation={location}
+            checkpoints={quest?.checkpoints || []}
+            userLocation={location}
+            currentOrder={quest?.currentOrder || 1}
+            onSelectPin={setSelectedPin}
             onRecenter={handleRecenter}
-            onSelectCheckpoint={(cp) => setSelectedPin(cp)}
           />
 
-          {/* Active Target Card */}
+          {/* Active Station Card below Map */}
           {currentClue ? (
-            <View style={styles.targetCard}>
-              <View style={styles.targetHeader}>
-                <View style={styles.targetBadge}>
-                  <Text style={styles.targetBadgeText}>ACTIVE TARGET</Text>
+            <View style={styles.clueCard}>
+              <View style={styles.clueHeaderRow}>
+                <View style={styles.orderBadge}>
+                  <Text style={styles.orderBadgeText}>STATION #{quest.currentOrder}</Text>
                 </View>
-                <Text style={styles.targetPoints}>+{currentClue.points} PTS</Text>
+                <Text style={styles.cluePoints}>+{currentClue.points || 100} PTS</Text>
               </View>
 
-              <Text style={styles.targetTitle}>{currentClue.title}</Text>
-              <Text style={styles.targetClue}>{currentClue.clue}</Text>
+              <Text style={styles.clueTitle}>{currentClue.title}</Text>
+              <Text style={styles.clueBody}>{currentClue.clue}</Text>
 
-              <View style={styles.targetFooter}>
-                <View style={styles.gpsRow}>
-                  <MaterialCommunityIcons name="radar" size={16} color={colors.accent.gold} />
-                  <Text style={styles.gpsText}>Search Radius: {currentClue.radius}m</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.scanTargetButton}
-                  onPress={() => router.push('/camera/scanner')}
-                  activeOpacity={0.8}
-                >
-                  <MaterialCommunityIcons name="qrcode-scan" size={16} color={colors.bg.dusk} />
-                  <Text style={styles.scanTargetButtonText}>SCAN QR</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.scanButton}
+                onPress={() => router.push('/camera/scanner')}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons name="qrcode-scan" size={18} color={colors.bg.dusk} />
+                <Text style={styles.scanButtonText}>Scan Station QR</Text>
+              </TouchableOpacity>
             </View>
-          ) : quest?.isCompleted ? (
-            <View style={styles.completedCard}>
-              <Text style={styles.completedTitle}>🏆 REALM EXPLORED</Text>
-              <Text style={styles.completedSub}>
-                All {quest.totalCheckpoints} checkpoints have been deciphered and claimed.
+          ) : (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>All Stations Unlocked!</Text>
+              <Text style={styles.emptySubtitle}>
+                You have reached every mapped waypoint in this territory.
               </Text>
             </View>
-          ) : null}
-
-          {/* Pin Inspector Modal / Detail (if pin selected) */}
-          {selectedPin ? (
-            <View style={styles.pinInspector}>
-              <View style={styles.pinInspectorHeader}>
-                <Text style={styles.pinInspectorTitle}>
-                  Checkpoint #{selectedPin.order}: {selectedPin.title}
-                </Text>
-                <TouchableOpacity onPress={() => setSelectedPin(null)}>
-                  <MaterialCommunityIcons name="close" size={18} color="#8E84B0" />
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.pinInspectorStatus}>
-                {selectedPin.order < (quest?.currentOrder || 1)
-                  ? '✅ Discovered & Cleared'
-                  : selectedPin.order === (quest?.currentOrder || 1)
-                  ? '🎯 Current Active Objective'
-                  : '🔒 Locked (Clear previous checkpoint first)'}
-              </Text>
-            </View>
-          ) : null}
-        </>
+          )}
+        </View>
       )}
     </ScrollView>
   );
@@ -190,130 +150,40 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg.dusk,
   },
-  center: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   content: {
     padding: spacing.screenPadding,
-    paddingTop: spacing.xxl + spacing.md,
+    paddingTop: spacing.xxl,
     paddingBottom: spacing.xxxl,
     gap: spacing.md,
   },
   header: {
-    alignItems: 'center',
     marginBottom: spacing.xs,
   },
   pixelTitle: {
-    ...typography.displayPixel,
-    fontSize: 16,
-    color: colors.accent.gold,
-    textAlign: 'center',
-    marginBottom: spacing.xs,
+    ...typography.displayXl,
+    color: colors.text.onDark.primary,
+    letterSpacing: 2,
   },
   subtitle: {
     ...typography.caption,
-    fontWeight: '700',
-    color: colors.text.onDark.secondary,
-    letterSpacing: 2,
-  },
-  errorBanner: {
-    backgroundColor: colors.accent.coral,
-    borderRadius: 6,
-    padding: spacing.md,
-  },
-  errorText: {
-    ...typography.bodyMd,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  targetCard: {
-    backgroundColor: colors.bg.duskRaised,
-    borderRadius: 8,
-    padding: spacing.cardPadding,
-    borderWidth: 1.5,
-    borderColor: colors.accent.goldDim,
-    gap: spacing.xs,
-  },
-  targetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  targetBadge: {
-    backgroundColor: colors.accent.gold,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  targetBadgeText: {
-    ...typography.caption,
-    fontWeight: '900',
-    color: colors.bg.dusk,
-  },
-  targetPoints: {
-    ...typography.monoSm,
-    color: colors.accent.gold,
     fontWeight: '800',
-  },
-  targetTitle: {
-    ...typography.headingLg,
-    color: colors.text.onDark.primary,
-    fontWeight: '700',
-  },
-  targetClue: {
-    ...typography.bodyMd,
-    color: colors.text.onDark.secondary,
-    lineHeight: 20,
-  },
-  targetFooter: {
-    marginTop: spacing.xs,
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: '#3D3560',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  scanTargetButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.accent.gold,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  scanTargetButtonText: {
-    ...typography.caption,
-    fontWeight: '900',
-    color: colors.bg.dusk,
-    letterSpacing: 0.8,
-  },
-  gpsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  gpsText: {
-    ...typography.monoSm,
-    fontSize: 11,
     color: colors.accent.gold,
+    letterSpacing: 1.5,
+    marginTop: 2,
   },
   emptyCard: {
     backgroundColor: colors.bg.duskRaised,
     borderRadius: 8,
-    padding: spacing.cardPadding,
+    padding: spacing.xl,
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#3D3560',
-    alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   emptyTitle: {
     ...typography.headingLg,
     color: colors.text.onDark.primary,
+    fontWeight: '800',
   },
   emptySubtitle: {
     ...typography.bodyMd,
@@ -323,56 +193,74 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: colors.accent.gold,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 12,
     borderRadius: 6,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: spacing.minTouchTarget,
-    width: '100%',
+    marginTop: spacing.xs,
   },
   primaryButtonText: {
     ...typography.bodyLg,
-    fontWeight: '700',
+    fontWeight: '900',
     color: colors.bg.dusk,
   },
-  completedCard: {
-    backgroundColor: colors.bg.duskRaised,
+  mapSection: {
+    gap: spacing.md,
+  },
+  clueCard: {
+    backgroundColor: '#272044',
     borderRadius: 8,
     padding: spacing.cardPadding,
     borderWidth: 1.5,
-    borderColor: colors.accent.green,
-    alignItems: 'center',
+    borderColor: colors.accent.gold,
     gap: spacing.xs,
   },
-  completedTitle: {
-    ...typography.headingLg,
-    color: colors.accent.green,
-  },
-  completedSub: {
-    ...typography.bodyMd,
-    color: colors.text.onDark.secondary,
-    textAlign: 'center',
-  },
-  pinInspector: {
-    backgroundColor: '#1E1A33',
-    borderRadius: 8,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: '#4A4170',
-    gap: 4,
-  },
-  pinInspectorHeader: {
+  clueHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  pinInspectorTitle: {
-    ...typography.bodyLg,
-    fontWeight: '700',
-    color: colors.text.onDark.primary,
+  orderBadge: {
+    backgroundColor: 'rgba(242, 200, 75, 0.15)',
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  pinInspectorStatus: {
-    ...typography.bodyMd,
+  orderBadgeText: {
+    ...typography.caption,
+    fontWeight: '900',
     color: colors.accent.gold,
+    fontSize: 10,
+  },
+  cluePoints: {
+    ...typography.caption,
+    color: colors.text.onDark.secondary,
+    fontWeight: '700',
+  },
+  clueTitle: {
+    ...typography.headingLg,
+    color: colors.text.onDark.primary,
+    fontWeight: '800',
+  },
+  clueBody: {
+    ...typography.bodyMd,
+    color: colors.text.onDark.secondary,
+    lineHeight: 20,
+  },
+  scanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.accent.gold,
+    paddingVertical: 12,
+    borderRadius: 6,
+    marginTop: spacing.xs,
+  },
+  scanButtonText: {
+    ...typography.bodyLg,
+    fontWeight: '900',
+    color: colors.bg.dusk,
   },
 });

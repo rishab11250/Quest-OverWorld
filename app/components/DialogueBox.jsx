@@ -4,12 +4,7 @@ import colors from '../theme/colors';
 import typography from '../theme/typography';
 import spacing from '../theme/spacing';
 
-export default function DialogueBox({
-  speaker = 'CURRENT QUEST CLUE',
-  text,
-  footnote,
-  style,
-}) {
+export default function DialogueBox({ speaker = 'CURRENT QUEST CLUE', text, footnote, style }) {
   return (
     <View style={[styles.container, style]}>
       {/* Corner Pixel Accents */}

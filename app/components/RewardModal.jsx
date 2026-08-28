@@ -1,13 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  Easing,
-} from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
@@ -47,17 +39,8 @@ export default function RewardModal({
   }, [visible, opacityAnim, scaleAnim]);
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={onDismiss}
-    >
-      <TouchableOpacity
-        style={styles.overlay}
-        activeOpacity={1}
-        onPress={onDismiss}
-      >
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss}>
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onDismiss}>
         <Animated.View
           style={[
             styles.card,
@@ -112,11 +95,7 @@ export default function RewardModal({
           ) : null}
 
           {/* Dismiss Button */}
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={onDismiss}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={styles.continueButton} onPress={onDismiss} activeOpacity={0.8}>
             <Text style={styles.continueButtonText}>
               {isQuestCompleted ? 'VIEW RANKINGS' : 'CONTINUE QUEST'}
             </Text>

@@ -72,9 +72,7 @@ export default function AdminSystemTab({
           <View style={styles.opsRow}>
             <View style={styles.opsInfo}>
               <Text style={styles.opsTitle}>Reset & Seed Demo Data</Text>
-              <Text style={styles.opsSub}>
-                Restores 4 campus checkpoints & 4 bounty challenges
-              </Text>
+              <Text style={styles.opsSub}>Restores 4 campus checkpoints & 4 bounty challenges</Text>
             </View>
             <TouchableOpacity
               style={[styles.opsBtn, { borderColor: colors.accent.gold }]}

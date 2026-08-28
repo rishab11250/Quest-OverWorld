@@ -4,11 +4,7 @@ import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
 
-export default function AdminBountiesTab({
-  challenges,
-  onOpenCreateChallenge,
-  onDeleteChallenge,
-}) {
+export default function AdminBountiesTab({ challenges, onOpenCreateChallenge, onDeleteChallenge }) {
   return (
     <View style={styles.container}>
       <View style={styles.cardSection}>
@@ -45,7 +41,11 @@ export default function AdminBountiesTab({
                 onPress={() => onDeleteChallenge(c._id)}
                 style={styles.deleteIconBtn}
               >
-                <MaterialCommunityIcons name="trash-can-outline" size={18} color={colors.accent.coral} />
+                <MaterialCommunityIcons
+                  name="trash-can-outline"
+                  size={18}
+                  color={colors.accent.coral}
+                />
               </TouchableOpacity>
             </View>
           </View>

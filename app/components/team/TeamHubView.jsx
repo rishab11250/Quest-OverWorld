@@ -3,13 +3,7 @@ import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
 
-export default function TeamHubView({
-  team,
-  copied,
-  onCopyCode,
-  onShareCode,
-  onRequestLeave,
-}) {
+export default function TeamHubView({ team, copied, onCopyCode, onShareCode, onRequestLeave }) {
   const leaderId = typeof team.leader === 'object' ? team.leader._id : team.leader;
   const level = Math.floor((team.score || 0) / 250) + 1;
 
@@ -35,11 +29,7 @@ export default function TeamHubView({
         <Text style={styles.codeValue}>{team.code}</Text>
 
         <View style={styles.codeActions}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={onCopyCode}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={styles.actionBtn} onPress={onCopyCode} activeOpacity={0.8}>
             <Text style={styles.actionBtnText}>{copied ? 'COPIED!' : 'COPY CODE'}</Text>
           </TouchableOpacity>
 
@@ -57,9 +47,7 @@ export default function TeamHubView({
       <View style={styles.rosterCard}>
         <View style={styles.rosterHeader}>
           <Text style={styles.rosterTitle}>PARTY ROSTER</Text>
-          <Text style={styles.memberCount}>
-            {team.members?.length || 1} ADVENTURERS
-          </Text>
+          <Text style={styles.memberCount}>{team.members?.length || 1} ADVENTURERS</Text>
         </View>
 
         <View style={styles.membersList}>
@@ -91,11 +79,7 @@ export default function TeamHubView({
       </View>
 
       {/* Leave Team Button */}
-      <TouchableOpacity
-        style={styles.leaveButton}
-        onPress={onRequestLeave}
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={styles.leaveButton} onPress={onRequestLeave} activeOpacity={0.8}>
         <Text style={styles.leaveButtonText}>Leave Party</Text>
       </TouchableOpacity>
     </View>

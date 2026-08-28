@@ -161,11 +161,7 @@ export default function ChallengeDetailScreen() {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorHeading}>{error || 'Challenge not found.'}</Text>
-        <TouchableOpacity
-          style={styles.backLink}
-          onPress={() => router.back()}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.backLink} onPress={() => router.back()} activeOpacity={0.8}>
           <Text style={styles.backLinkText}>Return to Bounty Board</Text>
         </TouchableOpacity>
       </View>
@@ -204,10 +200,7 @@ export default function ChallengeDetailScreen() {
       ) : (
         <View>
           {status === 'rejected' && submission?.feedback ? (
-            <ChallengeStatusCard
-              status={status}
-              feedback={submission.feedback}
-            />
+            <ChallengeStatusCard status={status} feedback={submission.feedback} />
           ) : null}
 
           <ChallengeSubmissionForm

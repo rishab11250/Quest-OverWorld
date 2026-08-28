@@ -58,8 +58,7 @@ const sampleCheckpoints = [
 
 const seed = async () => {
   try {
-    const mongoUri =
-      process.env.MONGO_URI || 'mongodb://localhost:27017/quest-overworld';
+    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/quest-overworld';
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB for seeding...');
 
