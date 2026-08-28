@@ -7,6 +7,7 @@ const teamRoutes = require('./routes/teams');
 const questRoutes = require('./routes/quests');
 const checkpointRoutes = require('./routes/checkpoints');
 const challengeRoutes = require('./routes/challenges');
+const leaderboardRoutes = require('./routes/leaderboard');
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/quests', questRoutes);
 app.use('/api/checkpoints', checkpointRoutes);
 app.use('/api/challenges', challengeRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 // Base Route / Health Check
 app.get('/api/health', (req, res) => {
