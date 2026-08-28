@@ -24,7 +24,27 @@ export const requestLocationPermission = async () => {
 };
 
 /**
- * Get current user GPS coordinates.
+ * Fast fetch of last known GPS location cached by the device.
+ * @returns {Promise<{ latitude: number, longitude: number } | null>}
+ */
+export const getLastKnownLocation = async () => {
+  try {
+    const lastPos = await Location.getLastKnownPositionAsync();
+    if (lastPos?.coords) {
+      return {
+        latitude: lastPos.coords.latitude,
+        longitude: lastPos.coords.longitude,
+        accuracy: lastPos.coords.accuracy,
+      };
+    }
+    return null;
+  } catch (err) {
+    return null;
+  }
+};
+
+/**
+ * Get current user GPS coordinates with high accuracy.
  * @returns {Promise<{ latitude: number, longitude: number, accuracy?: number } | null>}
  */
 export const getCurrentLocation = async () => {
@@ -51,6 +71,59 @@ export const getCurrentLocation = async () => {
       longitude: 77.1926,
       fallback: true,
     };
+  }
+};
+
+/**
+ * Subscribe to real-time live GPS location updates as the user moves.
+ * @param {Function} onLocationUpdate - Callback function receiving coords
+ * @returns {Promise<Location.LocationSubscription | null>}
+ */
+export const startLocationWatcher = async (onLocationUpdate) => {
+  try {
+    const perm = await requestLocationPermission();
+    if (!perm.granted) return null;
+
+    const subscription = await Location.watchPositionAsync(
+      {
+        accuracy: Location.Accuracy.Balanced,
+        timeInterval: 3000,
+        distanceInterval: 5,
+      },
+      (loc) => {
+        if (loc?.coords) {
+          onLocationUpdate({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+            accuracy: loc.coords.accuracy,
+          });
+        }
+      }
+    );
+
+    return subscription;
+  } catch (err) {
+    console.warn('Failed to start location watcher:', err.message);
+    return null;
+  }
+};
+
+/**
+ * Convert GPS latitude & longitude into a human-readable street/campus landmark address.
+ * @param {number} latitude
+ * @param {number} longitude
+ * @returns {Promise<string>}
+ */
+export const reverseGeocodeLocation = async (latitude, longitude) => {
+  try {
+    if (latitude == null || longitude == null) return '';
+    const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
+    if (!place) return '';
+
+    const parts = [place.name, place.street, place.district, place.city].filter(Boolean);
+    return parts.join(', ') || 'Campus Landmark Coordinates';
+  } catch (err) {
+    return '';
   }
 };
 

@@ -10,6 +10,7 @@ import StatusBanner from '../../components/StatusBanner';
 import ConfirmModal from '../../components/ConfirmModal';
 import TeamAuthCard from '../../components/team/TeamAuthCard';
 import TeamHubView from '../../components/team/TeamHubView';
+import InviteContactsModal from '../../components/team/InviteContactsModal';
 
 export default function TeamScreen() {
   const [team, setTeam] = useState(null);
@@ -24,6 +25,7 @@ export default function TeamScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [leaveModalVisible, setLeaveModalVisible] = useState(false);
+  const [contactsModalVisible, setContactsModalVisible] = useState(false);
 
   const fetchMyTeam = useCallback(async () => {
     try {
@@ -159,21 +161,30 @@ export default function TeamScreen() {
           copied={copied}
           onCopyCode={handleCopyCode}
           onShareCode={handleShareCode}
-          onRequestLeave={() => setLeaveModalVisible(true)}
+          onInviteContacts={() => setContactsModalVisible(true)}
+          onRequestLeave={() => setLeaveModalVisible(false) || setLeaveModalVisible(true)}
         />
       )}
 
       {team ? (
-        <ConfirmModal
-          visible={leaveModalVisible}
-          title="Leave Party?"
-          message={`Are you sure you want to leave "${team.name}"? You will forfeit your party rank until you rejoin.`}
-          confirmText="Leave Party"
-          cancelText="Stay in Party"
-          onConfirm={handleConfirmLeave}
-          onCancel={() => setLeaveModalVisible(false)}
-          isDestructive={true}
-        />
+        <>
+          <ConfirmModal
+            visible={leaveModalVisible}
+            title="Leave Party?"
+            message={`Are you sure you want to leave "${team.name}"? You will forfeit your party rank until you rejoin.`}
+            confirmText="Leave Party"
+            cancelText="Stay in Party"
+            onConfirm={handleConfirmLeave}
+            onCancel={() => setLeaveModalVisible(false)}
+            isDestructive={true}
+          />
+
+          <InviteContactsModal
+            visible={contactsModalVisible}
+            team={team}
+            onClose={() => setContactsModalVisible(false)}
+          />
+        </>
       ) : null}
     </ScrollView>
   );

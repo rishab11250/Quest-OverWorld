@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   TextInput,
   Dimensions,
@@ -30,6 +31,7 @@ export default function ScannerScreen() {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [torch, setTorch] = useState(false);
+  const [facing, setFacing] = useState('back'); // 'back' | 'front'
   const [manualMode, setManualMode] = useState(false);
   const [manualCode, setManualCode] = useState('');
 
@@ -150,25 +152,35 @@ export default function ScannerScreen() {
           <Text style={styles.hudButtonText}>‹ BACK</Text>
         </TouchableOpacity>
 
-        <Text style={styles.hudTitle}>QR VIEW categorizer</Text>
+        <Text style={styles.hudTitle}>QR RADAR SCANNER</Text>
 
-        <TouchableOpacity
-          style={styles.hudButton}
-          onPress={() => setTorch((t) => !t)}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons
-            name={torch ? 'flash' : 'flash-off'}
-            size={20}
-            color={torch ? colors.accent.gold : '#FFF'}
-          />
-        </TouchableOpacity>
+        <View style={styles.topRightActions}>
+          <TouchableOpacity
+            style={styles.hudIconBtn}
+            onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="camera-flip" size={18} color="#FFF" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.hudIconBtn}
+            onPress={() => setTorch((t) => !t)}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons
+              name={torch ? 'flash' : 'flash-off'}
+              size={18}
+              color={torch ? colors.accent.gold : '#FFF'}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Camera Viewfinder */}
       <CameraView
         style={StyleSheet.absoluteFillObject}
-        facing="back"
+        facing={facing}
         enableTorch={torch}
         barcodeScannerSettings={{
           barcodeTypes: ['qr'],
@@ -183,29 +195,27 @@ export default function ScannerScreen() {
             <View style={styles.maskSide} />
 
             {/* Target Reticle Box */}
-            <View style={styles.reticleBox}>
-              {/* Corner Pixel Accents */}
-              <View style={[styles.reticleCorner, styles.cornerTL]} />
-              <View style={[styles.reticleCorner, styles.cornerTR]} />
-              <View style={[styles.reticleCorner, styles.cornerBL]} />
-              <View style={[styles.reticleCorner, styles.cornerBR]} />
+            <View style={styles.scanBox}>
+              {/* Corner Accents */}
+              <View style={[styles.corner, styles.cornerTL]} />
+              <View style={[styles.corner, styles.cornerTR]} />
+              <View style={[styles.corner, styles.cornerBL]} />
+              <View style={[styles.corner, styles.cornerBR]} />
 
-              {/* Scanning Laser Line */}
-              {!verifying && !scanned ? (
-                <Animated.View
-                  style={[
-                    styles.laserLine,
-                    {
-                      transform: [{ translateY: laserAnim }],
-                    },
-                  ]}
-                />
-              ) : null}
+              {/* Animated Laser Line */}
+              <Animated.View
+                style={[
+                  styles.laserLine,
+                  {
+                    transform: [{ translateY: laserAnim }],
+                  },
+                ]}
+              />
 
               {verifying ? (
                 <View style={styles.verifyingOverlay}>
                   <ActivityIndicator size="large" color={colors.accent.gold} />
-                  <Text style={styles.verifyingText}>VERIFYING GPS & QR...</Text>
+                  <Text style={styles.verifyingText}>Verifying GPS & Key...</Text>
                 </View>
               ) : null}
             </View>
@@ -214,9 +224,14 @@ export default function ScannerScreen() {
           </View>
 
           <View style={styles.maskBottom}>
+            <Text style={styles.instructionText}>
+              Align campus checkpoint QR marker within the target frame
+            </Text>
+
             {error ? (
               <View style={styles.errorBox}>
-                <Text style={styles.errorText}>{error}</Text>
+                <MaterialCommunityIcons name="alert-circle" size={18} color={colors.accent.coral} />
+                <Text style={styles.errorMsg}>{error}</Text>
                 <TouchableOpacity
                   style={styles.retryButton}
                   onPress={() => {
@@ -225,25 +240,17 @@ export default function ScannerScreen() {
                   }}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.retryButtonText}>SCAN AGAIN</Text>
+                  <Text style={styles.retryButtonText}>TAP TO RETRY</Text>
                 </TouchableOpacity>
               </View>
+            ) : null}
+
+            {/* Manual Entry Fallback */}
+            {!manualMode ? (
+              <Pressable style={styles.manualToggle} onPress={() => setManualMode(true)}>
+                <Text style={styles.manualToggleText}>Keyboard Entry Fallback ›</Text>
+              </Pressable>
             ) : (
-              <Text style={styles.hintText}>Align checkpoint QR code inside target reticle</Text>
-            )}
-
-            {/* Manual Code Entry Toggle */}
-            <TouchableOpacity
-              style={styles.manualToggle}
-              onPress={() => setManualMode((m) => !m)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.manualToggleText}>
-                {manualMode ? '‹ Close Manual Input' : '⌨️ Enter Code Manually'}
-              </Text>
-            </TouchableOpacity>
-
-            {manualMode ? (
               <View style={styles.manualContainer}>
                 <TextInput
                   style={styles.manualInput}
@@ -259,24 +266,30 @@ export default function ScannerScreen() {
                   disabled={verifying}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.manualSubmitText}>VERIFY</Text>
+                  {verifying ? (
+                    <ActivityIndicator size="small" color={colors.bg.dusk} />
+                  ) : (
+                    <Text style={styles.manualSubmitText}>VERIFY</Text>
+                  )}
                 </TouchableOpacity>
               </View>
-            ) : null}
+            )}
           </View>
         </View>
       </CameraView>
 
-      {/* Celebration Reward Modal */}
-      <RewardModal
-        visible={rewardVisible}
-        points={rewardData?.pointsAwarded || 100}
-        checkpointTitle={rewardData?.clearedCheckpoint?.title || 'Checkpoint Cleared'}
-        checkpointOrder={rewardData?.clearedCheckpoint?.order || 1}
-        nextClue={rewardData?.nextClue}
-        isQuestCompleted={rewardData?.isQuestCompleted}
-        onDismiss={handleRewardDismiss}
-      />
+      {/* Level-Up Reward Fanfare Modal */}
+      {rewardData ? (
+        <RewardModal
+          visible={rewardVisible}
+          points={rewardData.pointsAwarded || 100}
+          title="CHECKPOINT CONQUERED!"
+          message={rewardData.message}
+          nextClue={rewardData.nextClue}
+          isQuestCompleted={rewardData.isQuestCompleted}
+          onDismiss={handleRewardDismiss}
+        />
+      ) : null}
     </View>
   );
 }
@@ -284,7 +297,7 @@ export default function ScannerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: colors.bg.dusk,
   },
   center: {
     justifyContent: 'center',
@@ -292,40 +305,54 @@ const styles = StyleSheet.create({
   },
   topHud: {
     position: 'absolute',
-    top: 40,
-    left: 0,
-    right: 0,
+    top: 50,
+    left: spacing.screenPadding,
+    right: spacing.screenPadding,
+    zIndex: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.screenPadding,
-    zIndex: 20,
-  },
-  hudButton: {
-    backgroundColor: 'rgba(23, 19, 38, 0.75)',
+    backgroundColor: 'rgba(30, 26, 51, 0.85)',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 6,
+    paddingVertical: spacing.sm,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#3D3560',
   },
+  hudButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    backgroundColor: '#322A54',
+  },
   hudButtonText: {
-    ...typography.bodyMd,
+    ...typography.caption,
     fontWeight: '800',
     color: colors.accent.gold,
   },
   hudTitle: {
     ...typography.caption,
-    fontWeight: '800',
+    fontWeight: '900',
     color: '#FFF',
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
+  },
+  topRightActions: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  hudIconBtn: {
+    padding: 6,
+    borderRadius: 4,
+    backgroundColor: '#322A54',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   maskContainer: {
     flex: 1,
   },
   maskTop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 12, 28, 0.7)',
+    backgroundColor: 'rgba(10, 8, 20, 0.75)',
   },
   maskCenterRow: {
     flexDirection: 'row',
@@ -333,100 +360,100 @@ const styles = StyleSheet.create({
   },
   maskSide: {
     flex: 1,
-    backgroundColor: 'rgba(15, 12, 28, 0.7)',
+    backgroundColor: 'rgba(10, 8, 20, 0.75)',
   },
-  reticleBox: {
+  scanBox: {
     width: SCAN_BOX_SIZE,
     height: SCAN_BOX_SIZE,
-    borderWidth: 1,
-    borderColor: 'rgba(242, 200, 75, 0.3)',
     position: 'relative',
-    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  reticleCorner: {
+  corner: {
     position: 'absolute',
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
     borderColor: colors.accent.gold,
   },
   cornerTL: {
     top: 0,
     left: 0,
-    borderTopWidth: 3,
-    borderLeftWidth: 3,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
   },
   cornerTR: {
     top: 0,
     right: 0,
-    borderTopWidth: 3,
-    borderRightWidth: 3,
+    borderTopWidth: 4,
+    borderRightWidth: 4,
   },
   cornerBL: {
     bottom: 0,
     left: 0,
-    borderBottomWidth: 3,
-    borderLeftWidth: 3,
+    borderBottomWidth: 4,
+    borderLeftWidth: 4,
   },
   cornerBR: {
     bottom: 0,
     right: 0,
-    borderBottomWidth: 3,
-    borderRightWidth: 3,
+    borderBottomWidth: 4,
+    borderRightWidth: 4,
   },
   laserLine: {
-    height: 2,
+    position: 'absolute',
+    top: 0,
+    left: 4,
+    right: 4,
+    height: 2.5,
     backgroundColor: colors.accent.gold,
     shadowColor: colors.accent.gold,
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
   },
   verifyingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(23, 19, 38, 0.85)',
+    backgroundColor: 'rgba(30, 26, 51, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     gap: spacing.sm,
   },
   verifyingText: {
-    ...typography.caption,
-    fontWeight: '900',
+    ...typography.bodyMd,
+    fontWeight: '800',
     color: colors.accent.gold,
-    letterSpacing: 1,
   },
   maskBottom: {
-    flex: 1.3,
-    backgroundColor: 'rgba(15, 12, 28, 0.7)',
-    alignItems: 'center',
+    flex: 1.2,
+    backgroundColor: 'rgba(10, 8, 20, 0.75)',
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.lg,
-    paddingHorizontal: spacing.screenPadding,
+    alignItems: 'center',
     gap: spacing.md,
   },
-  hintText: {
+  instructionText: {
     ...typography.bodyMd,
-    color: colors.text.onDark.primary,
+    color: colors.text.onDark.secondary,
     textAlign: 'center',
-    fontWeight: '600',
+    lineHeight: 22,
   },
   errorBox: {
-    backgroundColor: 'rgba(232, 102, 75, 0.95)',
-    borderRadius: 8,
+    backgroundColor: 'rgba(232, 102, 75, 0.15)',
+    borderWidth: 1,
+    borderColor: colors.accent.coral,
     padding: spacing.md,
-    width: '100%',
+    borderRadius: 6,
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 4,
+    width: '100%',
   },
-  errorText: {
-    ...typography.bodyMd,
-    color: '#FFF',
+  errorMsg: {
+    ...typography.caption,
+    color: colors.accent.coral,
     textAlign: 'center',
     fontWeight: '700',
   },
   retryButton: {
-    backgroundColor: '#FFF',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 4,
-    borderRadius: 4,
     marginTop: 2,
   },
   retryButtonText: {

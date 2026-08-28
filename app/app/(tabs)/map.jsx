@@ -4,7 +4,12 @@ import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import OverworldMap from '../../components/OverworldMap';
 import api from '../../lib/api';
-import { getCurrentLocation } from '../../lib/location';
+import {
+  getCurrentLocation,
+  getLastKnownLocation,
+  startLocationWatcher,
+  reverseGeocodeLocation,
+} from '../../lib/location';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
@@ -16,6 +21,7 @@ export default function MapScreen() {
   const router = useRouter();
   const [data, setData] = useState(null);
   const [location, setLocation] = useState(null);
+  const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -24,13 +30,32 @@ export default function MapScreen() {
   const fetchMapData = useCallback(async () => {
     try {
       setError('');
+
+      // 1. Fast cache fetch for immediate position
+      const cached = await getLastKnownLocation();
+      if (cached) setLocation(cached);
+
+      // 2. Fetch quest data & accurate GPS in parallel
       const [questRes, locRes] = await Promise.all([
         api.get('/quests/active'),
         getCurrentLocation(),
       ]);
 
       setData(questRes);
-      if (locRes) setLocation(locRes);
+      if (locRes) {
+        setLocation(locRes);
+        // Reverse geocode active station if available
+        const currentClue = questRes?.quest?.currentClue;
+        if (currentClue) {
+          const matchedCp = questRes?.quest?.checkpoints?.find(
+            (c) => c.order === questRes.quest.currentOrder
+          );
+          if (matchedCp) {
+            const addr = await reverseGeocodeLocation(matchedCp.latitude, matchedCp.longitude);
+            setAddress(addr);
+          }
+        }
+      }
     } catch (err) {
       setError(err.message || 'Failed to load atlas data.');
     } finally {
@@ -41,6 +66,21 @@ export default function MapScreen() {
 
   useEffect(() => {
     fetchMapData();
+
+    // Start live GPS stream subscription
+    let watcherSub = null;
+    startLocationWatcher((freshCoords) => {
+      setLocation(freshCoords);
+    }).then((sub) => {
+      watcherSub = sub;
+    });
+
+    // Cleanup watcher on screen unmount
+    return () => {
+      if (watcherSub && typeof watcherSub.remove === 'function') {
+        watcherSub.remove();
+      }
+    };
   }, [fetchMapData]);
 
   const onRefresh = () => {
@@ -121,6 +161,19 @@ export default function MapScreen() {
 
               <Text style={styles.clueTitle}>{currentClue.title}</Text>
               <Text style={styles.clueBody}>{currentClue.clue}</Text>
+
+              {address ? (
+                <View style={styles.addressRow}>
+                  <MaterialCommunityIcons
+                    name="map-marker-radius"
+                    size={14}
+                    color={colors.accent.gold}
+                  />
+                  <Text style={styles.addressText} numberOfLines={1}>
+                    {address}
+                  </Text>
+                </View>
+              ) : null}
 
               <TouchableOpacity
                 style={styles.scanButton}
@@ -247,6 +300,22 @@ const styles = StyleSheet.create({
     ...typography.bodyMd,
     color: colors.text.onDark.secondary,
     lineHeight: 20,
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#1E1A33',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginTop: 2,
+  },
+  addressText: {
+    ...typography.caption,
+    color: colors.accent.gold,
+    fontSize: 11,
+    fontWeight: '700',
   },
   scanButton: {
     flexDirection: 'row',

@@ -1,9 +1,17 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
 
-export default function TeamHubView({ team, copied, onCopyCode, onShareCode, onRequestLeave }) {
+export default function TeamHubView({
+  team,
+  copied,
+  onCopyCode,
+  onShareCode,
+  onInviteContacts,
+  onRequestLeave,
+}) {
   const leaderId = typeof team.leader === 'object' ? team.leader._id : team.leader;
   const level = Math.floor((team.score || 0) / 250) + 1;
 
@@ -39,6 +47,15 @@ export default function TeamHubView({ team, copied, onCopyCode, onShareCode, onR
             activeOpacity={0.8}
           >
             <Text style={styles.actionBtnTextOutline}>SHARE</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionBtnContacts]}
+            onPress={onInviteContacts}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="contacts" size={14} color={colors.accent.gold} />
+            <Text style={styles.actionBtnTextContacts}>CONTACTS</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -155,7 +172,7 @@ const styles = StyleSheet.create({
   },
   codeActions: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs,
     width: '100%',
   },
   actionBtn: {
@@ -164,21 +181,37 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 6,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   actionBtnOutline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#4A4170',
   },
+  actionBtnContacts: {
+    backgroundColor: '#322A54',
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
+    flexDirection: 'row',
+    gap: 4,
+  },
   actionBtnText: {
     ...typography.caption,
     fontWeight: '900',
     color: colors.bg.dusk,
+    fontSize: 11,
   },
   actionBtnTextOutline: {
     ...typography.caption,
     fontWeight: '800',
     color: colors.text.onDark.primary,
+    fontSize: 11,
+  },
+  actionBtnTextContacts: {
+    ...typography.caption,
+    fontWeight: '900',
+    color: colors.accent.gold,
+    fontSize: 11,
   },
   rosterCard: {
     backgroundColor: colors.bg.duskRaised,
