@@ -6,13 +6,20 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "scheme": "questoverworld",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#1E1A33"
     },
     "android": {
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS"
+      ],
+      "package": "com.rishab1125.questoverworld"
     },
     "web": {
       "bundler": "metro"
