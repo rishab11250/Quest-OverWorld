@@ -1,16 +1,12 @@
 import { Tabs } from 'expo-router';
+import RpgTabBar from '../../components/RpgTabBar';
 
 export default function TabLayout() {
   return (
     <Tabs
+      tabBar={(props) => <RpgTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#2A2447',
-          borderTopColor: '#3D3560',
-        },
-        tabBarActiveTintColor: '#F2C84B',
-        tabBarInactiveTintColor: '#C9C3DD',
       }}
     >
       <Tabs.Screen
@@ -22,31 +18,31 @@ export default function TabLayout() {
       <Tabs.Screen
         name="map"
         options={{
-          title: 'Map',
+          title: 'Atlas',
         }}
       />
       <Tabs.Screen
         name="team"
         options={{
-          title: 'Team',
+          title: 'Party',
         }}
       />
       <Tabs.Screen
         name="challenges"
         options={{
-          title: 'Challenges',
+          title: 'Bounty',
         }}
       />
       <Tabs.Screen
         name="leaderboard"
         options={{
-          title: 'Rank',
+          title: 'Hall',
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Hero',
         }}
       />
     </Tabs>
