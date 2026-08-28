@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const teamRoutes = require('./routes/teams');
 const questRoutes = require('./routes/quests');
 const checkpointRoutes = require('./routes/checkpoints');
+const challengeRoutes = require('./routes/challenges');
 
 const app = express();
 
@@ -14,13 +15,15 @@ connectDB();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/quests', questRoutes);
 app.use('/api/checkpoints', checkpointRoutes);
+app.use('/api/challenges', challengeRoutes);
 
 // Base Route / Health Check
 app.get('/api/health', (req, res) => {
