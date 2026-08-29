@@ -16,11 +16,11 @@ export function CreateQuestModal({
   existingCheckpoints = [],
   existingQuests = [],
 }) {
-  const selectedLoc = {
-    latitude: Number(form.latitude) || 28.5458,
-    longitude: Number(form.longitude) || 77.1926,
-    landmarkName: form.campus || 'Main Quad Territory',
-  };
+  const selectedLoc = form.latitude && form.longitude ? {
+    latitude: Number(form.latitude),
+    longitude: Number(form.longitude),
+    landmarkName: form.campus || '',
+  } : null;
 
   const handleLocationChange = (coords) => {
     setForm((prev) => ({
@@ -131,11 +131,11 @@ export function CreateCheckpointModal({
 }) {
   const [modalStep, setModalStep] = useState('map'); // 'map' or 'details'
 
-  const selectedLoc = {
-    latitude: Number(form.latitude) || 28.5458,
-    longitude: Number(form.longitude) || 77.1926,
+  const selectedLoc = form.latitude && form.longitude ? {
+    latitude: Number(form.latitude),
+    longitude: Number(form.longitude),
     landmarkName: form.landmarkName || '',
-  };
+  } : null;
 
   const handleLocationChange = (coords) => {
     setForm((prev) => ({
@@ -484,6 +484,44 @@ export function BanPlayerModal({ visible, onClose, onConfirm, player, reason, se
               onPress={onConfirm}
             >
               <Text style={[styles.modalSaveText, { color: '#FFF' }]}>Confirm Ban</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+export function BanGuildModal({ visible, onClose, onConfirm, guild, reason, setReason }) {
+  if (!guild) return null;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <Text style={[styles.modalTitle, { color: colors.accent.coral }]}>
+            🚫 Ban Guild Party
+          </Text>
+          <Text style={styles.modalSub}>
+            Banning <Text style={{ color: colors.accent.gold, fontWeight: '800' }}>{guild.name}</Text> will lock all party members from verifying checkpoints and solving bounties.
+          </Text>
+          <TextInput
+            style={[styles.input, { height: 80 }]}
+            placeholder="Reason for guild penalty / ban (optional)..."
+            placeholderTextColor="#7E75A0"
+            multiline
+            value={reason}
+            onChangeText={setReason}
+          />
+          <View style={styles.modalBtnRow}>
+            <TouchableOpacity style={styles.modalCancel} onPress={onClose}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalSave, { backgroundColor: colors.accent.coral }]}
+              onPress={onConfirm}
+            >
+              <Text style={[styles.modalSaveText, { color: '#FFF' }]}>Confirm Guild Ban</Text>
             </TouchableOpacity>
           </View>
         </View>

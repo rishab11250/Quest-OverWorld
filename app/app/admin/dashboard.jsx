@@ -22,6 +22,7 @@ import {
   CreateChallengeModal,
   RejectFeedbackModal,
   BanPlayerModal,
+  BanGuildModal,
   CheckpointQrPreviewModal,
 } from '../../components/admin/AdminModals';
 
@@ -36,6 +37,7 @@ export default function AdminDashboardScreen() {
   // Data states
   const [overview, setOverview] = useState(null);
   const [players, setPlayers] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [quests, setQuests] = useState([]);
   const [checkpoints, setCheckpoints] = useState([]);
   const [challenges, setChallenges] = useState([]);
@@ -57,6 +59,11 @@ export default function AdminDashboardScreen() {
   const [banModal, setBanModal] = useState(false);
   const [selectedPlayerToBan, setSelectedPlayerToBan] = useState(null);
   const [banReason, setBanReason] = useState('');
+
+  // Guild / Team Ban Modal
+  const [banTeamModal, setBanTeamModal] = useState(false);
+  const [selectedTeamToBan, setSelectedTeamToBan] = useState(null);
+  const [teamBanReason, setTeamBanReason] = useState('');
 
   // QR Preview Modal
   const [qrModal, setQrModal] = useState(false);
@@ -93,9 +100,10 @@ export default function AdminDashboardScreen() {
   const fetchAdminData = useCallback(async () => {
     try {
       setError('');
-      const [overviewRes, playersRes, questsRes, checkRes, challRes, subRes] = await Promise.all([
+      const [overviewRes, playersRes, teamsRes, questsRes, checkRes, challRes, subRes] = await Promise.all([
         api.get('/admin/overview'),
         api.get('/admin/players'),
+        api.get('/admin/teams'),
         api.get('/admin/quests'),
         api.get('/admin/checkpoints'),
         api.get('/admin/challenges'),
@@ -104,6 +112,7 @@ export default function AdminDashboardScreen() {
 
       setOverview(overviewRes);
       setPlayers(playersRes.players || []);
+      setTeams(teamsRes.teams || []);
       setQuests(questsRes.quests || []);
       setCheckpoints(checkRes.checkpoints || []);
       setChallenges(challRes.challenges || []);
@@ -207,6 +216,58 @@ export default function AdminDashboardScreen() {
       fetchAdminData();
     } catch (err) {
       Alert.alert('Error', err.message || 'Failed to kick player.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Guild / Team Ban & Disband Handlers
+  const handleOpenBanTeamModal = (team) => {
+    setSelectedTeamToBan(team);
+    setTeamBanReason('');
+    setBanTeamModal(true);
+  };
+
+  const handleConfirmBanTeam = async () => {
+    if (!selectedTeamToBan) return;
+    try {
+      setLoading(true);
+      await api.patch(`/admin/teams/${selectedTeamToBan._id}/status`, {
+        status: 'banned',
+        banReason: teamBanReason.trim(),
+      });
+      setBanTeamModal(false);
+      setSelectedTeamToBan(null);
+      setActionSuccess(`Guild "${selectedTeamToBan.name}" has been banned.`);
+      fetchAdminData();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to ban guild.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateTeamStatus = async (teamId, status, reason = '') => {
+    try {
+      setLoading(true);
+      await api.patch(`/admin/teams/${teamId}/status`, { status, banReason: reason });
+      setActionSuccess(`Guild status updated to ${status}.`);
+      fetchAdminData();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to update guild status.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTeam = async (teamId) => {
+    try {
+      setLoading(true);
+      const res = await api.delete(`/admin/teams/${teamId}`);
+      setActionSuccess(res.message || 'Guild disbanded and removed.');
+      fetchAdminData();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to disband guild.');
     } finally {
       setLoading(false);
     }
@@ -482,10 +543,14 @@ export default function AdminDashboardScreen() {
         {activeTab === 'players' && (
           <AdminPlayersTab
             players={players}
+            teams={teams}
             onUpdateStatus={handleUpdatePlayerStatus}
             onToggleRole={handleTogglePlayerRole}
             onKickPlayer={handleKickPlayer}
             onOpenBanModal={handleOpenBanModal}
+            onUpdateTeamStatus={handleUpdateTeamStatus}
+            onOpenBanTeamModal={handleOpenBanTeamModal}
+            onDeleteTeam={handleDeleteTeam}
             loading={loading}
           />
         )}
@@ -578,6 +643,15 @@ export default function AdminDashboardScreen() {
         player={selectedPlayerToBan}
         reason={banReason}
         setReason={setBanReason}
+      />
+
+      <BanGuildModal
+        visible={banTeamModal}
+        onClose={() => setBanTeamModal(false)}
+        onConfirm={handleConfirmBanTeam}
+        guild={selectedTeamToBan}
+        reason={teamBanReason}
+        setReason={setTeamBanReason}
       />
 
       <CheckpointQrPreviewModal

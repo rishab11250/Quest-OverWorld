@@ -23,6 +23,13 @@ const verifyCheckpoint = async (req, res) => {
         .json({ message: 'You must belong to an active party to verify checkpoints.' });
     }
 
+    if (team.isBanned || team.status === 'banned') {
+      return res.status(403).json({
+        message: `Guild "${team.name}" has been banned by the Guild Master Admin.${team.banReason ? ' Reason: ' + team.banReason : ''}`,
+        isBanned: true,
+      });
+    }
+
     if (!team.questId) {
       const defaultQuest = await Quest.findOne({ status: 'active' });
       if (!defaultQuest) {

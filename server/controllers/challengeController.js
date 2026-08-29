@@ -105,6 +105,13 @@ const submitChallenge = async (req, res) => {
         .json({ message: 'You must belong to an active party to submit challenges.' });
     }
 
+    if (team.isBanned || team.status === 'banned') {
+      return res.status(403).json({
+        message: `Guild "${team.name}" has been banned by the Guild Master Admin.${team.banReason ? ' Reason: ' + team.banReason : ''}`,
+        isBanned: true,
+      });
+    }
+
     const challenge = await Challenge.findById(req.params.id);
     if (!challenge || challenge.status !== 'active') {
       return res.status(404).json({ message: 'Challenge not found or no longer active.' });
@@ -302,6 +309,13 @@ const solveChallenge = async (req, res) => {
     const team = await Team.findOne({ members: req.user._id });
     if (!team) {
       return res.status(400).json({ message: 'You must belong to an active party to solve bounties.' });
+    }
+
+    if (team.isBanned || team.status === 'banned') {
+      return res.status(403).json({
+        message: `Guild "${team.name}" has been banned by the Guild Master Admin.${team.banReason ? ' Reason: ' + team.banReason : ''}`,
+        isBanned: true,
+      });
     }
 
     const challenge = await Challenge.findById(req.params.id);

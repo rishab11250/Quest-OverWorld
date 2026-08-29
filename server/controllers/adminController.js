@@ -427,10 +427,10 @@ const reseedDemoData = async (req, res) => {
     await Challenge.deleteMany({});
 
     const quest = await Quest.create({
-      name: 'The Legend of Old Campus',
+      name: 'The Chronicles of Parvat Patiya',
       description:
-        'Journey across landmark halls, statues, and ancient clocktowers to uncover the founding lore of Old Campus.',
-      campus: 'North Quadrant Campus',
+        'An ancient urban expedition across the historic squares, trading avenues, and garden plazas of Parvat Patiya, Surat.',
+      campus: 'Parvat Patiya Realm · Surat',
       totalPoints: 700,
       status: 'active',
     });
@@ -438,10 +438,10 @@ const reseedDemoData = async (req, res) => {
     const checkpoints = [
       {
         questId: quest._id,
-        title: 'The Great Oak of 1890',
-        clue: 'Seek the oldest living guardian of North Lawn where founding scholars met.',
-        latitude: 28.5458,
-        longitude: 77.1926,
+        title: 'Parvat Patiya Gateway Arch',
+        clue: 'Seek the grand gateway junction where the main avenue meets the eastern flyover arch. Behind the copper marker lies the secret beacon.',
+        latitude: 21.1796,
+        longitude: 72.8662,
         radius: 50,
         qrCode: crypto.randomBytes(8).toString('hex'),
         points: 100,
@@ -449,10 +449,10 @@ const reseedDemoData = async (req, res) => {
       },
       {
         questId: quest._id,
-        title: 'Belfry of the Grand Clock',
-        clue: 'Look to the high tower that chimes each hour without fail.',
-        latitude: 28.5465,
-        longitude: 77.1932,
+        title: 'Model Town Garden Plaza',
+        clue: 'Head northeast to where shady trees border the public garden square. Search near the stone seating pavilion.',
+        latitude: 21.1815,
+        longitude: 72.8685,
         radius: 50,
         qrCode: crypto.randomBytes(8).toString('hex'),
         points: 150,
@@ -460,10 +460,10 @@ const reseedDemoData = async (req, res) => {
       },
       {
         questId: quest._id,
-        title: 'Wisdom Fountain Plaza',
-        clue: 'Where fresh water flows in stone circles before the grand hall.',
-        latitude: 28.5472,
-        longitude: 77.1918,
+        title: 'Ambika Avenue Fountain Court',
+        clue: 'Where the twin avenues cross and tree shade cools the square. Look behind the western planter wall.',
+        latitude: 21.1775,
+        longitude: 72.864,
         radius: 50,
         qrCode: crypto.randomBytes(8).toString('hex'),
         points: 200,
@@ -471,10 +471,10 @@ const reseedDemoData = async (req, res) => {
       },
       {
         questId: quest._id,
-        title: 'Founders Memorial Crypt',
-        clue: 'Behind the bronze crest of the university architect.',
-        latitude: 28.548,
-        longitude: 77.194,
+        title: 'Surat Heritage Trading Vault',
+        clue: 'The final sigil marks the guild hall cornerstone. Locate the inscription by the grand entrance pillar.',
+        latitude: 21.183,
+        longitude: 72.8635,
         radius: 50,
         qrCode: crypto.randomBytes(8).toString('hex'),
         points: 250,
@@ -696,6 +696,94 @@ const kickPlayerFromTeam = async (req, res) => {
   }
 };
 
+// @desc    Get all teams/guilds with members, leader, quest, and status
+// @route   GET /api/admin/teams
+// @access  Private (Admin only)
+const getAllTeams = async (req, res) => {
+  try {
+    const teams = await Team.find({})
+      .populate('leader', 'name email status isBanned')
+      .populate('members', 'name email status isBanned')
+      .populate('questId', 'name campus totalPoints')
+      .sort({ score: -1, createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      teams,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error fetching teams' });
+  }
+};
+
+// @desc    Ban or unban a guild/team
+// @route   PATCH /api/admin/teams/:id/status
+// @access  Private (Admin only)
+const updateTeamStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, banReason = '' } = req.body;
+
+    if (!['active', 'banned'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status. Must be active or banned.' });
+    }
+
+    const isBanned = status === 'banned';
+    const team = await Team.findByIdAndUpdate(
+      id,
+      {
+        status,
+        isBanned,
+        bannedAt: isBanned ? new Date() : null,
+        banReason: isBanned ? banReason : '',
+      },
+      { new: true }
+    )
+      .populate('leader', 'name email')
+      .populate('members', 'name email')
+      .populate('questId', 'name campus');
+
+    if (!team) {
+      return res.status(404).json({ message: 'Guild not found.' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Guild "${team.name}" has been ${isBanned ? 'banned' : 'unbanned'}.`,
+      team,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error updating guild status' });
+  }
+};
+
+// @desc    Disband / remove a guild/team completely
+// @route   DELETE /api/admin/teams/:id
+// @access  Private (Admin only)
+const deleteTeam = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const team = await Team.findById(id);
+
+    if (!team) {
+      return res.status(404).json({ message: 'Guild not found.' });
+    }
+
+    // Unlink all members from this team
+    await User.updateMany({ teamId: team._id }, { $unset: { teamId: '' } });
+
+    // Delete team document
+    await Team.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      success: true,
+      message: `Guild "${team.name}" has been disbanded and removed.`,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error disbanding guild' });
+  }
+};
+
 module.exports = {
   getAdminOverview,
   getAllAdminQuests,
@@ -719,4 +807,7 @@ module.exports = {
   updatePlayerStatus,
   updatePlayerRole,
   kickPlayerFromTeam,
+  getAllTeams,
+  updateTeamStatus,
+  deleteTeam,
 };

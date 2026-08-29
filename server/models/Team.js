@@ -43,6 +43,24 @@ const teamSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    status: {
+      type: String,
+      enum: ['active', 'banned'],
+      default: 'active',
+    },
+    isBanned: {
+      type: Boolean,
+      default: false,
+    },
+    bannedAt: {
+      type: Date,
+      default: null,
+    },
+    banReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
   },
   {
     timestamps: true,

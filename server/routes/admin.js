@@ -25,6 +25,9 @@ const {
   updatePlayerStatus,
   updatePlayerRole,
   kickPlayerFromTeam,
+  getAllTeams,
+  updateTeamStatus,
+  deleteTeam,
 } = require('../controllers/adminController');
 
 // All admin routes require JWT auth and admin role
@@ -39,6 +42,11 @@ router.get('/players', getAllPlayers);
 router.patch('/players/:userId/status', updatePlayerStatus);
 router.patch('/players/:userId/role', updatePlayerRole);
 router.post('/players/:userId/kick', kickPlayerFromTeam);
+
+// Guild / Team Management
+router.get('/teams', getAllTeams);
+router.patch('/teams/:id/status', updateTeamStatus);
+router.delete('/teams/:id', deleteTeam);
 
 // Quests CRUD
 router.get('/quests', getAllAdminQuests);

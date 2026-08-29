@@ -54,6 +54,17 @@ export const getCurrentLocation = async () => {
       throw new Error(perm.error);
     }
 
+    // Fast path: instant return from device cache (< 30ms)
+    const lastKnown = await Location.getLastKnownPositionAsync();
+    if (lastKnown?.coords) {
+      return {
+        latitude: lastKnown.coords.latitude,
+        longitude: lastKnown.coords.longitude,
+        accuracy: lastKnown.coords.accuracy,
+      };
+    }
+
+    // Fallback: active GPS poll
     const location = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
     });
@@ -64,13 +75,8 @@ export const getCurrentLocation = async () => {
       accuracy: location.coords.accuracy,
     };
   } catch (error) {
-    // If device GPS is not ready/mocked, fallback to default campus anchor
-    console.warn('Location lookup fallback:', error.message);
-    return {
-      latitude: 28.5458,
-      longitude: 77.1926,
-      fallback: true,
-    };
+    console.warn('Location lookup error:', error.message);
+    return null;
   }
 };
 
