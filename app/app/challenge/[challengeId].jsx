@@ -30,20 +30,52 @@ export default function ChallengeDetailScreen() {
   const [photoUri, setPhotoUri] = useState(null);
   const [photoBase64, setPhotoBase64] = useState(null);
 
+  // Attempt & Cooldown states
+  const [attemptStatus, setAttemptStatus] = useState(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
   // Reward Modal state
   const [rewardVisible, setRewardVisible] = useState(false);
   const [rewardPoints, setRewardPoints] = useState(150);
+
+  // Countdown timer tick effect
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+
+    const timer = setInterval(() => {
+      setCooldownSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [cooldownSeconds]);
 
   const fetchChallenge = useCallback(async () => {
     if (!challengeId) return;
     try {
       setError('');
-      const data = await api.get(`/challenges/${challengeId}`);
-      setChallenge(data.challenge);
-      if (data.challenge?.submission) {
-        setTextResponse(data.challenge.submission.textResponse || '');
-        if (data.challenge.submission.photoUrl) {
-          setPhotoUri(data.challenge.submission.photoUrl);
+      const [challengeRes, attemptRes] = await Promise.all([
+        api.get(`/challenges/${challengeId}`),
+        api.get(`/challenges/${challengeId}/attempt-status`).catch(() => null),
+      ]);
+
+      setChallenge(challengeRes.challenge);
+      if (challengeRes.challenge?.submission) {
+        setTextResponse(challengeRes.challenge.submission.textResponse || '');
+        if (challengeRes.challenge.submission.photoUrl) {
+          setPhotoUri(challengeRes.challenge.submission.photoUrl);
+        }
+      }
+
+      if (attemptRes && attemptRes.isCapped) {
+        setAttemptStatus(attemptRes);
+        if (attemptRes.secondsRemaining > 0) {
+          setCooldownSeconds(attemptRes.secondsRemaining);
         }
       }
     } catch (err) {
@@ -114,12 +146,17 @@ export default function ChallengeDetailScreen() {
     setError('');
     setSuccessMsg('');
 
+    const isAutoTrivia =
+      challenge.verificationType === 'auto_answer' ||
+      challenge.category === 'trivia' ||
+      challenge.category === 'riddle';
+
     if (challenge.category === 'photo' && !photoBase64 && !photoUri) {
       setError('Please provide a photo submission.');
       return;
     }
 
-    if (challenge.verificationType === 'auto_answer' && !textResponse.trim()) {
+    if (isAutoTrivia && !textResponse.trim()) {
       setError('Please enter your answer.');
       return;
     }
@@ -127,22 +164,48 @@ export default function ChallengeDetailScreen() {
     setSubmitting(true);
 
     try {
-      const payload = {
-        textResponse: textResponse.trim(),
-        photoUrl: photoBase64 || photoUri || '',
-      };
+      if (isAutoTrivia) {
+        // Use Attempt-Capped Solve Endpoint
+        const res = await api.post(`/challenges/${challenge._id}/solve`, {
+          answer: textResponse.trim(),
+        });
 
-      const res = await api.post(`/challenges/${challenge._id}/submit`, payload);
-
-      if (res.approved) {
-        setRewardPoints(res.pointsAwarded || challenge.points);
-        setRewardVisible(true);
+        if (res.success && res.correct) {
+          setRewardPoints(res.awardedPoints || challenge.points);
+          setRewardVisible(true);
+        }
       } else {
-        setSuccessMsg(res.message || 'Submission sent for Guild review!');
-        fetchChallenge();
+        // Use Photo Submit Endpoint
+        const payload = {
+          textResponse: textResponse.trim(),
+          photoUrl: photoBase64 || photoUri || '',
+        };
+
+        const res = await api.post(`/challenges/${challenge._id}/submit`, payload);
+
+        if (res.approved) {
+          setRewardPoints(res.pointsAwarded || challenge.points);
+          setRewardVisible(true);
+        } else {
+          setSuccessMsg(res.message || 'Submission sent for Guild review!');
+          fetchChallenge();
+        }
       }
     } catch (err) {
-      setError(err.message || 'Failed to submit challenge.');
+      setError(err.message || 'Failed to submit answer.');
+
+      // If server returned cooldown (429 or attempt penalty)
+      if (err.secondsRemaining > 0) {
+        setCooldownSeconds(err.secondsRemaining);
+      }
+      if (err.attempts != null) {
+        setAttemptStatus((prev) => ({
+          ...prev,
+          attempts: err.attempts,
+          status: err.status || prev?.status || 'in_progress',
+          currentPointsPreview: err.nextPointsPreview || prev?.currentPointsPreview,
+        }));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -215,6 +278,8 @@ export default function ChallengeDetailScreen() {
             onPickPhoto={handlePickPhoto}
             onSubmit={handleSubmit}
             submitting={submitting}
+            attemptStatus={attemptStatus}
+            cooldownSeconds={cooldownSeconds}
           />
         </View>
       )}

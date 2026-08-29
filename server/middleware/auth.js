@@ -18,6 +18,15 @@ const protect = async (req, res, next) => {
         return res.status(401).json({ message: 'User not found' });
       }
 
+      if (req.user.isBanned || req.user.status === 'banned') {
+        return res.status(403).json({
+          message: req.user.banReason
+            ? `Your account has been banned: ${req.user.banReason}`
+            : 'Your account has been banned by the Guild Arch-Master.',
+          isBanned: true,
+        });
+      }
+
       return next();
     } catch (error) {
       return res.status(401).json({ message: 'Not authorized, token invalid or expired' });

@@ -79,6 +79,15 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    if (user.isBanned || user.status === 'banned') {
+      return res.status(403).json({
+        message: user.banReason
+          ? `Your account has been banned: ${user.banReason}`
+          : 'Your account has been banned by the Guild Arch-Master.',
+        isBanned: true,
+      });
+    }
+
     const token = generateToken(user);
 
     return res.status(200).json({
