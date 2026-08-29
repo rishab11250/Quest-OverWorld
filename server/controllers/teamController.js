@@ -156,10 +156,47 @@ const leaveTeam = async (req, res) => {
   }
 };
 
+// @desc    Update team name / settings
+// @route   PUT /api/teams/:id
+// @access  Private
+const updateTeam = async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: 'Team name is required' });
+    }
+
+    const team = await Team.findById(req.params.id);
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    // Check if requester is leader or admin
+    if (team.leader.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+      return res.status(403).json({ message: 'Only the party leader or admin can rename the guild' });
+    }
+
+    team.name = name.trim();
+    await team.save();
+
+    await team.populate('members', 'name email avatar');
+    await team.populate('leader', 'name email avatar');
+
+    return res.status(200).json({
+      success: true,
+      message: `Guild renamed to "${team.name}"`,
+      team,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error updating team' });
+  }
+};
+
 module.exports = {
   createTeam,
   joinTeam,
   getMyTeam,
   getTeamById,
   leaveTeam,
+  updateTeam,
 };

@@ -1,5 +1,6 @@
 const Challenge = require('../models/Challenge');
 const Submission = require('../models/Submission');
+const ChallengeAttempt = require('../models/ChallengeAttempt');
 const Team = require('../models/Team');
 const { uploadImage } = require('../utils/cloudinary');
 
