@@ -11,6 +11,7 @@ import StatusBanner from '../../components/StatusBanner';
 import AdminHeader from '../../components/admin/AdminHeader';
 import AdminBottomNav from '../../components/admin/AdminBottomNav';
 import AdminOverviewTab from '../../components/admin/AdminOverviewTab';
+import AdminPlayersTab from '../../components/admin/AdminPlayersTab';
 import AdminQuestsTab from '../../components/admin/AdminQuestsTab';
 import AdminBountiesTab from '../../components/admin/AdminBountiesTab';
 import AdminReviewsTab from '../../components/admin/AdminReviewsTab';
@@ -20,6 +21,8 @@ import {
   CreateCheckpointModal,
   CreateChallengeModal,
   RejectFeedbackModal,
+  BanPlayerModal,
+  CheckpointQrPreviewModal,
 } from '../../components/admin/AdminModals';
 
 export default function AdminDashboardScreen() {
@@ -32,6 +35,7 @@ export default function AdminDashboardScreen() {
 
   // Data states
   const [overview, setOverview] = useState(null);
+  const [players, setPlayers] = useState([]);
   const [quests, setQuests] = useState([]);
   const [checkpoints, setCheckpoints] = useState([]);
   const [challenges, setChallenges] = useState([]);
@@ -48,6 +52,16 @@ export default function AdminDashboardScreen() {
   const [rejectModal, setRejectModal] = useState(false);
   const [selectedSubId, setSelectedSubId] = useState(null);
   const [rejectFeedback, setRejectFeedback] = useState('');
+
+  // Player Ban Modal
+  const [banModal, setBanModal] = useState(false);
+  const [selectedPlayerToBan, setSelectedPlayerToBan] = useState(null);
+  const [banReason, setBanReason] = useState('');
+
+  // QR Preview Modal
+  const [qrModal, setQrModal] = useState(false);
+  const [previewQrCheckpoint, setPreviewQrCheckpoint] = useState(null);
+  const [previewQrImage, setPreviewQrImage] = useState(null);
 
   // Form states
   const [questForm, setQuestForm] = useState({
@@ -79,8 +93,9 @@ export default function AdminDashboardScreen() {
   const fetchAdminData = useCallback(async () => {
     try {
       setError('');
-      const [overviewRes, questsRes, checkRes, challRes, subRes] = await Promise.all([
+      const [overviewRes, playersRes, questsRes, checkRes, challRes, subRes] = await Promise.all([
         api.get('/admin/overview'),
+        api.get('/admin/players'),
         api.get('/admin/quests'),
         api.get('/admin/checkpoints'),
         api.get('/admin/challenges'),
@@ -88,6 +103,7 @@ export default function AdminDashboardScreen() {
       ]);
 
       setOverview(overviewRes);
+      setPlayers(playersRes.players || []);
       setQuests(questsRes.quests || []);
       setCheckpoints(checkRes.checkpoints || []);
       setChallenges(challRes.challenges || []);
@@ -129,6 +145,70 @@ export default function AdminDashboardScreen() {
       setHealthStatus(`🔴 Server Offline — ${err.message}`);
     } finally {
       setPingLoading(false);
+    }
+  };
+
+  const handleOpenBanModal = (player) => {
+    setSelectedPlayerToBan(player);
+    setBanReason('');
+    setBanModal(true);
+  };
+
+  const handleConfirmBan = async () => {
+    if (!selectedPlayerToBan) return;
+    try {
+      setLoading(true);
+      await api.patch(`/admin/players/${selectedPlayerToBan._id}/status`, {
+        status: 'banned',
+        banReason: banReason.trim(),
+      });
+      setBanModal(false);
+      setSelectedPlayerToBan(null);
+      setActionSuccess(`Player ${selectedPlayerToBan.name} has been banned.`);
+      fetchAdminData();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to ban player.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePlayerStatus = async (userId, status, reason = '') => {
+    try {
+      setLoading(true);
+      await api.patch(`/admin/players/${userId}/status`, { status, banReason: reason });
+      setActionSuccess(`Player status updated to ${status}.`);
+      fetchAdminData();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to update player status.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTogglePlayerRole = async (userId, isAdmin) => {
+    try {
+      setLoading(true);
+      await api.patch(`/admin/players/${userId}/role`, { isAdmin });
+      setActionSuccess(`Player role updated.`);
+      fetchAdminData();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to update player role.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKickPlayer = async (userId) => {
+    try {
+      setLoading(true);
+      const res = await api.post(`/admin/players/${userId}/kick`);
+      setActionSuccess(res.message || 'Player kicked from party.');
+      fetchAdminData();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to kick player.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -196,28 +276,57 @@ export default function AdminDashboardScreen() {
   };
 
   const handleCreateCheckpoint = async () => {
-    if (!checkpointForm.questId || !checkpointForm.title.trim() || !checkpointForm.qrCode.trim()) {
-      Alert.alert('Error', 'Quest, title, and QR code are required.');
+    if (!checkpointForm.questId || !checkpointForm.title.trim()) {
+      Alert.alert('Error', 'Quest and title are required.');
       return;
     }
+
+    const lat = parseFloat(checkpointForm.latitude);
+    const lon = parseFloat(checkpointForm.longitude);
+    if (isNaN(lat) || isNaN(lon)) {
+      Alert.alert('Physical Location Required', 'Please drop a pin on the interactive campus map to set the exact GPS coordinates.');
+      return;
+    }
+
     try {
       setLoading(true);
-      await api.post('/admin/checkpoints', {
+      const res = await api.post('/admin/checkpoints', {
         questId: checkpointForm.questId,
         title: checkpointForm.title.trim(),
         clue: checkpointForm.clue.trim(),
-        latitude: parseFloat(checkpointForm.latitude),
-        longitude: parseFloat(checkpointForm.longitude),
+        latitude: lat,
+        longitude: lon,
         radius: parseInt(checkpointForm.radius, 10) || 50,
-        qrCode: checkpointForm.qrCode.trim(),
         points: parseInt(checkpointForm.points, 10) || 100,
         order: parseInt(checkpointForm.order, 10) || 1,
       });
+
       setCheckpointModal(false);
-      setActionSuccess('Checkpoint added!');
+      setActionSuccess('Checkpoint station beacon created with secure QR code!');
       fetchAdminData();
+
+      // Show the generated QR Code Preview Modal immediately
+      if (res.checkpoint && res.qrImage) {
+        setPreviewQrCheckpoint(res.checkpoint);
+        setPreviewQrImage(res.qrImage);
+        setQrModal(true);
+      }
     } catch (err) {
       Alert.alert('Error', err.message || 'Failed to create checkpoint.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewCheckpointQr = async (checkpoint) => {
+    try {
+      setLoading(true);
+      const res = await api.get(`/admin/checkpoints/${checkpoint._id}/qr`);
+      setPreviewQrCheckpoint(res.checkpoint || checkpoint);
+      setPreviewQrImage(res.qrImage);
+      setQrModal(true);
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to load QR code.');
     } finally {
       setLoading(false);
     }
@@ -310,6 +419,19 @@ export default function AdminDashboardScreen() {
     }
   };
 
+  const handleOpenCreateCheckpoint = () => {
+    const nextOrder = (checkpoints?.length || 0) + 1;
+    setCheckpointForm((prev) => ({
+      ...prev,
+      title: '',
+      clue: '',
+      qrCode: `QST-CHK-0${nextOrder}`,
+      order: String(nextOrder),
+      points: '100',
+    }));
+    setCheckpointModal(true);
+  };
+
   if (loading && !refreshing) {
     return <LoadingScreen message="Loading Admin Operations Console..." />;
   }
@@ -357,14 +479,26 @@ export default function AdminDashboardScreen() {
           />
         )}
 
+        {activeTab === 'players' && (
+          <AdminPlayersTab
+            players={players}
+            onUpdateStatus={handleUpdatePlayerStatus}
+            onToggleRole={handleTogglePlayerRole}
+            onKickPlayer={handleKickPlayer}
+            onOpenBanModal={handleOpenBanModal}
+            loading={loading}
+          />
+        )}
+
         {activeTab === 'quests' && (
           <AdminQuestsTab
             quests={quests}
             checkpoints={checkpoints}
             onOpenCreateQuest={() => setQuestModal(true)}
-            onOpenCreateCheckpoint={() => setCheckpointModal(true)}
+            onOpenCreateCheckpoint={handleOpenCreateCheckpoint}
             onDeleteQuest={handleDeleteQuest}
             onDeleteCheckpoint={handleDeleteCheckpoint}
+            onViewQr={handleViewCheckpointQr}
           />
         )}
 
@@ -408,6 +542,8 @@ export default function AdminDashboardScreen() {
         onSave={handleCreateQuest}
         form={questForm}
         setForm={setQuestForm}
+        existingCheckpoints={checkpoints}
+        existingQuests={quests}
       />
 
       <CreateCheckpointModal
@@ -416,6 +552,7 @@ export default function AdminDashboardScreen() {
         onSave={handleCreateCheckpoint}
         form={checkpointForm}
         setForm={setCheckpointForm}
+        existingCheckpoints={checkpoints}
       />
 
       <CreateChallengeModal
@@ -432,6 +569,22 @@ export default function AdminDashboardScreen() {
         onConfirm={handleConfirmReject}
         feedback={rejectFeedback}
         setFeedback={setRejectFeedback}
+      />
+
+      <BanPlayerModal
+        visible={banModal}
+        onClose={() => setBanModal(false)}
+        onConfirm={handleConfirmBan}
+        player={selectedPlayerToBan}
+        reason={banReason}
+        setReason={setBanReason}
+      />
+
+      <CheckpointQrPreviewModal
+        visible={qrModal}
+        onClose={() => setQrModal(false)}
+        checkpoint={previewQrCheckpoint}
+        qrImage={previewQrImage}
       />
     </View>
   );

@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+const QRCode = require('qrcode');
 const Quest = require('../models/Quest');
 const Checkpoint = require('../models/Checkpoint');
 const Challenge = require('../models/Challenge');
@@ -140,18 +142,37 @@ const getAllAdminCheckpoints = async (req, res) => {
 
 const createCheckpoint = async (req, res) => {
   try {
-    const { questId, title, clue, latitude, longitude, radius, qrCode, points, order } = req.body;
+    const { questId, title, clue, latitude, longitude, radius, points, order } = req.body;
     if (
       !questId ||
       !title ||
       !clue ||
       latitude == null ||
       longitude == null ||
-      !qrCode ||
       order == null
     ) {
       return res.status(400).json({ message: 'Please provide all required checkpoint fields.' });
     }
+
+    const numericOrder = Number(order);
+    const existing = await Checkpoint.findOne({ questId, order: numericOrder });
+    if (existing) {
+      const highestCheckpoint = await Checkpoint.findOne({ questId }).sort({ order: -1 });
+      const nextOrder = (highestCheckpoint?.order || 0) + 1;
+      return res.status(400).json({
+        message: `Station #${numericOrder} already exists ("${existing.title}"). Please use Station #${nextOrder}.`,
+      });
+    }
+
+    // Auto-generate random, unpredictable crypto token (completely decoupled from order)
+    const generatedToken = crypto.randomBytes(8).toString('hex');
+
+    // Generate scannable QR Data URL image
+    const qrImage = await QRCode.toDataURL(generatedToken, {
+      width: 400,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' },
+    });
 
     const checkpoint = await Checkpoint.create({
       questId,
@@ -160,27 +181,91 @@ const createCheckpoint = async (req, res) => {
       latitude,
       longitude,
       radius: radius || 50,
-      qrCode,
+      qrCode: generatedToken,
       points: points || 100,
-      order,
+      order: numericOrder,
     });
 
     // Update quest checkpoints array
     await Quest.findByIdAndUpdate(questId, { $push: { checkpoints: checkpoint._id } });
 
-    return res.status(201).json({ success: true, checkpoint });
+    return res.status(201).json({
+      success: true,
+      checkpoint,
+      qrImage,
+      qrToken: generatedToken,
+      message: `Checkpoint station #${numericOrder} created with auto-generated QR code.`,
+    });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message: `A station with this order number already exists in this quest.`,
+      });
+    }
     return res.status(500).json({ message: error.message || 'Server error creating checkpoint' });
   }
 };
 
 const updateCheckpoint = async (req, res) => {
   try {
-    const checkpoint = await Checkpoint.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updateData = { ...req.body };
+
+    let generatedToken = null;
+    let qrImage = null;
+
+    if (req.body.regenerateQr) {
+      generatedToken = crypto.randomBytes(8).toString('hex');
+      updateData.qrCode = generatedToken;
+    }
+
+    const checkpoint = await Checkpoint.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!checkpoint) return res.status(404).json({ message: 'Checkpoint not found' });
-    return res.status(200).json({ success: true, checkpoint });
+
+    if (checkpoint.qrCode) {
+      qrImage = await QRCode.toDataURL(checkpoint.qrCode, {
+        width: 400,
+        margin: 2,
+        color: { dark: '#000000', light: '#ffffff' },
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      checkpoint,
+      qrImage,
+      qrToken: checkpoint.qrCode,
+      message: req.body.regenerateQr
+        ? 'Checkpoint updated and new QR code generated.'
+        : 'Checkpoint updated.',
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message || 'Server error updating checkpoint' });
+  }
+};
+
+const getCheckpointQr = async (req, res) => {
+  try {
+    const checkpoint = await Checkpoint.findById(req.params.id);
+    if (!checkpoint) return res.status(404).json({ message: 'Checkpoint not found' });
+
+    const qrImage = await QRCode.toDataURL(checkpoint.qrCode, {
+      width: 400,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+
+    return res.status(200).json({
+      success: true,
+      checkpoint: {
+        _id: checkpoint._id,
+        title: checkpoint.title,
+        order: checkpoint.order,
+        qrCode: checkpoint.qrCode,
+      },
+      qrImage,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error generating QR code' });
   }
 };
 
@@ -358,7 +443,7 @@ const reseedDemoData = async (req, res) => {
         latitude: 28.5458,
         longitude: 77.1926,
         radius: 50,
-        qrCode: 'QST-CHK-01-OAK',
+        qrCode: crypto.randomBytes(8).toString('hex'),
         points: 100,
         order: 1,
       },
@@ -369,7 +454,7 @@ const reseedDemoData = async (req, res) => {
         latitude: 28.5465,
         longitude: 77.1932,
         radius: 50,
-        qrCode: 'QST-CHK-02-CLOCK',
+        qrCode: crypto.randomBytes(8).toString('hex'),
         points: 150,
         order: 2,
       },
@@ -380,18 +465,18 @@ const reseedDemoData = async (req, res) => {
         latitude: 28.5472,
         longitude: 77.1918,
         radius: 50,
-        qrCode: 'QST-CHK-03-FOUNTAIN',
+        qrCode: crypto.randomBytes(8).toString('hex'),
         points: 200,
         order: 3,
       },
       {
         questId: quest._id,
-        title: 'Founders Memorial Hall',
-        clue: 'The bronze plaque engraved with the names of the original arch-guild masters.',
+        title: 'Founders Memorial Crypt',
+        clue: 'Behind the bronze crest of the university architect.',
         latitude: 28.548,
         longitude: 77.194,
         radius: 50,
-        qrCode: 'QST-CHK-04-FOUNDERS',
+        qrCode: crypto.randomBytes(8).toString('hex'),
         points: 250,
         order: 4,
       },
@@ -452,6 +537,165 @@ const reseedDemoData = async (req, res) => {
   }
 };
 
+// ================= PLAYER / ADVENTURER MANAGEMENT ================= //
+
+// @desc    Get all players with team and stats
+// @route   GET /api/admin/players
+// @access  Private (Admin)
+const getAllPlayers = async (req, res) => {
+  try {
+    const users = await User.find().select('-passwordHash').sort({ createdAt: -1 });
+    const teams = await Team.find().select('name code score leader members');
+
+    const players = users.map((u) => {
+      const userTeam = teams.find((t) =>
+        t.members.some((m) => m.toString() === u._id.toString())
+      );
+      const isLeader = userTeam && userTeam.leader.toString() === u._id.toString();
+
+      return {
+        _id: u._id,
+        name: u.name,
+        email: u.email,
+        avatar: u.avatar,
+        isAdmin: u.isAdmin,
+        isBanned: u.isBanned || u.status === 'banned',
+        status: u.status || 'active',
+        banReason: u.banReason || '',
+        createdAt: u.createdAt,
+        team: userTeam
+          ? {
+              _id: userTeam._id,
+              name: userTeam.name,
+              code: userTeam.code,
+              score: userTeam.score,
+              isLeader,
+            }
+          : null,
+      };
+    });
+
+    return res.status(200).json({ success: true, players });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error fetching players' });
+  }
+};
+
+// @desc    Update player status (active, suspended, banned)
+// @route   PATCH /api/admin/players/:userId/status
+// @access  Private (Admin)
+const updatePlayerStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status, banReason } = req.body;
+
+    if (!['active', 'suspended', 'banned'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status. Must be active, suspended, or banned.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Player not found' });
+    }
+
+    // Protect Arch-Master from banning themselves
+    if (user._id.toString() === req.user._id.toString() && status === 'banned') {
+      return res.status(400).json({ message: 'You cannot ban your own administrator account.' });
+    }
+
+    user.status = status;
+    user.isBanned = status === 'banned';
+    user.banReason = status === 'banned' ? (banReason || 'Administrative penalty') : '';
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Player status updated to ${status}.`,
+      player: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        status: user.status,
+        isBanned: user.isBanned,
+        banReason: user.banReason,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error updating player status' });
+  }
+};
+
+// @desc    Toggle player admin role
+// @route   PATCH /api/admin/players/:userId/role
+// @access  Private (Admin)
+const updatePlayerRole = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { isAdmin } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Player not found' });
+    }
+
+    if (user._id.toString() === req.user._id.toString() && !isAdmin) {
+      return res.status(400).json({ message: 'You cannot revoke your own administrator privileges.' });
+    }
+
+    user.isAdmin = !!isAdmin;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Player ${user.name} is now ${user.isAdmin ? 'an Administrator' : 'a Standard Adventurer'}.`,
+      player: {
+        _id: user._id,
+        name: user.name,
+        isAdmin: user.isAdmin,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error updating player role' });
+  }
+};
+
+// @desc    Kick player from team
+// @route   POST /api/admin/players/:userId/kick
+// @access  Private (Admin)
+const kickPlayerFromTeam = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Player not found' });
+    }
+
+    const team = await Team.findOne({ members: userId });
+    if (!team) {
+      return res.status(400).json({ message: 'Player is not in any team.' });
+    }
+
+    team.members = team.members.filter((m) => m.toString() !== userId.toString());
+
+    if (team.members.length === 0) {
+      await Team.findByIdAndDelete(team._id);
+    } else {
+      if (team.leader.toString() === userId.toString()) {
+        team.leader = team.members[0];
+      }
+      await team.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Player ${user.name} has been removed from party ${team.name}.`,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error kicking player' });
+  }
+};
+
 module.exports = {
   getAdminOverview,
   getAllAdminQuests,
@@ -461,6 +705,7 @@ module.exports = {
   getAllAdminCheckpoints,
   createCheckpoint,
   updateCheckpoint,
+  getCheckpointQr,
   deleteCheckpoint,
   getAllAdminChallenges,
   createChallenge,
@@ -470,4 +715,8 @@ module.exports = {
   approveSubmission,
   rejectSubmission,
   reseedDemoData,
+  getAllPlayers,
+  updatePlayerStatus,
+  updatePlayerRole,
+  kickPlayerFromTeam,
 };

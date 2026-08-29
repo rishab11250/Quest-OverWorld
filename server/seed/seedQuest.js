@@ -4,6 +4,8 @@ const Quest = require('../models/Quest');
 const Checkpoint = require('../models/Checkpoint');
 const Team = require('../models/Team');
 
+const crypto = require('crypto');
+
 const sampleQuest = {
   name: 'The Legend of Old Campus',
   description:
@@ -21,7 +23,7 @@ const sampleCheckpoints = [
     latitude: 28.5458,
     longitude: 77.1926,
     radius: 50,
-    qrCode: 'QST-CHK-01-OAK',
+    qrCode: crypto.randomBytes(8).toString('hex'),
     points: 100,
   },
   {
@@ -31,7 +33,7 @@ const sampleCheckpoints = [
     latitude: 28.5465,
     longitude: 77.1932,
     radius: 50,
-    qrCode: 'QST-CHK-02-CLOCK',
+    qrCode: crypto.randomBytes(8).toString('hex'),
     points: 150,
   },
   {
@@ -41,7 +43,7 @@ const sampleCheckpoints = [
     latitude: 28.5472,
     longitude: 77.1918,
     radius: 50,
-    qrCode: 'QST-CHK-03-FOUNTAIN',
+    qrCode: crypto.randomBytes(8).toString('hex'),
     points: 200,
   },
   {
@@ -51,7 +53,7 @@ const sampleCheckpoints = [
     latitude: 28.548,
     longitude: 77.194,
     radius: 50,
-    qrCode: 'QST-CHK-04-FOUNDERS',
+    qrCode: crypto.randomBytes(8).toString('hex'),
     points: 250,
   },
 ];

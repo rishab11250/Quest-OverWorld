@@ -1,19 +1,48 @@
+import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+import AdminLocationPickerMap from './AdminLocationPickerMap';
+import PixelCard from '../PixelCard';
 
 export default function AdminQuestsTab({
-  quests,
-  checkpoints,
+  quests = [],
+  checkpoints = [],
   onOpenCreateQuest,
   onOpenCreateCheckpoint,
   onDeleteQuest,
   onDeleteCheckpoint,
+  onViewQr,
 }) {
+  const [selectedMapPoint, setSelectedMapPoint] = useState(null);
+
   return (
     <View style={styles.container}>
+      {/* Interactive Realm Topo Map Header */}
+      <PixelCard variant="gold" style={styles.mapSectionCard}>
+        <View style={styles.mapSectionHeader}>
+          <View>
+            <Text style={styles.mapSectionTitle}>CAMPUS REALM TOPO MAP</Text>
+            <Text style={styles.mapSectionSub}>
+              {checkpoints.length} Stations & {quests.length} Active Expeditions Placed
+            </Text>
+          </View>
+          <View style={styles.mapBadge}>
+            <MaterialCommunityIcons name="map-check" size={14} color={colors.accent.gold} />
+            <Text style={styles.mapBadgeText}>LIVE GPS</Text>
+          </View>
+        </View>
+
+        <AdminLocationPickerMap
+          selectedLocation={selectedMapPoint}
+          onLocationChange={setSelectedMapPoint}
+          existingCheckpoints={checkpoints}
+          existingQuests={quests}
+          readOnly={true}
+        />
+      </PixelCard>
       {/* Quests Manager */}
       <View style={styles.cardSection}>
         <View style={styles.sectionHeaderRow}>
@@ -92,10 +121,15 @@ export default function AdminQuestsTab({
             </View>
 
             <View style={styles.checkpointFooter}>
-              <View style={styles.qrPill}>
+              <TouchableOpacity
+                style={styles.qrPill}
+                onPress={() => onViewQr && onViewQr(cp)}
+                activeOpacity={0.8}
+              >
                 <MaterialCommunityIcons name="qrcode" size={14} color={colors.accent.gold} />
-                <Text style={styles.qrPillText}>{cp.qrCode}</Text>
-              </View>
+                <Text style={styles.qrPillText}>View / Print QR Code</Text>
+                <MaterialCommunityIcons name="open-in-new" size={12} color={colors.accent.gold} />
+              </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => onDeleteCheckpoint(cp._id)}
@@ -118,6 +152,44 @@ export default function AdminQuestsTab({
 const styles = StyleSheet.create({
   container: {
     gap: spacing.md,
+  },
+  mapSectionCard: {
+    backgroundColor: colors.bg.duskRaised,
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  mapSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  mapSectionTitle: {
+    ...typography.displayPixelXs,
+    fontSize: 9.5,
+    color: colors.accent.gold,
+    letterSpacing: 1.2,
+  },
+  mapSectionSub: {
+    ...typography.caption,
+    color: colors.text.onDark.secondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  mapBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(242, 200, 75, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
+    gap: 4,
+  },
+  mapBadgeText: {
+    ...typography.displayPixelXs,
+    fontSize: 7.5,
+    color: colors.accent.gold,
   },
   cardSection: {
     gap: spacing.sm,

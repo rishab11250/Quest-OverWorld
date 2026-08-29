@@ -11,6 +11,7 @@ const {
   getAllAdminCheckpoints,
   createCheckpoint,
   updateCheckpoint,
+  getCheckpointQr,
   deleteCheckpoint,
   getAllAdminChallenges,
   createChallenge,
@@ -20,6 +21,10 @@ const {
   approveSubmission,
   rejectSubmission,
   reseedDemoData,
+  getAllPlayers,
+  updatePlayerStatus,
+  updatePlayerRole,
+  kickPlayerFromTeam,
 } = require('../controllers/adminController');
 
 // All admin routes require JWT auth and admin role
@@ -28,6 +33,12 @@ router.use(requireAdmin);
 
 // Overview
 router.get('/overview', getAdminOverview);
+
+// Player / Adventurer Management
+router.get('/players', getAllPlayers);
+router.patch('/players/:userId/status', updatePlayerStatus);
+router.patch('/players/:userId/role', updatePlayerRole);
+router.post('/players/:userId/kick', kickPlayerFromTeam);
 
 // Quests CRUD
 router.get('/quests', getAllAdminQuests);
@@ -38,6 +49,7 @@ router.delete('/quests/:id', deleteQuest);
 // Checkpoints CRUD
 router.get('/checkpoints', getAllAdminCheckpoints);
 router.post('/checkpoints', createCheckpoint);
+router.get('/checkpoints/:id/qr', getCheckpointQr);
 router.put('/checkpoints/:id', updateCheckpoint);
 router.delete('/checkpoints/:id', deleteCheckpoint);
 
