@@ -168,24 +168,25 @@ export default function HomeScreen() {
             <View style={styles.roadmapHeader}>
               <Text style={styles.roadmapTitle}>EXPEDITION WAYPOINTS</Text>
               <Text style={styles.roadmapSub}>
-                {Math.min(quest?.currentOrder - 1, 4)} / {quest?.totalCheckpoints || 4} CLEARED
+                {Math.max(0, Math.min((quest?.currentOrder || 1) - 1, quest?.totalCheckpoints || 0))} / {quest?.totalCheckpoints || 0} CLEARED
               </Text>
             </View>
 
             <View style={styles.waypointList}>
-              {[
-                { order: 1, name: 'North Quad Landmark', points: 100 },
-                { order: 2, name: 'Clocktower Steps', points: 150 },
-                { order: 3, name: 'Alumni Waters Fountain', points: 200 },
-                { order: 4, name: 'Founders Vault Arch', points: 250 },
-              ].map((wp) => {
+              {(quest?.checkpoints && quest.checkpoints.length > 0
+                ? quest.checkpoints
+                : quest?.currentClue
+                ? [quest.currentClue]
+                : []
+              ).map((wp) => {
                 const isCleared = wp.order < (quest?.currentOrder || 1);
                 const isActive = wp.order === (quest?.currentOrder || 1);
                 const isLocked = wp.order > (quest?.currentOrder || 1);
+                const waypointTitle = wp.title || wp.name || `Station #${wp.order}`;
 
                 return (
                   <View
-                    key={wp.order}
+                    key={wp._id || wp.order}
                     style={[
                       styles.waypointRow,
                       isActive && styles.waypointRowActive,
@@ -213,17 +214,18 @@ export default function HomeScreen() {
                         />
                       </View>
 
-                      <View>
+                      <View style={{ flex: 1 }}>
                         <Text
                           style={[
                             styles.waypointName,
                             isActive && styles.waypointNameActive,
                             isCleared && styles.waypointNameCleared,
                           ]}
+                          numberOfLines={1}
                         >
-                          #{wp.order} · {wp.name}
+                          #{wp.order} · {waypointTitle}
                         </Text>
-                        <Text style={styles.waypointPoints}>+{wp.points} PTS</Text>
+                        <Text style={styles.waypointPoints}>+{wp.points || 0} PTS</Text>
                       </View>
                     </View>
 

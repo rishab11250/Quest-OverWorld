@@ -432,36 +432,46 @@ export default function AdminLocationPickerMap({
 
       {/* Selected Coordinates & Perimeter Radius Selector */}
       <View style={styles.coordBar}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.coordLabel}>TARGET POINT GPS (CENTER CROSSHAIR)</Text>
+        {/* Row 1: Target Point GPS Coordinates */}
+        <View style={styles.coordHeaderRow}>
+          <View style={styles.coordLabelGroup}>
+            <MaterialCommunityIcons name="crosshairs" size={13} color={colors.accent.gold} />
+            <Text style={styles.coordLabel}>TARGET POINT GPS</Text>
+          </View>
           <Text style={styles.coordValue}>
             {center.latitude.toFixed(6)}, {center.longitude.toFixed(6)}
           </Text>
         </View>
 
+        {/* Row 2: Geofence Detection Radius Options */}
         {!readOnly && onRadiusChange ? (
-          <View style={styles.radiusSelector}>
-            <Text style={styles.radiusLabel}>GEOFENCE:</Text>
-            {[25, 50, 100].map((r) => (
-              <TouchableOpacity
-                key={r}
-                style={[styles.radiusPill, radius === r && styles.radiusPillActive]}
-                onPress={() => {
-                  triggerHaptic('selection');
-                  onRadiusChange(r);
-                }}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[
-                    styles.radiusPillText,
-                    radius === r && styles.radiusPillTextActive,
-                  ]}
+          <View style={styles.geofenceRow}>
+            <View style={styles.geofenceLabelGroup}>
+              <MaterialCommunityIcons name="radius-outline" size={13} color={colors.text.onDark.secondary} />
+              <Text style={styles.radiusLabel}>GEOFENCE RADIUS:</Text>
+            </View>
+            <View style={styles.radiusButtonGroup}>
+              {[25, 50, 100].map((r) => (
+                <TouchableOpacity
+                  key={r}
+                  style={[styles.radiusPill, radius === r && styles.radiusPillActive]}
+                  onPress={() => {
+                    triggerHaptic('selection');
+                    onRadiusChange(r);
+                  }}
+                  activeOpacity={0.8}
                 >
-                  ±{r}m
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.radiusPillText,
+                      radius === r && styles.radiusPillTextActive,
+                    ]}
+                  >
+                    ±{r}m
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         ) : null}
       </View>
@@ -775,41 +785,64 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   coordBar: {
+    backgroundColor: '#1E1A33',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#3D3560',
+    gap: 8,
+    marginTop: 4,
+  },
+  coordHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1E1A33',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#3D3560',
-    marginTop: 2,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(61, 53, 96, 0.6)',
+  },
+  coordLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   coordLabel: {
     ...typography.displayPixelXs,
-    fontSize: 7,
+    fontSize: 7.5,
     color: colors.accent.gold,
+    letterSpacing: 0.5,
   },
   coordValue: {
-    ...typography.bodyMdBold,
+    ...typography.bodySmBold,
     fontSize: 11,
     color: '#FFF',
   },
-  radiusSelector: {
+  geofenceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  geofenceLabelGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
   radiusLabel: {
     ...typography.caption,
-    fontSize: 9,
+    fontSize: 9.5,
     color: colors.text.onDark.secondary,
+    fontWeight: '700',
+  },
+  radiusButtonGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   radiusPill: {
-    backgroundColor: '#262040',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    backgroundColor: '#171326',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 4,
     borderWidth: 1,
     borderColor: '#4A4170',
@@ -820,12 +853,13 @@ const styles = StyleSheet.create({
   },
   radiusPillText: {
     ...typography.caption,
-    fontSize: 9,
+    fontSize: 9.5,
     fontWeight: '800',
     color: colors.text.onDark.secondary,
   },
   radiusPillTextActive: {
     color: '#FFF',
+    fontWeight: '900',
   },
   stationInfoCard: {
     backgroundColor: '#171326',

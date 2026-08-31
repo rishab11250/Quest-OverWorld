@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+import * as Clipboard from 'expo-clipboard';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
@@ -13,24 +16,7 @@ export function CreateQuestModal({
   onSave,
   form,
   setForm,
-  existingCheckpoints = [],
-  existingQuests = [],
 }) {
-  const selectedLoc = form.latitude && form.longitude ? {
-    latitude: Number(form.latitude),
-    longitude: Number(form.longitude),
-    landmarkName: form.campus || '',
-  } : null;
-
-  const handleLocationChange = (coords) => {
-    setForm((prev) => ({
-      ...prev,
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      campus: coords.landmarkName || prev.campus,
-    }));
-  };
-
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalOverlay}>
@@ -38,24 +24,12 @@ export function CreateQuestModal({
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
             <View style={styles.modalHeaderRow}>
               <View>
-                <Text style={styles.modalTitle}>Create New Campus Quest</Text>
-                <Text style={styles.modalSub}>Configure quest realm, territory, and objectives</Text>
+                <Text style={styles.modalTitle}>Create New Quest</Text>
+                <Text style={styles.modalSub}>Define the expedition name, lore, and point budget</Text>
               </View>
               <TouchableOpacity onPress={onClose}>
                 <MaterialCommunityIcons name="close" size={20} color={colors.text.onDark.secondary} />
               </TouchableOpacity>
-            </View>
-
-            {/* Interactive Territory Map */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.inputLabel}>PRIMARY REALM TERRITORY & EXISTING CHECKPOINTS</Text>
-              <AdminLocationPickerMap
-                selectedLocation={selectedLoc}
-                onLocationChange={handleLocationChange}
-                existingCheckpoints={existingCheckpoints}
-                existingQuests={existingQuests}
-                readOnly={false}
-              />
             </View>
 
             <View style={styles.fieldGroup}>
@@ -72,7 +46,7 @@ export function CreateQuestModal({
             <View style={styles.fieldGroup}>
               <Text style={styles.inputLabel}>LORE & EXPEDITION BRIEFING</Text>
               <TextInput
-                style={[styles.input, { height: 65 }]}
+                style={[styles.input, { height: 80 }]}
                 placeholder="Uncover hidden relics across the ancient quad..."
                 placeholderTextColor="#7E75A0"
                 multiline
@@ -82,11 +56,11 @@ export function CreateQuestModal({
             </View>
 
             <View style={styles.inlineInputs}>
-              <View style={[styles.fieldGroup, { flex: 1.2 }]}>
-                <Text style={styles.inputLabel}>CAMPUS ZONE</Text>
+              <View style={[styles.fieldGroup, { flex: 1.4 }]}>
+                <Text style={styles.inputLabel}>CAMPUS / ZONE LABEL</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Main Quad Campus"
+                  placeholder="e.g. Main Campus · North Block"
                   placeholderTextColor="#7E75A0"
                   value={form.campus}
                   onChangeText={(t) => setForm({ ...form, campus: t })}
@@ -106,6 +80,13 @@ export function CreateQuestModal({
               </View>
             </View>
 
+            <View style={styles.questInfoNote}>
+              <MaterialCommunityIcons name="information-outline" size={14} color={colors.text.onDark.secondary} />
+              <Text style={styles.questInfoNoteText}>
+                GPS checkpoint locations are set per-station, not per-quest. Add stations after creating this quest.
+              </Text>
+            </View>
+
             <View style={styles.modalBtnRow}>
               <TouchableOpacity style={styles.modalCancel} onPress={onClose}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
@@ -121,6 +102,7 @@ export function CreateQuestModal({
   );
 }
 
+
 export function CreateCheckpointModal({
   visible,
   onClose,
@@ -128,6 +110,8 @@ export function CreateCheckpointModal({
   form,
   setForm,
   existingCheckpoints = [],
+  quests = [],
+  onOpenCreateQuest,
 }) {
   const [modalStep, setModalStep] = useState('map'); // 'map' or 'details'
 
@@ -178,14 +162,15 @@ export function CreateCheckpointModal({
                   triggerHaptic('light');
                   setModalStep('map');
                 }}
+                activeOpacity={0.8}
               >
                 <MaterialCommunityIcons
-                  name="map-marker-radius"
-                  size={14}
+                  name="crosshairs-gps"
+                  size={15}
                   color={modalStep === 'map' ? colors.accent.gold : colors.text.onDark.secondary}
                 />
                 <Text style={[styles.stepTabText, modalStep === 'map' && styles.stepTabTextActive]}>
-                  1. MAP LOCATION
+                  1. MAP PIN
                 </Text>
               </TouchableOpacity>
 
@@ -195,21 +180,22 @@ export function CreateCheckpointModal({
                   triggerHaptic('light');
                   setModalStep('details');
                 }}
+                activeOpacity={0.8}
               >
                 <MaterialCommunityIcons
                   name="file-document-edit-outline"
-                  size={14}
+                  size={15}
                   color={modalStep === 'details' ? colors.accent.gold : colors.text.onDark.secondary}
                 />
                 <Text style={[styles.stepTabText, modalStep === 'details' && styles.stepTabTextActive]}>
-                  2. DETAILS & CLUES
+                  2. CLUES & QR
                 </Text>
               </TouchableOpacity>
             </View>
 
             {modalStep === 'map' ? (
               <View style={{ gap: spacing.xs }}>
-                <Text style={styles.inputLabel}>INTERACTIVE CAMPUS PIN DROP (TAP ANYWHERE)</Text>
+                <Text style={styles.inputLabel}>CAMPUS MAP PIN (TAP OR DRAG TARGET)</Text>
                 <AdminLocationPickerMap
                   selectedLocation={selectedLoc}
                   onLocationChange={handleLocationChange}
@@ -240,6 +226,57 @@ export function CreateCheckpointModal({
                   <TouchableOpacity onPress={() => setModalStep('map')}>
                     <Text style={styles.changeLocLink}>Change</Text>
                   </TouchableOpacity>
+                </View>
+
+                {/* Quest Assignment Selector */}
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.inputLabel}>ATTACH TO QUEST EXPEDITION</Text>
+                  {quests && quests.length > 0 ? (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.questPickerRow}
+                    >
+                      {quests.map((q) => {
+                        const isSelected = form.questId === q._id;
+                        return (
+                          <TouchableOpacity
+                            key={q._id}
+                            style={[
+                              styles.questPickerChip,
+                              isSelected && styles.questPickerChipActive,
+                            ]}
+                            onPress={() => {
+                              triggerHaptic('selection');
+                              setForm((prev) => ({ ...prev, questId: q._id }));
+                            }}
+                            activeOpacity={0.8}
+                          >
+                            <MaterialCommunityIcons
+                              name={isSelected ? 'shield-check' : 'shield-outline'}
+                              size={14}
+                              color={isSelected ? colors.accent.gold : colors.text.onDark.secondary}
+                            />
+                            <Text
+                              style={[
+                                styles.questPickerChipText,
+                                isSelected && styles.questPickerChipTextActive,
+                              ]}
+                            >
+                              {q.name}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  ) : (
+                    <View style={styles.noQuestNoticeBox}>
+                      <MaterialCommunityIcons name="alert-circle-outline" size={16} color={colors.accent.coral} />
+                      <Text style={styles.noQuestNoticeText}>
+                        No quests created yet. Please create a quest first before adding stations.
+                      </Text>
+                    </View>
+                  )}
                 </View>
 
                 <View style={styles.fieldGroup}>
@@ -323,7 +360,61 @@ export function CreateCheckpointModal({
 }
 
 export function CheckpointQrPreviewModal({ visible, onClose, checkpoint, qrImage }) {
+  const [copied, setCopied] = useState(false);
+  const [sharing, setSharing] = useState(false);
+
   if (!checkpoint) return null;
+
+  const handleShareQrImage = async () => {
+    if (!qrImage) {
+      Alert.alert('QR Not Ready', 'QR image is still loading. Please try again.');
+      return;
+    }
+    try {
+      setSharing(true);
+      triggerHaptic('light');
+
+      // Strip data URI prefix if present
+      const base64Data = qrImage.includes('base64,')
+        ? qrImage.split('base64,')[1]
+        : qrImage;
+
+      const safeOrder = checkpoint.order || 1;
+      const safeToken = checkpoint.qrCode || 'beacon';
+      const fileUri = `${FileSystem.cacheDirectory}quest_beacon_station_${safeOrder}_${safeToken}.png`;
+
+      await FileSystem.writeAsStringAsync(fileUri, base64Data, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'image/png',
+          dialogTitle: `Save / Print QR Beacon: ${checkpoint.title}`,
+          UTI: 'public.png',
+        });
+      } else {
+        Alert.alert('Download Ready', `QR Beacon saved to: ${fileUri}`);
+      }
+    } catch (err) {
+      Alert.alert('Export Failed', err.message || 'Could not export QR beacon image.');
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const handleCopyToken = async () => {
+    if (!checkpoint.qrCode) return;
+    try {
+      triggerHaptic('selection');
+      await Clipboard.setStringAsync(checkpoint.qrCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch (err) {
+      console.error('Clipboard copy failed:', err);
+    }
+  };
 
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -345,21 +436,50 @@ export function CheckpointQrPreviewModal({ visible, onClose, checkpoint, qrImage
             </View>
           )}
 
-          {/* Token String */}
-          <View style={styles.tokenPill}>
-            <Text style={styles.tokenLabel}>PAYLOAD TOKEN:</Text>
+          {/* Token String & Copy Button */}
+          <TouchableOpacity
+            style={styles.tokenPill}
+            onPress={handleCopyToken}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons
+              name={copied ? 'check-bold' : 'content-copy'}
+              size={14}
+              color={copied ? colors.accent.green : colors.accent.gold}
+            />
+            <Text style={styles.tokenLabel}>TOKEN:</Text>
             <Text style={styles.tokenVal} numberOfLines={1}>
               {checkpoint.qrCode || 'AUTO-GENERATED'}
             </Text>
-          </View>
+            <Text style={[styles.copyHintText, copied && { color: colors.accent.green }]}>
+              {copied ? 'COPIED!' : 'TAP TO COPY'}
+            </Text>
+          </TouchableOpacity>
 
           <Text style={styles.qrPrintTip}>
-            Print or display this beacon physically at the checkpoint GPS location.
+            Save, print, or post this QR beacon at the physical GPS station.
           </Text>
 
-          <View style={[styles.modalBtnRow, { width: '100%' }]}>
-            <TouchableOpacity style={styles.modalSave} onPress={onClose}>
-              <Text style={styles.modalSaveText}>Done / Dismiss</Text>
+          {/* QR Action Buttons: Download/Share & Close */}
+          <View style={[styles.modalBtnRow, { width: '100%', gap: 8 }]}>
+            <TouchableOpacity
+              style={styles.qrShareBtn}
+              onPress={handleShareQrImage}
+              disabled={sharing}
+              activeOpacity={0.8}
+            >
+              {sharing ? (
+                <ActivityIndicator size="small" color="#000" />
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <MaterialCommunityIcons name="download" size={16} color="#000" />
+                  <Text style={styles.qrShareBtnText}>Save / Share QR</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.modalCancel} onPress={onClose}>
+              <Text style={styles.modalCancelText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -646,11 +766,11 @@ const styles = StyleSheet.create({
   stepTabRow: {
     flexDirection: 'row',
     backgroundColor: '#171326',
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#3D3560',
-    padding: 3,
-    gap: 4,
+    padding: 4,
+    gap: 6,
     marginBottom: 6,
   },
   stepTabBtn: {
@@ -658,9 +778,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 6,
-    borderRadius: 4,
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: 5,
   },
   stepTabBtnActive: {
     backgroundColor: 'rgba(242, 200, 75, 0.2)',
@@ -669,7 +789,7 @@ const styles = StyleSheet.create({
   },
   stepTabText: {
     ...typography.displayPixelXs,
-    fontSize: 8,
+    fontSize: 8.5,
     color: colors.text.onDark.secondary,
   },
   stepTabTextActive: {
@@ -699,6 +819,69 @@ const styles = StyleSheet.create({
     color: colors.accent.gold,
     fontWeight: 'bold',
     textDecorationLine: 'underline',
+  },
+  questInfoNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: 'rgba(126, 117, 160, 0.12)',
+    padding: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(61, 53, 96, 0.8)',
+  },
+  questInfoNoteText: {
+    ...typography.caption,
+    fontSize: 10,
+    color: colors.text.onDark.secondary,
+    flex: 1,
+    lineHeight: 14,
+  },
+  questPickerRow: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingVertical: 2,
+  },
+  questPickerChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#1E1A33',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#3D3560',
+  },
+  questPickerChipActive: {
+    backgroundColor: 'rgba(242, 200, 75, 0.18)',
+    borderColor: colors.accent.gold,
+  },
+  questPickerChipText: {
+    ...typography.caption,
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: colors.text.onDark.secondary,
+  },
+  questPickerChipTextActive: {
+    color: colors.accent.gold,
+    fontWeight: '800',
+  },
+  noQuestNoticeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(232, 102, 75, 0.12)',
+    padding: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(232, 102, 75, 0.3)',
+  },
+  noQuestNoticeText: {
+    ...typography.caption,
+    fontSize: 10,
+    color: colors.accent.coral,
+    flex: 1,
   },
   fieldGroup: {
     gap: 3,
@@ -811,6 +994,27 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     color: colors.accent.green,
     fontWeight: '900',
+    flex: 1,
+  },
+  copyHintText: {
+    ...typography.caption,
+    fontSize: 8,
+    color: colors.accent.gold,
+    fontWeight: '800',
+  },
+  qrShareBtn: {
+    flex: 1.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accent.gold,
+    paddingVertical: spacing.md,
+    borderRadius: 6,
+  },
+  qrShareBtnText: {
+    ...typography.bodyMd,
+    fontWeight: '800',
+    color: colors.bg.dusk,
   },
   qrPrintTip: {
     ...typography.caption,

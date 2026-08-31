@@ -528,14 +528,17 @@ export default function AdminDashboardScreen() {
 
   const handleOpenCreateCheckpoint = () => {
     const nextOrder = (checkpoints?.length || 0) + 1;
-    setCheckpointForm((prev) => ({
-      ...prev,
+    setCheckpointForm({
+      questId: '',
       title: '',
       clue: '',
-      qrCode: `QST-CHK-0${nextOrder}`,
-      order: String(nextOrder),
+      latitude: '',
+      longitude: '',
+      radius: '50',
+      qrCode: '',
       points: '100',
-    }));
+      order: String(nextOrder),
+    });
     setCheckpointModal(true);
   };
 
@@ -665,6 +668,7 @@ export default function AdminDashboardScreen() {
         form={checkpointForm}
         setForm={setCheckpointForm}
         existingCheckpoints={checkpoints}
+        quests={quests}
       />
 
       <CreateChallengeModal
