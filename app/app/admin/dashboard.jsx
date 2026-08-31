@@ -22,6 +22,7 @@ import {
   CreateChallengeModal,
   RejectFeedbackModal,
   BanPlayerModal,
+  DeletePlayerModal,
   BanGuildModal,
   CheckpointQrPreviewModal,
 } from '../../components/admin/AdminModals';
@@ -59,6 +60,10 @@ export default function AdminDashboardScreen() {
   const [banModal, setBanModal] = useState(false);
   const [selectedPlayerToBan, setSelectedPlayerToBan] = useState(null);
   const [banReason, setBanReason] = useState('');
+
+  // Player Delete Modal
+  const [deletePlayerModal, setDeletePlayerModal] = useState(false);
+  const [selectedPlayerToDelete, setSelectedPlayerToDelete] = useState(null);
 
   // Guild / Team Ban Modal
   const [banTeamModal, setBanTeamModal] = useState(false);
@@ -236,6 +241,27 @@ export default function AdminDashboardScreen() {
       fetchAdminData();
     } catch (err) {
       Alert.alert('Error', err.message || 'Failed to kick player.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenDeletePlayerModal = (player) => {
+    setSelectedPlayerToDelete(player);
+    setDeletePlayerModal(true);
+  };
+
+  const handleConfirmDeletePlayer = async () => {
+    if (!selectedPlayerToDelete) return;
+    try {
+      setLoading(true);
+      const res = await api.delete(`/admin/players/${selectedPlayerToDelete._id}`);
+      setDeletePlayerModal(false);
+      setSelectedPlayerToDelete(null);
+      setActionSuccess(res.message || 'Player has been permanently deleted.');
+      fetchAdminData();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to delete player.');
     } finally {
       setLoading(false);
     }
@@ -568,6 +594,7 @@ export default function AdminDashboardScreen() {
             onToggleRole={handleTogglePlayerRole}
             onKickPlayer={handleKickPlayer}
             onOpenBanModal={handleOpenBanModal}
+            onOpenDeletePlayerModal={handleOpenDeletePlayerModal}
             onUpdateTeamStatus={handleUpdateTeamStatus}
             onOpenBanTeamModal={handleOpenBanTeamModal}
             onDeleteTeam={handleDeleteTeam}
@@ -663,6 +690,14 @@ export default function AdminDashboardScreen() {
         player={selectedPlayerToBan}
         reason={banReason}
         setReason={setBanReason}
+      />
+
+      <DeletePlayerModal
+        visible={deletePlayerModal}
+        onClose={() => setDeletePlayerModal(false)}
+        onConfirm={handleConfirmDeletePlayer}
+        player={selectedPlayerToDelete}
+        loading={loading}
       />
 
       <BanGuildModal

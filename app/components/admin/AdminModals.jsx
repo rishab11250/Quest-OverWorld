@@ -492,6 +492,87 @@ export function BanPlayerModal({ visible, onClose, onConfirm, player, reason, se
   );
 }
 
+export function DeletePlayerModal({ visible, onClose, onConfirm, player, loading = false }) {
+  if (!player) return null;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalCard, styles.deleteModalCard]}>
+          {/* Header Warning Tag */}
+          <View style={styles.deleteHeaderBadge}>
+            <MaterialCommunityIcons name="alert-octagon" size={15} color={colors.accent.coral} />
+            <Text style={styles.deleteHeaderBadgeText}>PERMANENT DELETION</Text>
+          </View>
+
+          <Text style={[styles.modalTitle, { color: colors.accent.coral, marginTop: 4 }]}>
+            Delete Adventurer
+          </Text>
+
+          <Text style={styles.modalSub}>
+            You are about to permanently delete this player from the game.
+          </Text>
+
+          {/* Player Identity Details */}
+          <View style={styles.deletePlayerCard}>
+            <View style={styles.deleteAvatarBox}>
+              <Text style={styles.deleteAvatarText}>
+                {(player.name || 'A').charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.deletePlayerName}>{player.name}</Text>
+              <Text style={styles.deletePlayerEmail}>{player.email}</Text>
+              <View style={{ flexDirection: 'row', gap: 6, marginTop: 5, flexWrap: 'wrap' }}>
+                <View style={styles.deletePill}>
+                  <Text style={styles.deletePillText}>
+                    GUILD: {player.team ? player.team.name : 'None'}
+                  </Text>
+                </View>
+                <View style={[styles.deletePill, { borderColor: 'rgba(232, 102, 75, 0.4)' }]}>
+                  <Text style={[styles.deletePillText, { color: colors.accent.coral }]}>
+                    BANNED
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Warning Callout Box */}
+          <View style={styles.deleteWarningBox}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={16} color={colors.accent.coral} />
+            <Text style={styles.deleteWarningText}>
+              This will permanently delete their account, game progress, and remove them from all guilds. This cannot be undone.
+            </Text>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.modalBtnRow}>
+            <TouchableOpacity style={styles.modalCancel} onPress={onClose} disabled={loading}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalSave, { backgroundColor: colors.accent.coral }]}
+              onPress={onConfirm}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <MaterialCommunityIcons name="trash-can-outline" size={16} color="#FFF" />
+                  <Text style={[styles.modalSaveText, { color: '#FFF' }]}>Delete Player</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export function BanGuildModal({ visible, onClose, onConfirm, guild, reason, setReason }) {
   if (!guild) return null;
 
@@ -737,5 +818,93 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 11,
     marginVertical: 4,
+  },
+  deleteModalCard: {
+    borderColor: 'rgba(232, 102, 75, 0.6)',
+    backgroundColor: '#191528',
+  },
+  deleteHeaderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    backgroundColor: 'rgba(232, 102, 75, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.accent.coral,
+  },
+  deleteHeaderBadgeText: {
+    ...typography.displayPixelXs,
+    fontSize: 7.5,
+    color: colors.accent.coral,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  deletePlayerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#130F20',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#3D3560',
+  },
+  deleteAvatarBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: 'rgba(232, 102, 75, 0.18)',
+    borderWidth: 1.5,
+    borderColor: colors.accent.coral,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteAvatarText: {
+    ...typography.headingLg,
+    color: colors.accent.coral,
+    fontWeight: '900',
+  },
+  deletePlayerName: {
+    ...typography.bodyMdBold,
+    color: colors.text.onDark.primary,
+    fontSize: 14,
+  },
+  deletePlayerEmail: {
+    ...typography.caption,
+    color: colors.text.onDark.secondary,
+    fontSize: 11,
+  },
+  deletePill: {
+    backgroundColor: '#1E1A33',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#3D3560',
+  },
+  deletePillText: {
+    ...typography.displayPixelXs,
+    fontSize: 7,
+    color: colors.text.onDark.secondary,
+  },
+  deleteWarningBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: 'rgba(232, 102, 75, 0.12)',
+    padding: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(232, 102, 75, 0.3)',
+  },
+  deleteWarningText: {
+    ...typography.bodySm,
+    fontSize: 11,
+    color: colors.accent.coral,
+    flex: 1,
+    lineHeight: 16,
   },
 });

@@ -14,6 +14,7 @@ export default function AdminPlayersTab({
   onToggleRole,
   onKickPlayer,
   onOpenBanModal,
+  onOpenDeletePlayerModal,
   onUpdateTeamStatus,
   onOpenBanTeamModal,
   onDeleteTeam,
@@ -23,7 +24,7 @@ export default function AdminPlayersTab({
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('ALL'); // ALL, ACTIVE, BANNED
 
-  // Filtered Players
+  // Filtered Players - Banned players are isolated to the BANNED tab
   const filteredPlayers = players.filter((p) => {
     const matchesSearch =
       (p.name && p.name.toLowerCase().includes(search.toLowerCase())) ||
@@ -32,9 +33,10 @@ export default function AdminPlayersTab({
 
     if (!matchesSearch) return false;
 
-    if (filter === 'ACTIVE') return p.status === 'active' && !p.isBanned;
+    if (filter === 'ALL') return !p.isBanned && p.status !== 'banned';
+    if (filter === 'PLAYERS') return !p.isAdmin && !p.isBanned && p.status !== 'banned';
     if (filter === 'BANNED') return p.isBanned || p.status === 'banned';
-    if (filter === 'ADMINS') return p.isAdmin;
+    if (filter === 'ADMIN' || filter === 'ADMINS') return p.isAdmin && !p.isBanned && p.status !== 'banned';
     return true;
   });
 
@@ -52,6 +54,7 @@ export default function AdminPlayersTab({
     if (filter === 'DISBANDED') return t.isDisbanded || t.status === 'disbanded';
     return true;
   });
+
 
   const handleConfirmDisband = (team) => {
     Alert.alert(
@@ -171,7 +174,7 @@ export default function AdminPlayersTab({
 
       {/* Filter Tabs */}
       <View style={styles.filterRow}>
-        {(sectionMode === 'GUILDS' ? ['ALL', 'ACTIVE', 'BANNED', 'DISBANDED'] : ['ALL', 'ACTIVE', 'BANNED', 'ADMINS']).map(
+        {(sectionMode === 'GUILDS' ? ['ALL', 'ACTIVE', 'BANNED', 'DISBANDED'] : ['ALL', 'PLAYERS', 'BANNED', 'ADMIN']).map(
           (f) => (
             <TouchableOpacity
               key={f}
@@ -192,9 +195,10 @@ export default function AdminPlayersTab({
                       return true;
                     }).length
                   : players.filter((p) => {
-                      if (f === 'ACTIVE') return p.status === 'active' && !p.isBanned;
+                      if (f === 'ALL') return !p.isBanned && p.status !== 'banned';
+                      if (f === 'PLAYERS') return !p.isAdmin && !p.isBanned && p.status !== 'banned';
                       if (f === 'BANNED') return p.isBanned || p.status === 'banned';
-                      if (f === 'ADMINS') return p.isAdmin;
+                      if (f === 'ADMIN') return p.isAdmin && !p.isBanned && p.status !== 'banned';
                       return true;
                     }).length}
                 )
@@ -480,62 +484,80 @@ export default function AdminPlayersTab({
                   {/* Actions Row */}
                   <View style={styles.actionRow}>
                     {isBanned ? (
-                      <TouchableOpacity
-                        style={styles.unbanBtn}
-                        onPress={() => {
-                          triggerHaptic('medium');
-                          onUpdateStatus(player._id, 'active');
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <MaterialCommunityIcons name="lock-open-outline" size={14} color="#FFF" />
-                        <Text style={styles.unbanBtnText}>Unban Player</Text>
-                      </TouchableOpacity>
+                      <>
+                        <TouchableOpacity
+                          style={styles.unbanBtn}
+                          onPress={() => {
+                            triggerHaptic('medium');
+                            onUpdateStatus(player._id, 'active');
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <MaterialCommunityIcons name="lock-open-outline" size={14} color="#000" />
+                          <Text style={styles.unbanBtnText}>Unban Player</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.purgePlayerBtn}
+                          onPress={() => {
+                            triggerHaptic('warning');
+                            if (onOpenDeletePlayerModal) {
+                              onOpenDeletePlayerModal(player);
+                            }
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <MaterialCommunityIcons name="trash-can-outline" size={14} color={colors.accent.coral} />
+                          <Text style={styles.purgePlayerBtnText}>Delete Player</Text>
+                        </TouchableOpacity>
+                      </>
                     ) : (
-                      <TouchableOpacity
-                        style={styles.banBtn}
-                        onPress={() => {
-                          triggerHaptic('light');
-                          onOpenBanModal(player);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <MaterialCommunityIcons name="cancel" size={14} color={colors.accent.coral} />
-                        <Text style={styles.banBtnText}>Ban Player</Text>
-                      </TouchableOpacity>
+                      <>
+                        <TouchableOpacity
+                          style={styles.banBtn}
+                          onPress={() => {
+                            triggerHaptic('light');
+                            onOpenBanModal(player);
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <MaterialCommunityIcons name="cancel" size={14} color={colors.accent.coral} />
+                          <Text style={styles.banBtnText}>Ban Player</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.roleBtn}
+                          onPress={() => {
+                            triggerHaptic('selection');
+                            onToggleRole(player._id, !player.isAdmin);
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <MaterialCommunityIcons
+                            name={player.isAdmin ? 'shield-remove-outline' : 'shield-crown-outline'}
+                            size={14}
+                            color={colors.accent.gold}
+                          />
+                          <Text style={styles.roleBtnText}>
+                            {player.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {player.team ? (
+                          <TouchableOpacity
+                            style={styles.kickBtn}
+                            onPress={() => {
+                              triggerHaptic('medium');
+                              onKickPlayer(player._id);
+                            }}
+                            activeOpacity={0.8}
+                          >
+                            <MaterialCommunityIcons name="account-minus-outline" size={14} color={colors.accent.coral} />
+                            <Text style={styles.kickBtnText}>Kick</Text>
+                          </TouchableOpacity>
+                        ) : null}
+                      </>
                     )}
-
-                    <TouchableOpacity
-                      style={styles.roleBtn}
-                      onPress={() => {
-                        triggerHaptic('selection');
-                        onToggleRole(player._id, !player.isAdmin);
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <MaterialCommunityIcons
-                        name={player.isAdmin ? 'shield-remove-outline' : 'shield-crown-outline'}
-                        size={14}
-                        color={colors.accent.gold}
-                      />
-                      <Text style={styles.roleBtnText}>
-                        {player.isAdmin ? 'Revoke Admin' : 'Make Admin'}
-                      </Text>
-                    </TouchableOpacity>
-
-                    {player.team ? (
-                      <TouchableOpacity
-                        style={styles.kickBtn}
-                        onPress={() => {
-                          triggerHaptic('medium');
-                          onKickPlayer(player._id);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <MaterialCommunityIcons name="account-minus-outline" size={14} color={colors.accent.coral} />
-                        <Text style={styles.kickBtnText}>Kick Party</Text>
-                      </TouchableOpacity>
-                    ) : null}
                   </View>
                 </PixelCard>
               );
@@ -979,6 +1001,24 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     color: '#000',
+  },
+  purgePlayerBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(232, 102, 75, 0.15)',
+    paddingVertical: 6,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.accent.coral,
+  },
+  purgePlayerBtnText: {
+    ...typography.caption,
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.accent.coral,
   },
   roleBtn: {
     flex: 1.2,

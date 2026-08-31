@@ -25,6 +25,7 @@ const {
   updatePlayerStatus,
   updatePlayerRole,
   kickPlayerFromTeam,
+  deletePlayer,
   getAllTeams,
   updateTeamStatus,
   deleteTeam,
@@ -42,6 +43,7 @@ router.get('/players', getAllPlayers);
 router.patch('/players/:userId/status', updatePlayerStatus);
 router.patch('/players/:userId/role', updatePlayerRole);
 router.post('/players/:userId/kick', kickPlayerFromTeam);
+router.delete('/players/:userId', deletePlayer);
 
 // Guild / Team Management
 router.get('/teams', getAllTeams);

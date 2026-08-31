@@ -696,6 +696,56 @@ const kickPlayerFromTeam = async (req, res) => {
   }
 };
 
+// @desc    Permanently delete a player from database (ONLY if banned)
+// @route   DELETE /api/admin/players/:userId
+// @access  Private (Admin)
+const deletePlayer = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Prevent Arch-Master from deleting own account
+    if (userId.toString() === req.user._id.toString()) {
+      return res.status(400).json({ message: 'You cannot delete your own administrator account.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Player not found' });
+    }
+
+    // Security: Only banned players can be permanently deleted
+    if (!user.isBanned && user.status !== 'banned') {
+      return res.status(400).json({
+        message: 'Only banned players can be removed from the database. Please ban the player first before deleting.',
+      });
+    }
+
+    // Unlink player from any teams
+    const teams = await Team.find({ members: userId });
+    for (const team of teams) {
+      team.members = team.members.filter((m) => m.toString() !== userId.toString());
+      if (team.members.length === 0) {
+        await Team.findByIdAndDelete(team._id);
+      } else {
+        if (team.leader.toString() === userId.toString()) {
+          team.leader = team.members[0];
+        }
+        await team.save();
+      }
+    }
+
+    // Delete player from database
+    await User.findByIdAndDelete(userId);
+
+    return res.status(200).json({
+      success: true,
+      message: `Player "${user.name}" has been permanently deleted.`,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error deleting player' });
+  }
+};
+
 // @desc    Get all teams/guilds with members, leader, quest, and status
 // @route   GET /api/admin/teams
 // @access  Private (Admin only)
@@ -822,6 +872,7 @@ module.exports = {
   updatePlayerStatus,
   updatePlayerRole,
   kickPlayerFromTeam,
+  deletePlayer,
   getAllTeams,
   updateTeamStatus,
   deleteTeam,
