@@ -47,15 +47,16 @@ export default function AdminPlayersTab({
 
     if (!matchesSearch) return false;
 
-    if (filter === 'ACTIVE') return t.status === 'active' && !t.isBanned;
+    if (filter === 'ACTIVE') return t.status === 'active' && !t.isBanned && !t.isDisbanded;
     if (filter === 'BANNED') return t.isBanned || t.status === 'banned';
+    if (filter === 'DISBANDED') return t.isDisbanded || t.status === 'disbanded';
     return true;
   });
 
   const handleConfirmDisband = (team) => {
     Alert.alert(
       'Disband Guild Party',
-      `Are you sure you want to completely disband "${team.name}"? All ${team.members?.length || 0} members will be unlinked from this party.`,
+      `Are you sure you want to disband "${team.name}"? All ${team.members?.length || 0} members will be unlinked and this party will be moved to Disbanded records.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -63,7 +64,25 @@ export default function AdminPlayersTab({
           style: 'destructive',
           onPress: () => {
             triggerHaptic('medium');
-            onDeleteTeam(team._id);
+            onDeleteTeam(team._id, false);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleConfirmPurge = (team) => {
+    Alert.alert(
+      'Permanently Purge Guild',
+      `Are you sure you want to permanently delete "${team.name}" from database records? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Purge Permanently',
+          style: 'destructive',
+          onPress: () => {
+            triggerHaptic('heavy');
+            onDeleteTeam(team._id, true);
           },
         },
       ]
@@ -152,7 +171,7 @@ export default function AdminPlayersTab({
 
       {/* Filter Tabs */}
       <View style={styles.filterRow}>
-        {(sectionMode === 'GUILDS' ? ['ALL', 'ACTIVE', 'BANNED'] : ['ALL', 'ACTIVE', 'BANNED', 'ADMINS']).map(
+        {(sectionMode === 'GUILDS' ? ['ALL', 'ACTIVE', 'BANNED', 'DISBANDED'] : ['ALL', 'ACTIVE', 'BANNED', 'ADMINS']).map(
           (f) => (
             <TouchableOpacity
               key={f}
@@ -167,8 +186,9 @@ export default function AdminPlayersTab({
                 {f} (
                 {sectionMode === 'GUILDS'
                   ? teams.filter((t) => {
-                      if (f === 'ACTIVE') return t.status === 'active' && !t.isBanned;
+                      if (f === 'ACTIVE') return t.status === 'active' && !t.isBanned && !t.isDisbanded;
                       if (f === 'BANNED') return t.isBanned || t.status === 'banned';
+                      if (f === 'DISBANDED') return t.isDisbanded || t.status === 'disbanded';
                       return true;
                     }).length
                   : players.filter((p) => {
@@ -195,29 +215,30 @@ export default function AdminPlayersTab({
         filteredTeams.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>No Guild Parties Found</Text>
-            <Text style={styles.emptySub}>No active or registered guilds match your filter.</Text>
+            <Text style={styles.emptySub}>No active, banned, or disbanded guilds match your filter.</Text>
           </View>
         ) : (
           <View style={styles.list}>
             {filteredTeams.map((team) => {
               const isBanned = team.isBanned || team.status === 'banned';
+              const isDisbanded = team.isDisbanded || team.status === 'disbanded';
 
               return (
                 <PixelCard
                   key={team._id}
-                  variant={isBanned ? 'coral' : 'gold'}
-                  style={styles.guildCard}
+                  variant={isDisbanded ? 'dusk' : isBanned ? 'coral' : 'gold'}
+                  style={[styles.guildCard, isDisbanded && styles.guildCardDisbanded]}
                 >
                   {/* Top Row: Guild Name + Code + Status */}
                   <View style={styles.guildTopRow}>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <MaterialCommunityIcons
-                          name="shield-sword"
+                          name={isDisbanded ? 'shield-off-outline' : 'shield-sword'}
                           size={18}
-                          color={isBanned ? colors.accent.coral : colors.accent.gold}
+                          color={isDisbanded ? colors.text.onDark.secondary : isBanned ? colors.accent.coral : colors.accent.gold}
                         />
-                        <Text style={styles.guildTitle}>{team.name}</Text>
+                        <Text style={[styles.guildTitle, isDisbanded && styles.guildTitleDisbanded]}>{team.name}</Text>
                       </View>
                       <Text style={styles.guildCode}>PARTY CODE: #{team.code}</Text>
                     </View>
@@ -225,16 +246,16 @@ export default function AdminPlayersTab({
                     <View
                       style={[
                         styles.statusBadge,
-                        isBanned ? styles.badgeBanned : styles.badgeActive,
+                        isDisbanded ? styles.badgeDisbanded : isBanned ? styles.badgeBanned : styles.badgeActive,
                       ]}
                     >
                       <Text
                         style={[
                           styles.statusBadgeText,
-                          isBanned ? styles.badgeTextBanned : styles.badgeTextActive,
+                          isDisbanded ? styles.badgeTextDisbanded : isBanned ? styles.badgeTextBanned : styles.badgeTextActive,
                         ]}
                       >
-                        {isBanned ? 'BANNED' : 'ACTIVE'}
+                        {isDisbanded ? 'DISBANDED' : isBanned ? 'BANNED' : 'ACTIVE'}
                       </Text>
                     </View>
                   </View>
@@ -249,7 +270,7 @@ export default function AdminPlayersTab({
                     </View>
                     <View style={styles.telemetryItem}>
                       <Text style={styles.telemetryLabel}>EXPEDITION XP</Text>
-                      <Text style={[styles.telemetryVal, { color: colors.accent.green }]}>
+                      <Text style={[styles.telemetryVal, { color: isDisbanded ? colors.text.onDark.secondary : colors.accent.green }]}>
                         {team.score || 0} PTS
                       </Text>
                     </View>
@@ -285,50 +306,86 @@ export default function AdminPlayersTab({
                     </View>
                   ) : null}
 
-                  {/* Ban Notice */}
+                  {/* Ban or Disband Notice */}
                   {isBanned && team.banReason ? (
                     <View style={styles.banNoticeBox}>
                       <MaterialCommunityIcons name="alert-circle-outline" size={14} color={colors.accent.coral} />
-                      <Text style={styles.banNoticeText}>Reason: {team.banReason}</Text>
+                      <Text style={styles.banNoticeText}>Ban Reason: {team.banReason}</Text>
                     </View>
                   ) : null}
 
-                  {/* Guild Actions: Ban / Unban & Disband */}
-                  <View style={styles.guildActionRow}>
-                    {isBanned ? (
-                      <TouchableOpacity
-                        style={styles.unbanBtn}
-                        onPress={() => {
-                          triggerHaptic('medium');
-                          onUpdateTeamStatus(team._id, 'active');
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <MaterialCommunityIcons name="lock-open-outline" size={14} color="#FFF" />
-                        <Text style={styles.unbanBtnText}>Unban Guild</Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <TouchableOpacity
-                        style={styles.banBtn}
-                        onPress={() => {
-                          triggerHaptic('light');
-                          onOpenBanTeamModal(team);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <MaterialCommunityIcons name="cancel" size={14} color={colors.accent.coral} />
-                        <Text style={styles.banBtnText}>Ban Guild</Text>
-                      </TouchableOpacity>
-                    )}
+                  {isDisbanded ? (
+                    <View style={styles.disbandNoticeBox}>
+                      <MaterialCommunityIcons name="information-outline" size={14} color={colors.text.onDark.secondary} />
+                      <Text style={styles.disbandNoticeText}>
+                        Disbanded: {team.disbandReason || 'Party dissolved by Guild Master Admin'}
+                      </Text>
+                    </View>
+                  ) : null}
 
-                    <TouchableOpacity
-                      style={styles.disbandBtn}
-                      onPress={() => handleConfirmDisband(team)}
-                      activeOpacity={0.8}
-                    >
-                      <MaterialCommunityIcons name="trash-can-outline" size={14} color={colors.accent.coral} />
-                      <Text style={styles.disbandBtnText}>Disband Party</Text>
-                    </TouchableOpacity>
+                  {/* Guild Actions: Ban / Unban & Disband OR Restore / Purge */}
+                  <View style={styles.guildActionRow}>
+                    {isDisbanded ? (
+                      <>
+                        <TouchableOpacity
+                          style={styles.restoreBtn}
+                          onPress={() => {
+                            triggerHaptic('medium');
+                            onUpdateTeamStatus(team._id, 'active');
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <MaterialCommunityIcons name="backup-restore" size={14} color={colors.accent.green} />
+                          <Text style={styles.restoreBtnText}>Restore Guild</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.purgeBtn}
+                          onPress={() => handleConfirmPurge(team)}
+                          activeOpacity={0.8}
+                        >
+                          <MaterialCommunityIcons name="trash-can" size={14} color={colors.accent.coral} />
+                          <Text style={styles.purgeBtnText}>Purge Permanently</Text>
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <>
+                        {isBanned ? (
+                          <TouchableOpacity
+                            style={styles.unbanBtn}
+                            onPress={() => {
+                              triggerHaptic('medium');
+                              onUpdateTeamStatus(team._id, 'active');
+                            }}
+                            activeOpacity={0.8}
+                          >
+                            <MaterialCommunityIcons name="lock-open-outline" size={14} color="#FFF" />
+                            <Text style={styles.unbanBtnText}>Unban Guild</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <TouchableOpacity
+                            style={styles.banBtn}
+                            onPress={() => {
+                              triggerHaptic('light');
+                              onOpenBanTeamModal(team);
+                            }}
+                            activeOpacity={0.8}
+                          >
+                            <MaterialCommunityIcons name="cancel" size={14} color={colors.accent.coral} />
+                            <Text style={styles.banBtnText}>Ban Guild</Text>
+                          </TouchableOpacity>
+                        )}
+
+                        <TouchableOpacity
+                          style={styles.disbandBtn}
+                          onPress={() => handleConfirmDisband(team)}
+                          activeOpacity={0.8}
+                        >
+                          <MaterialCommunityIcons name="trash-can-outline" size={14} color={colors.accent.coral} />
+                          <Text style={styles.disbandBtnText}>Disband Party</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
                   </View>
                 </PixelCard>
               );
@@ -765,6 +822,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(232, 102, 75, 0.2)',
     borderColor: colors.accent.coral,
   },
+  badgeDisbanded: {
+    backgroundColor: 'rgba(126, 117, 160, 0.2)',
+    borderColor: '#7E75A0',
+  },
   statusBadgeText: {
     ...typography.caption,
     fontSize: 9,
@@ -774,6 +835,71 @@ const styles = StyleSheet.create({
     color: colors.accent.green,
   },
   badgeTextBanned: {
+    color: colors.accent.coral,
+  },
+  badgeTextDisbanded: {
+    color: '#B0A8D0',
+  },
+  guildCardDisbanded: {
+    opacity: 0.85,
+    borderColor: '#4A4170',
+  },
+  guildTitleDisbanded: {
+    color: colors.text.onDark.secondary,
+    textDecorationLine: 'line-through',
+  },
+  disbandNoticeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(126, 117, 160, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(126, 117, 160, 0.3)',
+  },
+  disbandNoticeText: {
+    ...typography.caption,
+    fontSize: 10,
+    color: '#B0A8D0',
+    fontStyle: 'italic',
+    flex: 1,
+  },
+  restoreBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(74, 222, 128, 0.15)',
+    paddingVertical: 7,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.accent.green,
+  },
+  restoreBtnText: {
+    ...typography.caption,
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.accent.green,
+  },
+  purgeBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(232, 102, 75, 0.15)',
+    paddingVertical: 7,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.accent.coral,
+  },
+  purgeBtnText: {
+    ...typography.caption,
+    fontSize: 10,
+    fontWeight: '800',
     color: colors.accent.coral,
   },
   telemetryRow: {

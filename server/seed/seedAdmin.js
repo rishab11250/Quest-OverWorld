@@ -8,36 +8,38 @@ const seedAdmin = async () => {
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB for admin creation...');
 
-    // 1. Ensure dedicated admin account exists
-    const adminEmail = 'admin@overworld.com';
-    const adminPassword = 'adminpassword123';
+    // 1. Ensure dedicated admin account exists from environment configuration
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@overworld.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'adminpassword123';
+    const adminName = process.env.ADMIN_NAME || 'Guild Master Admin';
+
+    if (!adminEmail || !adminPassword) {
+      throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be configured in environment variables.');
+    }
+
     const passwordHash = await User.hashPassword(adminPassword);
 
     let admin = await User.findOne({ email: adminEmail });
     if (!admin) {
       admin = await User.create({
-        name: 'Guild Master Admin',
+        name: adminName,
         email: adminEmail,
         passwordHash,
         isAdmin: true,
       });
-      console.log(`Created new admin account: ${adminEmail} / ${adminPassword}`);
+      console.log(`Created new admin account: ${adminEmail}`);
     } else {
+      admin.name = adminName;
       admin.passwordHash = passwordHash;
       admin.isAdmin = true;
       await admin.save();
-      console.log(`Updated existing admin account: ${adminEmail} / ${adminPassword}`);
+      console.log(`Updated existing admin account: ${adminEmail}`);
     }
 
-    // 2. Ensure test player account is a regular player
-    await User.updateOne({ email: 'rishabtest@gmail.com' }, { isAdmin: false });
-    console.log('Reset rishabtest@gmail.com to standard player role (isAdmin: false).');
-
-    console.log('\n--- ADMIN CREDENTIALS ---');
-    console.log('Email:    admin@overworld.com');
-    console.log('Password: adminpassword123');
-    console.log('Role:     Admin (Guild Master)');
-    console.log('-------------------------\n');
+    console.log('\n--- ADMIN SEED SUCCESSFUL ---');
+    console.log(`Email: ${adminEmail}`);
+    console.log(`Role:  Admin (Guild Master)`);
+    console.log('-----------------------------\n');
 
     process.exit(0);
   } catch (error) {

@@ -757,27 +757,42 @@ const updateTeamStatus = async (req, res) => {
   }
 };
 
-// @desc    Disband / remove a guild/team completely
+// @desc    Disband / remove a guild/team
 // @route   DELETE /api/admin/teams/:id
 // @access  Private (Admin only)
 const deleteTeam = async (req, res) => {
   try {
     const { id } = req.params;
+    const { permanent = false, reason = '' } = req.body || {};
     const team = await Team.findById(id);
 
     if (!team) {
       return res.status(404).json({ message: 'Guild not found.' });
     }
 
-    // Unlink all members from this team
+    // Unlink all members from this team in User collection
     await User.updateMany({ teamId: team._id }, { $unset: { teamId: '' } });
 
-    // Delete team document
-    await Team.findByIdAndDelete(id);
+    if (permanent === true || req.query.permanent === 'true') {
+      await Team.findByIdAndDelete(id);
+      return res.status(200).json({
+        success: true,
+        message: `Guild "${team.name}" permanently purged.`,
+      });
+    }
+
+    // Soft disband: retain record for admin auditing & disband list
+    team.status = 'disbanded';
+    team.isDisbanded = true;
+    team.disbandedAt = new Date();
+    team.disbandReason = reason || 'Disbanded by Guild Master Admin';
+    team.members = [];
+    await team.save();
 
     return res.status(200).json({
       success: true,
-      message: `Guild "${team.name}" has been disbanded and removed.`,
+      message: `Guild "${team.name}" has been disbanded and moved to Disbanded records.`,
+      team,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message || 'Server error disbanding guild' });

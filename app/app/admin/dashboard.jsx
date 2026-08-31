@@ -133,6 +133,26 @@ export default function AdminDashboardScreen() {
     fetchAdminData();
   }, [fetchAdminData]);
 
+  // Auto-dismiss feedback banners after 3.5 seconds
+  useEffect(() => {
+    if (actionSuccess) {
+      const timer = setTimeout(() => {
+        setActionSuccess('');
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [actionSuccess]);
+
+  // Auto-dismiss error banners after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchAdminData();
@@ -260,14 +280,14 @@ export default function AdminDashboardScreen() {
     }
   };
 
-  const handleDeleteTeam = async (teamId) => {
+  const handleDeleteTeam = async (teamId, permanent = false) => {
     try {
       setLoading(true);
-      const res = await api.delete(`/admin/teams/${teamId}`);
-      setActionSuccess(res.message || 'Guild disbanded and removed.');
+      const res = await api.delete(`/admin/teams/${teamId}${permanent ? '?permanent=true' : ''}`);
+      setActionSuccess(res.message || 'Guild updated.');
       fetchAdminData();
     } catch (err) {
-      Alert.alert('Error', err.message || 'Failed to disband guild.');
+      Alert.alert('Error', err.message || 'Failed to process guild disband.');
     } finally {
       setLoading(false);
     }
@@ -529,8 +549,8 @@ export default function AdminDashboardScreen() {
       >
         <AdminHeader adminProfile={adminProfile} onLogout={handleLogout} />
 
-        <StatusBanner type="error" message={error} />
-        <StatusBanner type="success" message={actionSuccess} />
+        <StatusBanner type="error" message={error} onDismiss={() => setError('')} />
+        <StatusBanner type="success" message={actionSuccess} onDismiss={() => setActionSuccess('')} />
 
         {activeTab === 'overview' && (
           <AdminOverviewTab

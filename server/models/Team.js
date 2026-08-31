@@ -45,7 +45,7 @@ const teamSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['active', 'banned'],
+      enum: ['active', 'banned', 'disbanded'],
       default: 'active',
     },
     isBanned: {
@@ -57,6 +57,19 @@ const teamSchema = new mongoose.Schema(
       default: null,
     },
     banReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    isDisbanded: {
+      type: Boolean,
+      default: false,
+    },
+    disbandedAt: {
+      type: Date,
+      default: null,
+    },
+    disbandReason: {
       type: String,
       default: '',
       trim: true,
