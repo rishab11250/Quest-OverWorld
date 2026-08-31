@@ -37,7 +37,18 @@ const getActiveQuest = async (req, res) => {
 
     // Default to the first active quest if not specifically bound
     if (!quest) {
-      quest = await Quest.findOne({ status: 'active' });
+      const activeQuests = await Quest.find({ status: 'active' }).select('_id name').lean();
+
+      // Data integrity warning: should never be more than one active quest
+      if (activeQuests.length > 1) {
+        console.warn(
+          `[WARN] single-active-quest violation: ${activeQuests.length} active quests found — ` +
+          activeQuests.map((q) => `"${q.name}" (${q._id})`).join(', ') +
+          '. Routing to first. Fix via admin dashboard.'
+        );
+      }
+
+      quest = activeQuests[0] ? await Quest.findById(activeQuests[0]._id) : null;
       if (quest) {
         team.questId = quest._id;
         await team.save();

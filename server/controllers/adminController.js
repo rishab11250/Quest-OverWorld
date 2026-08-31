@@ -73,6 +73,16 @@ const getAdminOverview = async (req, res) => {
 
 // ================= QUEST CRUD ================= //
 
+/**
+ * Enforces the single-active-quest rule.
+ * Returns the currently active quest (excluding excludeId), or null.
+ */
+const findOtherActiveQuest = async (excludeId = null) => {
+  const query = { status: 'active' };
+  if (excludeId) query._id = { $ne: excludeId };
+  return Quest.findOne(query).select('_id name');
+};
+
 const getAllAdminQuests = async (req, res) => {
   try {
     const quests = await Quest.find().populate('checkpoints').sort({ createdAt: -1 });
@@ -89,12 +99,25 @@ const createQuest = async (req, res) => {
       return res.status(400).json({ message: 'Name and description are required.' });
     }
 
+    const resolvedStatus = status || 'draft';
+
+    // Block if trying to create an immediately active quest while one already exists
+    if (resolvedStatus === 'active') {
+      const existingActive = await findOtherActiveQuest();
+      if (existingActive) {
+        return res.status(409).json({
+          message: `"${existingActive.name}" is already active. End or archive it before activating a new quest.`,
+          conflictQuestId: existingActive._id,
+        });
+      }
+    }
+
     const quest = await Quest.create({
       name,
       description,
       campus: campus || 'Main Campus',
       totalPoints: totalPoints || 0,
-      status: status || 'active',
+      status: resolvedStatus,
     });
 
     return res.status(201).json({ success: true, quest });
@@ -105,7 +128,21 @@ const createQuest = async (req, res) => {
 
 const updateQuest = async (req, res) => {
   try {
-    const quest = await Quest.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { id } = req.params;
+    const updates = req.body;
+
+    // If activating this quest, enforce single-active rule
+    if (updates.status === 'active') {
+      const existingActive = await findOtherActiveQuest(id);
+      if (existingActive) {
+        return res.status(409).json({
+          message: `"${existingActive.name}" is currently active. Set it to Draft or Ended before activating another quest.`,
+          conflictQuestId: existingActive._id,
+        });
+      }
+    }
+
+    const quest = await Quest.findByIdAndUpdate(id, updates, { new: true });
     if (!quest) return res.status(404).json({ message: 'Quest not found' });
     return res.status(200).json({ success: true, quest });
   } catch (error) {
