@@ -56,7 +56,16 @@ const getActiveQuest = async (req, res) => {
     }
 
     if (!quest) {
-      return res.status(200).json({ quest: null, message: 'No active quest found.' });
+      return res.status(200).json({
+        quest: null,
+        team: {
+          _id: team._id,
+          name: team.name,
+          score: team.score,
+          code: team.code,
+        },
+        message: 'No active quest found.',
+      });
     }
 
     // Fetch all checkpoints in sequence order

@@ -144,6 +144,13 @@ export default function MapScreen() {
             <Text style={styles.primaryButtonText}>Head to Party HQ</Text>
           </TouchableOpacity>
         </View>
+      ) : !quest ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>No Active Quest Realm</Text>
+          <Text style={styles.emptySubtitle}>
+            Party {team.name} is ready! No quest is currently active. Once an admin starts a campaign, your radar will activate.
+          </Text>
+        </View>
       ) : (
         /* Map Component */
         <View style={styles.mapSection}>
