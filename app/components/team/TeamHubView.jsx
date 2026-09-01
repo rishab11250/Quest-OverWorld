@@ -58,13 +58,43 @@ export default function TeamHubView({
   currentUserId,
   onOpenRenameModal,
   onManageMember,
+  onOpenRequestsModal,
 }) {
   const leaderId = typeof team.leader === 'object' ? team.leader._id : team.leader;
   const level = Math.floor((team.score || 0) / 250) + 1;
   const activeBuffsCount = GUILD_PERKS.filter((p) => level >= p.minLevel).length;
+  const pendingCount = team.pendingRequests?.length || 0;
 
   return (
     <View style={styles.container}>
+      {/* Pending Recruits Alert Banner for Captain / Vice-Captain */}
+      {(isCaptain || isViceCaptain) && pendingCount > 0 ? (
+        <TouchableOpacity
+          style={styles.pendingRecruitsBanner}
+          onPress={() => {
+            triggerHaptic('selection');
+            if (onOpenRequestsModal) onOpenRequestsModal();
+          }}
+          activeOpacity={0.8}
+        >
+          <View style={styles.pendingLeft}>
+            <View style={styles.pulseRecruitDot} />
+            <MaterialCommunityIcons name="account-clock" size={20} color={colors.accent.gold} />
+            <View>
+              <Text style={styles.pendingTitle}>ADMISSION REQUESTS PENDING</Text>
+              <Text style={styles.pendingSub}>
+                {pendingCount} {pendingCount === 1 ? 'recruit' : 'recruits'} awaiting gatekeeper
+                approval
+              </Text>
+            </View>
+          </View>
+          <View style={styles.reviewBadge}>
+            <Text style={styles.reviewBadgeText}>REVIEW</Text>
+            <MaterialCommunityIcons name="chevron-right" size={16} color={colors.bg.dusk} />
+          </View>
+        </TouchableOpacity>
+      ) : null}
+
       {/* Team Header & XP */}
       <PixelCard variant="gold" glow style={styles.headerCard}>
         <View style={styles.headerTop}>
@@ -579,6 +609,53 @@ const styles = StyleSheet.create({
   perkDesc: {
     ...typography.caption,
     color: colors.text.onDark.secondary,
+    fontSize: 10,
+  },
+  pendingRecruitsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#281E10',
+    borderWidth: 1.5,
+    borderColor: colors.accent.gold,
+    borderRadius: 8,
+    padding: 10,
+  },
+  pendingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  pulseRecruitDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.accent.gold,
+  },
+  pendingTitle: {
+    ...typography.displayPixelXs,
+    fontSize: 7.5,
+    color: colors.accent.gold,
+    letterSpacing: 0.8,
+  },
+  pendingSub: {
+    ...typography.caption,
+    color: colors.text.onDark.secondary,
+    fontSize: 10.5,
+  },
+  reviewBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.accent.gold,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    gap: 2,
+  },
+  reviewBadgeText: {
+    ...typography.captionBold,
+    color: colors.bg.dusk,
     fontSize: 10,
   },
 });

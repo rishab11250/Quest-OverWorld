@@ -17,10 +17,13 @@ import InviteContactsModal from '../../components/team/InviteContactsModal';
 import RenameTeamModal from '../../components/team/RenameTeamModal';
 import ManageMemberModal from '../../components/team/ManageMemberModal';
 import TransferCaptainModal from '../../components/team/TransferCaptainModal';
+import PendingRequestsModal from '../../components/team/PendingRequestsModal';
+import PendingAdmissionCard from '../../components/team/PendingAdmissionCard';
 
 export default function TeamScreen() {
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState(null);
+  const [pendingTeam, setPendingTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -44,16 +47,22 @@ export default function TeamScreen() {
   const [transferModalVisible, setTransferModalVisible] = useState(false);
   const [transferringAndLeaving, setTransferringAndLeaving] = useState(false);
 
+  // Admission queue modal & actions
+  const [requestsModalVisible, setRequestsModalVisible] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [cancellingRequest, setCancellingRequest] = useState(false);
+
   const fetchMyTeam = useCallback(async (isSilent = false) => {
     try {
       if (!isSilent) setError('');
       const [userData, teamData] = await Promise.all([
         getUserData(),
-        api.get('/teams/me').catch(() => ({ team: null })),
+        api.get('/teams/me').catch(() => ({ team: null, pendingTeam: null })),
       ]);
 
       if (userData) setUser(userData);
       setTeam(teamData?.team || null);
+      setPendingTeam(teamData?.pendingTeam || null);
     } catch (err) {
       if (!isSilent) setError(err.message || 'Failed to load team data.');
     } finally {
@@ -84,14 +93,38 @@ export default function TeamScreen() {
 
     try {
       const data = await api.post('/teams/join', { code: joinCode.trim() });
-      setTeam(data.team);
-      setJoinCode('');
-      triggerHaptic('success');
+      if (data.pending) {
+        setPendingTeam(data.pendingTeam || { code: joinCode.trim().toUpperCase(), name: 'Party' });
+        setJoinCode('');
+        triggerHaptic('selection');
+        setSuccessBanner(data.message || 'Admission request dispatched to Party Captain!');
+        setTimeout(() => setSuccessBanner(''), 5000);
+      } else if (data.team) {
+        setTeam(data.team);
+        setJoinCode('');
+        triggerHaptic('success');
+      }
     } catch (err) {
       triggerHaptic('error');
-      setError(err.message || 'Failed to join team. Check code and try again.');
+      setError(err.message || 'Failed to join party. Check code and try again.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleCancelJoinRequest = async () => {
+    setCancellingRequest(true);
+    try {
+      triggerHaptic('medium');
+      await api.post('/teams/join/cancel');
+      setPendingTeam(null);
+      setSuccessBanner('Admission request cancelled.');
+      setTimeout(() => setSuccessBanner(''), 4000);
+    } catch (err) {
+      triggerHaptic('error');
+      setError(err.message || 'Failed to cancel admission request.');
+    } finally {
+      setCancellingRequest(false);
     }
   };
 
@@ -107,6 +140,7 @@ export default function TeamScreen() {
     try {
       const data = await api.post('/teams', { name: teamName.trim() });
       setTeam(data.team);
+      setPendingTeam(null);
       setTeamName('');
       triggerHaptic('success');
     } catch (err) {
@@ -152,6 +186,44 @@ export default function TeamScreen() {
       setError(err.message || 'Failed to rename party.');
     } finally {
       setRenaming(false);
+    }
+  };
+
+  const handleApproveRequest = async (applicantUserId) => {
+    if (!team) return;
+    setActionLoadingId(applicantUserId);
+    try {
+      const res = await api.post(`/teams/${team._id}/requests/${applicantUserId}/approve`);
+      if (res?.team) {
+        setTeam(res.team);
+        triggerHaptic('success');
+        setSuccessBanner(res.message || 'Recruit admitted to party! ⚔️');
+        setTimeout(() => setSuccessBanner(''), 4000);
+      }
+    } catch (err) {
+      triggerHaptic('error');
+      setError(err.message || 'Failed to approve recruit.');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleRejectRequest = async (applicantUserId) => {
+    if (!team) return;
+    setActionLoadingId(applicantUserId);
+    try {
+      const res = await api.post(`/teams/${team._id}/requests/${applicantUserId}/reject`);
+      if (res?.team) {
+        setTeam(res.team);
+        triggerHaptic('selection');
+        setSuccessBanner('Recruitment request declined.');
+        setTimeout(() => setSuccessBanner(''), 4000);
+      }
+    } catch (err) {
+      triggerHaptic('error');
+      setError(err.message || 'Failed to decline request.');
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -251,7 +323,6 @@ export default function TeamScreen() {
 
   const handleRequestLeave = () => {
     if (!team) return;
-    // If Captain and has other party members: must appoint new Captain first
     if (isCaptain && team.members && team.members.length > 1) {
       triggerHaptic('medium');
       setTransferModalVisible(true);
@@ -311,7 +382,13 @@ export default function TeamScreen() {
       <StatusBanner type="error" message={error} />
       {successBanner ? <StatusBanner type="success" message={successBanner} /> : null}
 
-      {!team ? (
+      {!team && pendingTeam ? (
+        <PendingAdmissionCard
+          pendingTeam={pendingTeam}
+          onCancelRequest={handleCancelJoinRequest}
+          cancelling={cancellingRequest}
+        />
+      ) : !team ? (
         <TeamAuthCard
           activeTab={activeTab}
           setActiveTab={(tab) => {
@@ -339,6 +416,7 @@ export default function TeamScreen() {
           currentUserId={currentUserId}
           onOpenRenameModal={() => setRenameModalVisible(true)}
           onManageMember={(member) => setSelectedMemberToManage(member)}
+          onOpenRequestsModal={() => setRequestsModalVisible(true)}
         />
       )}
 
@@ -371,6 +449,15 @@ export default function TeamScreen() {
             onClose={() => setTransferModalVisible(false)}
             onConfirmTransferAndLeave={handleConfirmTransferAndLeave}
             loading={transferringAndLeaving}
+          />
+
+          <PendingRequestsModal
+            visible={requestsModalVisible}
+            team={team}
+            onClose={() => setRequestsModalVisible(false)}
+            onApprove={handleApproveRequest}
+            onReject={handleRejectRequest}
+            actionLoadingId={actionLoadingId}
           />
 
           <ConfirmModal

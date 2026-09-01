@@ -4,6 +4,7 @@ const POPULATE_FIELDS = [
   { path: 'members', select: 'name email avatar' },
   { path: 'leader', select: 'name email avatar' },
   { path: 'viceCaptains', select: 'name email avatar' },
+  { path: 'pendingRequests.user', select: 'name email avatar' },
   { path: 'questId', select: 'name description difficulty xpReward' },
 ];
 
@@ -37,6 +38,7 @@ const createTeam = async (req, res) => {
       leader: req.user._id,
       viceCaptains: [],
       members: [req.user._id],
+      pendingRequests: [],
       score: 0,
     });
 
@@ -48,7 +50,7 @@ const createTeam = async (req, res) => {
   }
 };
 
-// @desc    Join team by 6-character code
+// @desc    Submit Join Request by 6-character code
 // @route   POST /api/teams/join
 // @access  Private
 const joinTeam = async (req, res) => {
@@ -61,44 +63,118 @@ const joinTeam = async (req, res) => {
 
     const normalizedCode = code.trim().toUpperCase();
 
+    // Check if user is already an active member of a team
     const currentTeam = await Team.findOne({ members: req.user._id });
     if (currentTeam) {
       if (currentTeam.code === normalizedCode) {
-        return res.status(400).json({ message: 'You are already in this team' });
+        return res.status(400).json({ message: 'You are already in this party.' });
       }
       return res.status(400).json({
-        message: 'You are already a member of a team. Leave your current team first.',
+        message: 'You are already a member of a party. Leave your current party first.',
       });
     }
 
-    const team = await Team.findOne({ code: normalizedCode });
-    if (!team) {
-      return res.status(404).json({ message: 'No team found with this join code' });
+    const targetTeam = await Team.findOne({ code: normalizedCode });
+    if (!targetTeam) {
+      return res.status(404).json({ message: 'No party found with this join code.' });
     }
 
-    team.members.push(req.user._id);
-    await team.save();
+    // Check if user already has a pending request
+    if (!targetTeam.pendingRequests) targetTeam.pendingRequests = [];
+    const hasPending = targetTeam.pendingRequests.some(
+      (pr) => pr.user.toString() === req.user._id.toString()
+    );
 
-    await populateTeam(team);
+    if (hasPending) {
+      return res.status(400).json({
+        message: `You already have a pending admission request for "${targetTeam.name}". Awaiting Captain or Vice-Captain approval.`,
+        pending: true,
+      });
+    }
 
-    return res.status(200).json({ team });
+    // Clean up any pending requests to other teams
+    await Team.updateMany(
+      { 'pendingRequests.user': req.user._id },
+      { $pull: { pendingRequests: { user: req.user._id } } }
+    );
+
+    // Add pending request
+    targetTeam.pendingRequests.push({
+      user: req.user._id,
+      requestedAt: new Date(),
+    });
+
+    await targetTeam.save();
+
+    return res.status(200).json({
+      success: true,
+      pending: true,
+      message: `Admission request sent to "${targetTeam.name}". Waiting for Captain or Vice-Captain approval.`,
+      pendingTeam: {
+        _id: targetTeam._id,
+        name: targetTeam.name,
+        code: targetTeam.code,
+      },
+    });
   } catch (error) {
-    return res.status(500).json({ message: error.message || 'Server error joining team' });
+    return res
+      .status(500)
+      .json({ message: error.message || 'Server error submitting join request' });
   }
 };
 
-// @desc    Get current user's team
+// @desc    Cancel user's pending join request
+// @route   POST /api/teams/join/cancel
+// @access  Private
+const cancelJoinRequest = async (req, res) => {
+  try {
+    await Team.updateMany(
+      { 'pendingRequests.user': req.user._id },
+      { $pull: { pendingRequests: { user: req.user._id } } }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Admission request cancelled.',
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error cancelling request' });
+  }
+};
+
+// @desc    Get current user's team or pending request status
 // @route   GET /api/teams/me
 // @access  Private
 const getMyTeam = async (req, res) => {
   try {
     const team = await populateTeam(Team.findOne({ members: req.user._id }));
 
-    if (!team) {
-      return res.status(200).json({ team: null });
+    if (team) {
+      return res.status(200).json({ team, pendingTeam: null });
     }
 
-    return res.status(200).json({ team });
+    // Check if user has a pending join request
+    const pendingTeam = await Team.findOne({ 'pendingRequests.user': req.user._id }).select(
+      '_id name code pendingRequests'
+    );
+
+    if (pendingTeam) {
+      const userRequest = pendingTeam.pendingRequests.find(
+        (pr) => pr.user.toString() === req.user._id.toString()
+      );
+
+      return res.status(200).json({
+        team: null,
+        pendingTeam: {
+          _id: pendingTeam._id,
+          name: pendingTeam.name,
+          code: pendingTeam.code,
+          requestedAt: userRequest?.requestedAt,
+        },
+      });
+    }
+
+    return res.status(200).json({ team: null, pendingTeam: null });
   } catch (error) {
     return res.status(500).json({ message: error.message || 'Server error fetching team' });
   }
@@ -118,6 +194,96 @@ const getTeamById = async (req, res) => {
     return res.status(200).json({ team });
   } catch (error) {
     return res.status(500).json({ message: error.message || 'Server error fetching team' });
+  }
+};
+
+// @desc    Approve a pending recruitment request
+// @route   POST /api/teams/:id/requests/:userId/approve
+// @access  Private (Captain or Vice-Captain)
+const approveJoinRequest = async (req, res) => {
+  try {
+    const { id, userId } = req.params;
+    const team = await Team.findById(id);
+
+    if (!team) {
+      return res.status(404).json({ message: 'Party not found' });
+    }
+
+    const requesterId = req.user._id.toString();
+    const isCaptain = team.leader.toString() === requesterId || req.user.isAdmin;
+    const isViceCaptain =
+      team.viceCaptains && team.viceCaptains.some((vc) => vc.toString() === requesterId);
+
+    if (!isCaptain && !isViceCaptain) {
+      return res.status(403).json({
+        message: 'Only the party Captain or Vice-Captain can approve new recruits',
+      });
+    }
+
+    // Remove from pendingRequests
+    if (team.pendingRequests) {
+      team.pendingRequests = team.pendingRequests.filter(
+        (pr) => pr.user.toString() !== userId.toString()
+      );
+    }
+
+    // Add to members if not present
+    if (!team.members.some((m) => m.toString() === userId.toString())) {
+      team.members.push(userId);
+    }
+
+    await team.save();
+    await populateTeam(team);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Adventurer admitted into the party!',
+      team,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error approving request' });
+  }
+};
+
+// @desc    Reject / Decline a pending recruitment request
+// @route   POST /api/teams/:id/requests/:userId/reject
+// @access  Private (Captain or Vice-Captain)
+const rejectJoinRequest = async (req, res) => {
+  try {
+    const { id, userId } = req.params;
+    const team = await Team.findById(id);
+
+    if (!team) {
+      return res.status(404).json({ message: 'Party not found' });
+    }
+
+    const requesterId = req.user._id.toString();
+    const isCaptain = team.leader.toString() === requesterId || req.user.isAdmin;
+    const isViceCaptain =
+      team.viceCaptains && team.viceCaptains.some((vc) => vc.toString() === requesterId);
+
+    if (!isCaptain && !isViceCaptain) {
+      return res.status(403).json({
+        message: 'Only the party Captain or Vice-Captain can decline recruitment requests',
+      });
+    }
+
+    if (team.pendingRequests) {
+      team.pendingRequests = team.pendingRequests.filter(
+        (pr) => pr.user.toString() !== userId.toString()
+      );
+    }
+
+    await team.save();
+    await populateTeam(team);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Recruitment request declined',
+      team,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error rejecting request' });
   }
 };
 
@@ -197,9 +363,11 @@ const kickMember = async (req, res) => {
       team.viceCaptains && team.viceCaptains.some((vc) => vc.toString() === memberId);
 
     if (targetIsViceCaptain && !isCaptain) {
-      return res.status(403).json({
-        message: 'Vice-Captains cannot remove other Vice-Captains. Only the Captain can.',
-      });
+      return res
+        .status(403)
+        .json({
+          message: 'Vice-Captains cannot remove other Vice-Captains. Only the Captain can.',
+        });
     }
 
     const memberIndex = team.members.findIndex((m) => m.toString() === memberId);
@@ -313,16 +481,11 @@ const transferLeadership = async (req, res) => {
 
     const oldCaptainId = team.leader;
 
-    // Set new leader
     team.leader = newLeaderId;
-
-    // Initialize viceCaptains array if missing
     if (!team.viceCaptains) team.viceCaptains = [];
 
-    // Remove new leader from viceCaptains if they were one
     team.viceCaptains = team.viceCaptains.filter((vc) => vc.toString() !== newLeaderId);
 
-    // Old captain is automatically demoted to Vice-Captain!
     if (!team.viceCaptains.some((vc) => vc.toString() === oldCaptainId.toString())) {
       team.viceCaptains.push(oldCaptainId);
     }
@@ -363,7 +526,6 @@ const leaveTeam = async (req, res) => {
 
     const isCaptain = team.leader.toString() === requesterId;
 
-    // If Captain wants to leave and there are other members:
     if (isCaptain && team.members.length > 1) {
       if (!newLeaderId) {
         return res.status(400).json({
@@ -388,19 +550,16 @@ const leaveTeam = async (req, res) => {
       }
     }
 
-    // Remove user from members and viceCaptains
     team.members.splice(memberIndex, 1);
     if (team.viceCaptains) {
       team.viceCaptains = team.viceCaptains.filter((vc) => vc.toString() !== requesterId);
     }
 
-    // If team is now empty, delete it
     if (team.members.length === 0) {
       await Team.findByIdAndDelete(team._id);
       return res.status(200).json({ message: 'Party disbanded as last member left', team: null });
     }
 
-    // If captain left and had only 1 other member, that member becomes leader
     if (isCaptain && !team.leader) {
       team.leader = team.members[0];
     }
@@ -417,8 +576,11 @@ const leaveTeam = async (req, res) => {
 module.exports = {
   createTeam,
   joinTeam,
+  cancelJoinRequest,
   getMyTeam,
   getTeamById,
+  approveJoinRequest,
+  rejectJoinRequest,
   updateTeam,
   kickMember,
   setViceCaptain,
