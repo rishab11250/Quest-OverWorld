@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../lib/api';
 import { setToken, setUserData } from '../../lib/secureStore';
 import colors from '../../theme/colors';
@@ -21,6 +22,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -90,17 +92,30 @@ export default function LoginScreen() {
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor={colors.text.onDark.secondary}
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (error) setError('');
-              }}
-              secureTextEntry
-            />
+            <View style={styles.passwordWrapper}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="••••••••"
+                placeholderTextColor={colors.text.onDark.secondary}
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (error) setError('');
+                }}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword((prev) => !prev)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <MaterialCommunityIcons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={20}
+                  color={colors.text.onDark.secondary}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity
@@ -197,6 +212,28 @@ const styles = StyleSheet.create({
     ...typography.bodyLg,
     color: colors.text.onDark.primary,
     minHeight: spacing.minTouchTarget,
+  },
+  passwordWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bg.dusk,
+    borderWidth: 1,
+    borderColor: '#4A4170',
+    borderRadius: 6,
+    minHeight: spacing.minTouchTarget,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    ...typography.bodyLg,
+    color: colors.text.onDark.primary,
+  },
+  eyeButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   button: {
     backgroundColor: colors.accent.gold,
