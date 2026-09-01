@@ -1,11 +1,15 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+if (!process.env.JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is not set. Server cannot start without it.');
+}
+
 // Helper to sign JWT token
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, email: user.email, isAdmin: user.isAdmin },
-    process.env.JWT_SECRET || 'supersecretjwtkeyquestoverworld2026',
+    process.env.JWT_SECRET,
     { expiresIn: '30d' }
   );
 };

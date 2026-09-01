@@ -3,11 +3,11 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 
 async function createPlayer() {
-  const uri =
-    process.env.MONGO_URI ||
-    'mongodb://rishabchandgothiacg_db_user:rishab25nov@ac-dhjjvkk-shard-00-00.iwhvfnb.mongodb.net:27017,ac-dhjjvkk-shard-00-01.iwhvfnb.mongodb.net:27017,ac-dhjjvkk-shard-00-02.iwhvfnb.mongodb.net:27017/quest-overworld?ssl=true&replicaSet=atlas-mo37rj-shard-0&authSource=admin&appName=Cluster0';
+  if (!process.env.MONGO_URI) {
+    throw new Error('MONGO_URI environment variable is required. Set it in server/.env');
+  }
 
-  await mongoose.connect(uri);
+  await mongoose.connect(process.env.MONGO_URI);
   console.log('Connected to MongoDB Atlas...');
 
   const email = 'player@overworld.com';

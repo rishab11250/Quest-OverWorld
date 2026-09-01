@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const teamRoutes = require('./routes/teams');
@@ -15,14 +16,32 @@ const app = express();
 // Connect Database
 connectDB();
 
-// Middleware
-app.use(cors());
+// CORS — restrict origins in production via CORS_ORIGIN env var
+const corsOrigin = process.env.CORS_ORIGIN || '*';
+app.use(
+  cors({
+    origin: corsOrigin === '*' ? true : corsOrigin.split(',').map((o) => o.trim()),
+    credentials: true,
+  })
+);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static uploads folder
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Rate limiting — auth endpoints (brute-force protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15, // 15 attempts per window per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many attempts. Please try again after 15 minutes.' },
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -42,13 +61,26 @@ app.post('/api/upload', async (req, res) => {
     const url = await uploadImage(image, folder || 'quest_overworld_proofs');
     return res.status(200).json({ url });
   } catch (err) {
-    return res.status(500).json({ message: err.message || 'Upload failed' });
+    console.error('[Upload Error]', err.message);
+    const msg = process.env.NODE_ENV === 'production' ? 'Upload failed' : err.message || 'Upload failed';
+    return res.status(500).json({ message: msg });
   }
 });
 
 // Base Route / Health Check
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Quest Overworld API is running' });
+});
+
+// Global error handler — sanitize 500 errors in production
+app.use((err, req, res, _next) => {
+  console.error('[Unhandled Error]', err.stack || err.message);
+  const status = err.statusCode || 500;
+  const message =
+    status === 500 && process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : err.message || 'Internal server error';
+  res.status(status).json({ message });
 });
 
 const PORT = process.env.PORT || 5000;
