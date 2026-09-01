@@ -12,8 +12,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
-import PixelCard from '../PixelCard';
 import { triggerHaptic } from '../../lib/haptics';
+
+import AdminGuildCard from './players/AdminGuildCard';
+import AdminPlayerCard from './players/AdminPlayerCard';
 
 export default function AdminPlayersTab({
   players = [],
@@ -28,11 +30,10 @@ export default function AdminPlayersTab({
   onDeleteTeam,
   loading = false,
 }) {
-  const [sectionMode, setSectionMode] = useState('GUILDS'); // 'GUILDS' or 'PLAYERS'
+  const [sectionMode, setSectionMode] = useState('GUILDS');
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('ALL'); // ALL, ACTIVE, BANNED
+  const [filter, setFilter] = useState('ALL');
 
-  // Filtered Players - Banned players are isolated to the BANNED tab
   const filteredPlayers = players.filter((p) => {
     const matchesSearch =
       (p.name && p.name.toLowerCase().includes(search.toLowerCase())) ||
@@ -49,7 +50,6 @@ export default function AdminPlayersTab({
     return true;
   });
 
-  // Filtered Guilds / Teams
   const filteredTeams = teams.filter((t) => {
     const matchesSearch =
       (t.name && t.name.toLowerCase().includes(search.toLowerCase())) ||
@@ -102,7 +102,6 @@ export default function AdminPlayersTab({
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>GUILD & ROSTER CONTROLLER</Text>
         <Text style={styles.subtitle}>
@@ -110,7 +109,7 @@ export default function AdminPlayersTab({
         </Text>
       </View>
 
-      {/* Section Mode Switcher: GUILDS vs ADVENTURERS */}
+      {/* Mode Switcher */}
       <View style={styles.sectionModeRow}>
         <TouchableOpacity
           style={[styles.sectionModeBtn, sectionMode === 'GUILDS' && styles.sectionModeBtnActive]}
@@ -161,7 +160,7 @@ export default function AdminPlayersTab({
         </TouchableOpacity>
       </View>
 
-      {/* Search Input */}
+      {/* Search Box */}
       <View style={styles.searchBox}>
         <MaterialCommunityIcons name="magnify" size={18} color="#7E75A0" />
         <TextInput
@@ -182,7 +181,7 @@ export default function AdminPlayersTab({
         ) : null}
       </View>
 
-      {/* Filter Tabs */}
+      {/* Filter Row */}
       <View style={styles.filterRow}>
         {(sectionMode === 'GUILDS'
           ? ['ALL', 'ACTIVE', 'BANNED', 'DISBANDED']
@@ -220,14 +219,13 @@ export default function AdminPlayersTab({
         ))}
       </View>
 
-      {/* Loading state */}
+      {/* List content */}
       {loading ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator size="small" color={colors.accent.gold} />
           <Text style={styles.loadingText}>Reading Realm Scrolls...</Text>
         </View>
       ) : sectionMode === 'GUILDS' ? (
-        /* ================= GUILDS / TEAMS LIST ================= */
         filteredTeams.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>No Guild Parties Found</Text>
@@ -237,410 +235,36 @@ export default function AdminPlayersTab({
           </View>
         ) : (
           <View style={styles.list}>
-            {filteredTeams.map((team) => {
-              const isBanned = team.isBanned || team.status === 'banned';
-              const isDisbanded = team.isDisbanded || team.status === 'disbanded';
-
-              return (
-                <PixelCard
-                  key={team._id}
-                  variant={isDisbanded ? 'dusk' : isBanned ? 'coral' : 'gold'}
-                  style={[styles.guildCard, isDisbanded && styles.guildCardDisbanded]}
-                >
-                  {/* Top Row: Guild Name + Code + Status */}
-                  <View style={styles.guildTopRow}>
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <MaterialCommunityIcons
-                          name={isDisbanded ? 'shield-off-outline' : 'shield-sword'}
-                          size={18}
-                          color={
-                            isDisbanded
-                              ? colors.text.onDark.secondary
-                              : isBanned
-                                ? colors.accent.coral
-                                : colors.accent.gold
-                          }
-                        />
-                        <Text
-                          style={[styles.guildTitle, isDisbanded && styles.guildTitleDisbanded]}
-                        >
-                          {team.name}
-                        </Text>
-                      </View>
-                      <Text style={styles.guildCode}>PARTY CODE: #{team.code}</Text>
-                    </View>
-
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        isDisbanded
-                          ? styles.badgeDisbanded
-                          : isBanned
-                            ? styles.badgeBanned
-                            : styles.badgeActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.statusBadgeText,
-                          isDisbanded
-                            ? styles.badgeTextDisbanded
-                            : isBanned
-                              ? styles.badgeTextBanned
-                              : styles.badgeTextActive,
-                        ]}
-                      >
-                        {isDisbanded ? 'DISBANDED' : isBanned ? 'BANNED' : 'ACTIVE'}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Telemetry Row */}
-                  <View style={styles.telemetryRow}>
-                    <View style={styles.telemetryItem}>
-                      <Text style={styles.telemetryLabel}>LEADER</Text>
-                      <Text style={styles.telemetryVal}>
-                        👑 {team.leader?.name || 'Unassigned'}
-                      </Text>
-                    </View>
-                    <View style={styles.telemetryItem}>
-                      <Text style={styles.telemetryLabel}>EXPEDITION XP</Text>
-                      <Text
-                        style={[
-                          styles.telemetryVal,
-                          {
-                            color: isDisbanded ? colors.text.onDark.secondary : colors.accent.green,
-                          },
-                        ]}
-                      >
-                        {team.score || 0} PTS
-                      </Text>
-                    </View>
-                    <View style={styles.telemetryItem}>
-                      <Text style={styles.telemetryLabel}>PARTY SIZE</Text>
-                      <Text style={styles.telemetryVal}>{team.members?.length || 0} Members</Text>
-                    </View>
-                  </View>
-
-                  {/* Active Quest */}
-                  {team.questId ? (
-                    <View style={styles.guildQuestRow}>
-                      <Text style={styles.guildQuestLabel}>ACTIVE EXPEDITION:</Text>
-                      <Text style={styles.guildQuestName} numberOfLines={1}>
-                        🗺️ {team.questId.name || 'Campus Realm Quest'}
-                      </Text>
-                    </View>
-                  ) : null}
-
-                  {/* Member Chips */}
-                  {team.members && team.members.length > 0 ? (
-                    <View style={styles.memberChipsRow}>
-                      {team.members.map((m) => (
-                        <View key={m._id} style={styles.memberChip}>
-                          <Text style={styles.memberChipText}>
-                            {m._id === team.leader?._id ? '👑 ' : ''}
-                            {m.name || m.email}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  ) : null}
-
-                  {/* Ban or Disband Notice */}
-                  {isBanned && team.banReason ? (
-                    <View style={styles.banNoticeBox}>
-                      <MaterialCommunityIcons
-                        name="alert-circle-outline"
-                        size={14}
-                        color={colors.accent.coral}
-                      />
-                      <Text style={styles.banNoticeText}>Ban Reason: {team.banReason}</Text>
-                    </View>
-                  ) : null}
-
-                  {isDisbanded ? (
-                    <View style={styles.disbandNoticeBox}>
-                      <MaterialCommunityIcons
-                        name="information-outline"
-                        size={14}
-                        color={colors.text.onDark.secondary}
-                      />
-                      <Text style={styles.disbandNoticeText}>
-                        Disbanded: {team.disbandReason || 'Party dissolved by Guild Master Admin'}
-                      </Text>
-                    </View>
-                  ) : null}
-
-                  {/* Guild Actions: Ban / Unban & Disband OR Restore / Purge */}
-                  <View style={styles.guildActionRow}>
-                    {isDisbanded ? (
-                      <>
-                        <TouchableOpacity
-                          style={styles.restoreBtn}
-                          onPress={() => {
-                            triggerHaptic('medium');
-                            onUpdateTeamStatus(team._id, 'active');
-                          }}
-                          activeOpacity={0.8}
-                        >
-                          <MaterialCommunityIcons
-                            name="backup-restore"
-                            size={14}
-                            color={colors.accent.green}
-                          />
-                          <Text style={styles.restoreBtnText}>Restore Guild</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          style={styles.purgeBtn}
-                          onPress={() => handleConfirmPurge(team)}
-                          activeOpacity={0.8}
-                        >
-                          <MaterialCommunityIcons
-                            name="trash-can"
-                            size={14}
-                            color={colors.accent.coral}
-                          />
-                          <Text style={styles.purgeBtnText}>Purge Permanently</Text>
-                        </TouchableOpacity>
-                      </>
-                    ) : (
-                      <>
-                        {isBanned ? (
-                          <TouchableOpacity
-                            style={styles.unbanBtn}
-                            onPress={() => {
-                              triggerHaptic('medium');
-                              onUpdateTeamStatus(team._id, 'active');
-                            }}
-                            activeOpacity={0.8}
-                          >
-                            <MaterialCommunityIcons
-                              name="lock-open-outline"
-                              size={14}
-                              color="#FFF"
-                            />
-                            <Text style={styles.unbanBtnText}>Unban Guild</Text>
-                          </TouchableOpacity>
-                        ) : (
-                          <TouchableOpacity
-                            style={styles.banBtn}
-                            onPress={() => {
-                              triggerHaptic('light');
-                              onOpenBanTeamModal(team);
-                            }}
-                            activeOpacity={0.8}
-                          >
-                            <MaterialCommunityIcons
-                              name="cancel"
-                              size={14}
-                              color={colors.accent.coral}
-                            />
-                            <Text style={styles.banBtnText}>Ban Guild</Text>
-                          </TouchableOpacity>
-                        )}
-
-                        <TouchableOpacity
-                          style={styles.disbandBtn}
-                          onPress={() => handleConfirmDisband(team)}
-                          activeOpacity={0.8}
-                        >
-                          <MaterialCommunityIcons
-                            name="trash-can-outline"
-                            size={14}
-                            color={colors.accent.coral}
-                          />
-                          <Text style={styles.disbandBtnText}>Disband Party</Text>
-                        </TouchableOpacity>
-                      </>
-                    )}
-                  </View>
-                </PixelCard>
-              );
-            })}
+            {filteredTeams.map((team) => (
+              <AdminGuildCard
+                key={team._id}
+                team={team}
+                onUpdateTeamStatus={onUpdateTeamStatus}
+                onOpenBanTeamModal={onOpenBanTeamModal}
+                onConfirmDisband={handleConfirmDisband}
+                onConfirmPurge={handleConfirmPurge}
+              />
+            ))}
           </View>
         )
-      ) : /* ================= ADVENTURERS / PLAYERS LIST ================= */
-      filteredPlayers.length === 0 ? (
+      ) : filteredPlayers.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>No Adventurers Found</Text>
           <Text style={styles.emptySub}>No players match your search filter criteria.</Text>
         </View>
       ) : (
         <View style={styles.list}>
-          {filteredPlayers.map((player) => {
-            const isBanned = player.isBanned || player.status === 'banned';
-
-            return (
-              <PixelCard
-                key={player._id}
-                variant={isBanned ? 'coral' : player.isAdmin ? 'gold' : 'dusk'}
-                style={styles.playerCard}
-              >
-                {/* Top Row: Avatar + Name + Status */}
-                <View style={styles.playerTop}>
-                  <View style={[styles.avatarBox, isBanned && styles.avatarBanned]}>
-                    <Text style={styles.avatarLetter}>
-                      {(player.name || 'A').charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-
-                  <View style={styles.playerInfo}>
-                    <View style={styles.nameRow}>
-                      <Text style={styles.playerName}>{player.name}</Text>
-                      {player.isAdmin ? (
-                        <View style={styles.adminTag}>
-                          <Text style={styles.adminTagText}>ADMIN</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                    <Text style={styles.playerEmail}>{player.email}</Text>
-                  </View>
-
-                  <View
-                    style={[styles.statusBadge, isBanned ? styles.badgeBanned : styles.badgeActive]}
-                  >
-                    <Text
-                      style={[
-                        styles.statusBadgeText,
-                        isBanned ? styles.badgeTextBanned : styles.badgeTextActive,
-                      ]}
-                    >
-                      {isBanned ? 'BANNED' : 'ACTIVE'}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Team & Points telemetry */}
-                <View style={styles.telemetryRow}>
-                  <View style={styles.telemetryItem}>
-                    <Text style={styles.telemetryLabel}>GUILD PARTY</Text>
-                    <Text style={styles.telemetryVal}>
-                      {player.team
-                        ? `${player.team.name} ${player.team.isLeader ? '👑' : ''}`
-                        : 'No Party'}
-                    </Text>
-                  </View>
-                  <View style={styles.telemetryItem}>
-                    <Text style={styles.telemetryLabel}>TOTAL XP</Text>
-                    <Text style={[styles.telemetryVal, { color: colors.accent.green }]}>
-                      {player.score || 0} PTS
-                    </Text>
-                  </View>
-                  <View style={styles.telemetryItem}>
-                    <Text style={styles.telemetryLabel}>ACCOUNT ROLE</Text>
-                    <Text style={styles.telemetryVal}>
-                      {player.isAdmin ? 'Guild Master' : 'Adventurer'}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Ban Notice */}
-                {isBanned && player.banReason ? (
-                  <View style={styles.banNoticeBox}>
-                    <MaterialCommunityIcons
-                      name="alert-circle-outline"
-                      size={14}
-                      color={colors.accent.coral}
-                    />
-                    <Text style={styles.banNoticeText}>Reason: {player.banReason}</Text>
-                  </View>
-                ) : null}
-
-                {/* Actions Row */}
-                <View style={styles.actionRow}>
-                  {isBanned ? (
-                    <>
-                      <TouchableOpacity
-                        style={styles.unbanBtn}
-                        onPress={() => {
-                          triggerHaptic('medium');
-                          onUpdateStatus(player._id, 'active');
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <MaterialCommunityIcons name="lock-open-outline" size={14} color="#000" />
-                        <Text style={styles.unbanBtnText}>Unban Player</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.purgePlayerBtn}
-                        onPress={() => {
-                          triggerHaptic('warning');
-                          if (onOpenDeletePlayerModal) {
-                            onOpenDeletePlayerModal(player);
-                          }
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <MaterialCommunityIcons
-                          name="trash-can-outline"
-                          size={14}
-                          color={colors.accent.coral}
-                        />
-                        <Text style={styles.purgePlayerBtnText}>Delete Player</Text>
-                      </TouchableOpacity>
-                    </>
-                  ) : (
-                    <>
-                      <TouchableOpacity
-                        style={styles.banBtn}
-                        onPress={() => {
-                          triggerHaptic('light');
-                          onOpenBanModal(player);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <MaterialCommunityIcons
-                          name="cancel"
-                          size={14}
-                          color={colors.accent.coral}
-                        />
-                        <Text style={styles.banBtnText}>Ban Player</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.roleBtn}
-                        onPress={() => {
-                          triggerHaptic('selection');
-                          onToggleRole(player._id, !player.isAdmin);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <MaterialCommunityIcons
-                          name={player.isAdmin ? 'shield-remove-outline' : 'shield-crown-outline'}
-                          size={14}
-                          color={colors.accent.gold}
-                        />
-                        <Text style={styles.roleBtnText}>
-                          {player.isAdmin ? 'Revoke Admin' : 'Make Admin'}
-                        </Text>
-                      </TouchableOpacity>
-
-                      {player.team ? (
-                        <TouchableOpacity
-                          style={styles.kickBtn}
-                          onPress={() => {
-                            triggerHaptic('medium');
-                            onKickPlayer(player._id);
-                          }}
-                          activeOpacity={0.8}
-                        >
-                          <MaterialCommunityIcons
-                            name="account-minus-outline"
-                            size={14}
-                            color={colors.accent.coral}
-                          />
-                          <Text style={styles.kickBtnText}>Kick</Text>
-                        </TouchableOpacity>
-                      ) : null}
-                    </>
-                  )}
-                </View>
-              </PixelCard>
-            );
-          })}
+          {filteredPlayers.map((player) => (
+            <AdminPlayerCard
+              key={player._id}
+              player={player}
+              onUpdateStatus={onUpdateStatus}
+              onToggleRole={onToggleRole}
+              onKickPlayer={onKickPlayer}
+              onOpenBanModal={onOpenBanModal}
+              onOpenDeletePlayerModal={onOpenDeletePlayerModal}
+            />
+          ))}
         </View>
       )}
     </View>
@@ -649,27 +273,31 @@ export default function AdminPlayersTab({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   header: {
+    gap: 2,
     marginBottom: 4,
   },
   title: {
     ...typography.displayPixelSm,
+    fontSize: 13,
     color: colors.accent.gold,
-    fontSize: 14,
+    letterSpacing: 1.2,
   },
   subtitle: {
-    ...typography.bodySm,
+    ...typography.caption,
     color: colors.text.onDark.secondary,
+    fontSize: 10,
+    letterSpacing: 0.6,
   },
   sectionModeRow: {
     flexDirection: 'row',
-    backgroundColor: '#1E1A33',
+    backgroundColor: '#171329',
     borderRadius: 8,
+    padding: 3,
     borderWidth: 1,
     borderColor: '#3D3560',
-    padding: 3,
     gap: 4,
   },
   sectionModeBtn: {
@@ -685,10 +313,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.gold,
   },
   sectionModeText: {
-    ...typography.caption,
+    ...typography.captionBold,
+    color: colors.accent.gold,
     fontSize: 11,
-    fontWeight: '800',
-    color: colors.text.onDark.secondary,
   },
   sectionModeTextActive: {
     color: colors.bg.dusk,
@@ -696,45 +323,68 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bg.duskRaised,
-    borderRadius: 6,
-    paddingHorizontal: 12,
+    backgroundColor: '#1E1933',
     borderWidth: 1,
     borderColor: '#3D3560',
-    gap: 8,
-    height: 42,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    height: 38,
+    gap: 6,
   },
   searchInput: {
     flex: 1,
-    color: colors.text.onDark.primary,
     ...typography.bodyMd,
-    fontSize: 13,
+    fontSize: 12,
+    color: colors.text.onDark.primary,
   },
   filterRow: {
     flexDirection: 'row',
     gap: 6,
   },
   filterChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
-    backgroundColor: '#1E1A33',
+    flex: 1,
+    backgroundColor: '#1E1933',
     borderWidth: 1,
     borderColor: '#3D3560',
+    paddingVertical: 6,
+    borderRadius: 5,
+    alignItems: 'center',
   },
   filterChipActive: {
     backgroundColor: 'rgba(242, 200, 75, 0.2)',
     borderColor: colors.accent.gold,
   },
   filterChipText: {
-    ...typography.caption,
-    fontSize: 10,
-    fontWeight: '700',
+    ...typography.captionBold,
+    fontSize: 9,
     color: colors.text.onDark.secondary,
   },
   filterChipTextActive: {
     color: colors.accent.gold,
-    fontWeight: '900',
+    fontWeight: '800',
+  },
+  list: {
+    gap: spacing.sm,
+  },
+  emptyCard: {
+    backgroundColor: '#1E1933',
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#3D3560',
+    padding: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  emptyTitle: {
+    ...typography.h3,
+    color: colors.text.onDark.primary,
+    fontSize: 15,
+  },
+  emptySub: {
+    ...typography.caption,
+    color: colors.text.onDark.secondary,
+    textAlign: 'center',
+    fontSize: 11,
   },
   loadingBox: {
     padding: 30,
@@ -743,395 +393,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...typography.caption,
-    color: colors.text.onDark.secondary,
-  },
-  emptyCard: {
-    backgroundColor: colors.bg.duskRaised,
-    borderRadius: 8,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#3D3560',
-  },
-  emptyTitle: {
-    ...typography.headingMd,
     color: colors.accent.gold,
-    marginBottom: 4,
-  },
-  emptySub: {
-    ...typography.bodySm,
-    color: colors.text.onDark.secondary,
-    textAlign: 'center',
-  },
-  list: {
-    gap: spacing.sm,
-  },
-  guildCard: {
-    gap: spacing.xs,
-    padding: spacing.cardPadding,
-  },
-  guildTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  guildTitle: {
-    ...typography.headingMd,
-    color: colors.text.onDark.primary,
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  guildCode: {
-    ...typography.displayPixelXs,
-    fontSize: 8,
-    color: colors.accent.gold,
-    marginTop: 2,
-  },
-  guildQuestRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#171326',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 4,
-  },
-  guildQuestLabel: {
-    ...typography.displayPixelXs,
-    fontSize: 7,
-    color: colors.text.onDark.secondary,
-  },
-  guildQuestName: {
-    ...typography.bodySmBold,
     fontSize: 11,
-    color: colors.accent.gold,
-    flex: 1,
-  },
-  memberChipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  memberChip: {
-    backgroundColor: '#1E1A33',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#3D3560',
-  },
-  memberChipText: {
-    ...typography.caption,
-    fontSize: 9,
-    color: colors.text.onDark.primary,
-  },
-  guildActionRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
-  },
-  disbandBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(232, 102, 75, 0.15)',
-    paddingVertical: 7,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.accent.coral,
-  },
-  disbandBtnText: {
-    ...typography.caption,
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.accent.coral,
-  },
-  playerCard: {
-    gap: spacing.xs,
-    padding: spacing.cardPadding,
-  },
-  playerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  avatarBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 6,
-    backgroundColor: '#2D274A',
-    borderWidth: 1.5,
-    borderColor: colors.accent.gold,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarBanned: {
-    borderColor: colors.accent.coral,
-    backgroundColor: 'rgba(232, 102, 75, 0.2)',
-  },
-  avatarLetter: {
-    ...typography.headingMd,
-    color: colors.accent.gold,
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  playerInfo: {
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  playerName: {
-    ...typography.bodyMdBold,
-    color: colors.text.onDark.primary,
-  },
-  adminTag: {
-    backgroundColor: 'rgba(242, 200, 75, 0.25)',
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: colors.accent.gold,
-  },
-  adminTagText: {
-    ...typography.caption,
-    fontSize: 8,
-    color: colors.accent.gold,
-    fontWeight: '900',
-  },
-  playerEmail: {
-    ...typography.caption,
-    color: colors.text.onDark.secondary,
-    fontSize: 11,
-  },
-  statusBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-  badgeActive: {
-    backgroundColor: 'rgba(74, 222, 128, 0.15)',
-    borderColor: colors.accent.green,
-  },
-  badgeBanned: {
-    backgroundColor: 'rgba(232, 102, 75, 0.2)',
-    borderColor: colors.accent.coral,
-  },
-  badgeDisbanded: {
-    backgroundColor: 'rgba(126, 117, 160, 0.2)',
-    borderColor: '#7E75A0',
-  },
-  statusBadgeText: {
-    ...typography.caption,
-    fontSize: 9,
-    fontWeight: '900',
-  },
-  badgeTextActive: {
-    color: colors.accent.green,
-  },
-  badgeTextBanned: {
-    color: colors.accent.coral,
-  },
-  badgeTextDisbanded: {
-    color: '#B0A8D0',
-  },
-  guildCardDisbanded: {
-    opacity: 0.85,
-    borderColor: '#4A4170',
-  },
-  guildTitleDisbanded: {
-    color: colors.text.onDark.secondary,
-    textDecorationLine: 'line-through',
-  },
-  disbandNoticeBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(126, 117, 160, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(126, 117, 160, 0.3)',
-  },
-  disbandNoticeText: {
-    ...typography.caption,
-    fontSize: 10,
-    color: '#B0A8D0',
-    fontStyle: 'italic',
-    flex: 1,
-  },
-  restoreBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(74, 222, 128, 0.15)',
-    paddingVertical: 7,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.accent.green,
-  },
-  restoreBtnText: {
-    ...typography.caption,
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.accent.green,
-  },
-  purgeBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(232, 102, 75, 0.15)',
-    paddingVertical: 7,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.accent.coral,
-  },
-  purgeBtnText: {
-    ...typography.caption,
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.accent.coral,
-  },
-  telemetryRow: {
-    flexDirection: 'row',
-    backgroundColor: '#171326',
-    borderRadius: 6,
-    padding: 8,
-    gap: 6,
-    justifyContent: 'space-between',
-  },
-  telemetryItem: {
-    flex: 1,
-  },
-  telemetryLabel: {
-    ...typography.displayPixelXs,
-    fontSize: 7,
-    color: colors.text.onDark.secondary,
-    marginBottom: 2,
-  },
-  telemetryVal: {
-    ...typography.bodySmBold,
-    fontSize: 11,
-    color: colors.text.onDark.primary,
-  },
-  banNoticeBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(232, 102, 75, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(232, 102, 75, 0.3)',
-  },
-  banNoticeText: {
-    ...typography.caption,
-    fontSize: 10,
-    color: colors.accent.coral,
-    fontStyle: 'italic',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 4,
-  },
-  banBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(232, 102, 75, 0.15)',
-    paddingVertical: 6,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.accent.coral,
-  },
-  banBtnText: {
-    ...typography.caption,
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.accent.coral,
-  },
-  unbanBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: colors.accent.green,
-    paddingVertical: 6,
-    borderRadius: 4,
-  },
-  unbanBtnText: {
-    ...typography.caption,
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#000',
-  },
-  purgePlayerBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(232, 102, 75, 0.15)',
-    paddingVertical: 6,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.accent.coral,
-  },
-  purgePlayerBtnText: {
-    ...typography.caption,
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.accent.coral,
-  },
-  roleBtn: {
-    flex: 1.2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: '#1E1A33',
-    paddingVertical: 6,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.accent.gold,
-  },
-  roleBtnText: {
-    ...typography.caption,
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.accent.gold,
-  },
-  kickBtn: {
-    flex: 0.9,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: '#1E1A33',
-    paddingVertical: 6,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#4A4170',
-  },
-  kickBtnText: {
-    ...typography.caption,
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.text.onDark.secondary,
   },
 });
