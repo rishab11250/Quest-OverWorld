@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { StyleSheet, ScrollView, RefreshControl, Share } from 'react-native';
+import { StyleSheet, ScrollView, RefreshControl, Share, Alert } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import api from '../../lib/api';
@@ -15,6 +15,8 @@ import TeamAuthCard from '../../components/team/TeamAuthCard';
 import TeamHubView from '../../components/team/TeamHubView';
 import InviteContactsModal from '../../components/team/InviteContactsModal';
 import RenameTeamModal from '../../components/team/RenameTeamModal';
+import ManageMemberModal from '../../components/team/ManageMemberModal';
+import TransferCaptainModal from '../../components/team/TransferCaptainModal';
 
 export default function TeamScreen() {
   const [user, setUser] = useState(null);
@@ -30,10 +32,17 @@ export default function TeamScreen() {
   const [teamName, setTeamName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Modals
   const [leaveModalVisible, setLeaveModalVisible] = useState(false);
   const [contactsModalVisible, setContactsModalVisible] = useState(false);
   const [renameModalVisible, setRenameModalVisible] = useState(false);
   const [renaming, setRenaming] = useState(false);
+
+  // Squad management modals
+  const [selectedMemberToManage, setSelectedMemberToManage] = useState(null);
+  const [transferModalVisible, setTransferModalVisible] = useState(false);
+  const [transferringAndLeaving, setTransferringAndLeaving] = useState(false);
 
   const fetchMyTeam = useCallback(async (isSilent = false) => {
     try {
@@ -77,7 +86,9 @@ export default function TeamScreen() {
       const data = await api.post('/teams/join', { code: joinCode.trim() });
       setTeam(data.team);
       setJoinCode('');
+      triggerHaptic('success');
     } catch (err) {
+      triggerHaptic('error');
       setError(err.message || 'Failed to join team. Check code and try again.');
     } finally {
       setSubmitting(false);
@@ -97,7 +108,9 @@ export default function TeamScreen() {
       const data = await api.post('/teams', { name: teamName.trim() });
       setTeam(data.team);
       setTeamName('');
+      triggerHaptic('success');
     } catch (err) {
+      triggerHaptic('error');
       setError(err.message || 'Failed to create team.');
     } finally {
       setSubmitting(false);
@@ -142,6 +155,128 @@ export default function TeamScreen() {
     }
   };
 
+  const handleKickMember = async (member) => {
+    if (!team || !member) return;
+    Alert.alert(
+      'Remove Adventurer',
+      `Are you sure you want to remove "${member.name}" from ${team.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              triggerHaptic('warning');
+              const res = await api.post(`/teams/${team._id}/kick/${member._id}`);
+              if (res?.team) {
+                setTeam(res.team);
+                setSuccessBanner(`Removed ${member.name} from party.`);
+                setTimeout(() => setSuccessBanner(''), 4000);
+              }
+            } catch (err) {
+              triggerHaptic('error');
+              setError(err.message || 'Failed to remove member.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleToggleViceCaptain = async (member, action) => {
+    if (!team || !member) return;
+    try {
+      triggerHaptic('selection');
+      const res = await api.post(`/teams/${team._id}/roles/vice-captain`, {
+        memberId: member._id,
+        action,
+      });
+      if (res?.team) {
+        setTeam(res.team);
+        setSuccessBanner(
+          action === 'promote'
+            ? `${member.name} is now Vice-Captain! 🛡️`
+            : `${member.name} was demoted to Member.`
+        );
+        setTimeout(() => setSuccessBanner(''), 4000);
+      }
+    } catch (err) {
+      triggerHaptic('error');
+      setError(err.message || 'Failed to update squad role.');
+    }
+  };
+
+  const handlePromoteToCaptain = (member) => {
+    if (!team || !member) return;
+    Alert.alert(
+      'Transfer Captaincy',
+      `Appoint "${member.name}" as the new Party Captain? You will step down to Vice-Captain.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Make Captain',
+          style: 'default',
+          onPress: async () => {
+            try {
+              triggerHaptic('medium');
+              const res = await api.post(`/teams/${team._id}/transfer-leadership`, {
+                newLeaderId: member._id,
+              });
+              if (res?.team) {
+                setTeam(res.team);
+                setSuccessBanner(`${member.name} is now Captain! You are Vice-Captain.`);
+                setTimeout(() => setSuccessBanner(''), 4000);
+              }
+            } catch (err) {
+              triggerHaptic('error');
+              setError(err.message || 'Failed to transfer leadership.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const leaderId = typeof team?.leader === 'object' ? team?.leader?._id : team?.leader;
+  const currentUserId = user?._id || user?.id;
+  const isCaptain = Boolean(
+    currentUserId && leaderId && (currentUserId === leaderId || user?.isAdmin)
+  );
+  const isViceCaptain = Boolean(
+    currentUserId &&
+    team?.viceCaptains &&
+    team.viceCaptains.some((vc) => (typeof vc === 'object' ? vc._id : vc) === currentUserId)
+  );
+
+  const handleRequestLeave = () => {
+    if (!team) return;
+    // If Captain and has other party members: must appoint new Captain first
+    if (isCaptain && team.members && team.members.length > 1) {
+      triggerHaptic('medium');
+      setTransferModalVisible(true);
+    } else {
+      triggerHaptic('warning');
+      setLeaveModalVisible(true);
+    }
+  };
+
+  const handleConfirmTransferAndLeave = async (newLeaderId) => {
+    if (!team) return;
+    setTransferringAndLeaving(true);
+    try {
+      triggerHaptic('medium');
+      await api.post(`/teams/${team._id}/leave`, { newLeaderId });
+      setTransferModalVisible(false);
+      setTeam(null);
+    } catch (err) {
+      triggerHaptic('error');
+      setError(err.message || 'Failed to leave party.');
+    } finally {
+      setTransferringAndLeaving(false);
+    }
+  };
+
   const handleConfirmLeave = async () => {
     setLeaveModalVisible(false);
     if (!team) return;
@@ -160,11 +295,6 @@ export default function TeamScreen() {
   if (loading && !refreshing) {
     return <LoadingScreen message="Assembling Party Guild..." />;
   }
-
-  const leaderId = typeof team?.leader === 'object' ? team?.leader?._id : team?.leader;
-  const isLeader = Boolean(
-    user && leaderId && (user._id === leaderId || user.id === leaderId || user.isAdmin)
-  );
 
   return (
     <ScrollView
@@ -203,9 +333,12 @@ export default function TeamScreen() {
           onCopyCode={handleCopyCode}
           onShareCode={handleShareCode}
           onInviteContacts={() => setContactsModalVisible(true)}
-          onRequestLeave={() => setLeaveModalVisible(false) || setLeaveModalVisible(true)}
-          isLeader={isLeader}
+          onRequestLeave={handleRequestLeave}
+          isCaptain={isCaptain}
+          isViceCaptain={isViceCaptain}
+          currentUserId={currentUserId}
           onOpenRenameModal={() => setRenameModalVisible(true)}
+          onManageMember={(member) => setSelectedMemberToManage(member)}
         />
       )}
 
@@ -219,10 +352,31 @@ export default function TeamScreen() {
             loading={renaming}
           />
 
+          <ManageMemberModal
+            visible={Boolean(selectedMemberToManage)}
+            member={selectedMemberToManage}
+            team={team}
+            isCaptain={isCaptain}
+            isViceCaptain={isViceCaptain}
+            onClose={() => setSelectedMemberToManage(null)}
+            onKickMember={handleKickMember}
+            onToggleViceCaptain={handleToggleViceCaptain}
+            onPromoteToCaptain={handlePromoteToCaptain}
+          />
+
+          <TransferCaptainModal
+            visible={transferModalVisible}
+            team={team}
+            currentUserId={currentUserId}
+            onClose={() => setTransferModalVisible(false)}
+            onConfirmTransferAndLeave={handleConfirmTransferAndLeave}
+            loading={transferringAndLeaving}
+          />
+
           <ConfirmModal
             visible={leaveModalVisible}
             title="Leave Party?"
-            message={`Are you sure you want to leave "${team.name}"? You will forfeit your party rank until you rejoin.`}
+            message={`Are you sure you want to leave "${team.name}"? As the last member, the party will be disbanded.`}
             confirmText="Leave Party"
             cancelText="Stay in Party"
             onConfirm={handleConfirmLeave}

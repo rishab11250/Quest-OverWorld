@@ -8,13 +8,16 @@ import {
   FlatList,
   TextInput,
   ActivityIndicator,
+  Platform,
   Share,
 } from 'react-native';
 import * as Contacts from 'expo-contacts';
+import * as Linking from 'expo-linking';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+import { triggerHaptic } from '../../lib/haptics';
 
 export default function InviteContactsModal({ visible, team, onClose }) {
   const [contacts, setContacts] = useState([]);
@@ -63,13 +66,39 @@ export default function InviteContactsModal({ visible, team, onClose }) {
 
   const handleInviteContact = async (contact) => {
     if (!team?.code) return;
+    triggerHaptic('light');
+
+    const message = `⚔️ Hey ${contact.name}! Join my Quest Overworld adventuring party "${team.name}" using invite code: ${team.code} 🏆`;
+    const rawPhone = contact.phoneNumbers?.[0]?.number || '';
+    const cleanPhone = rawPhone.replace(/[^0-9+]/g, '');
+
     try {
-      const phone = contact.phoneNumbers?.[0]?.number || '';
-      await Share.share({
-        message: `⚔️ Hey ${contact.name}! Join my Quest Overworld adventuring party "${team.name}" using invite code: ${team.code} 🏆`,
-      });
+      // 1. Direct native SMS / Messages app
+      if (cleanPhone) {
+        const separator = Platform.OS === 'ios' ? '&' : '?';
+        const smsUrl = `sms:${cleanPhone}${separator}body=${encodeURIComponent(message)}`;
+        const canOpen = await Linking.canOpenURL(smsUrl);
+        if (canOpen) {
+          await Linking.openURL(smsUrl);
+          return;
+        }
+      }
+
+      // 2. Direct Email app fallback if contact only has email
+      const email = contact.emails?.[0]?.email;
+      if (email) {
+        const mailUrl = `mailto:${email}?subject=${encodeURIComponent(`Join my Quest Overworld party: ${team.name}`)}&body=${encodeURIComponent(message)}`;
+        const canOpen = await Linking.canOpenURL(mailUrl);
+        if (canOpen) {
+          await Linking.openURL(mailUrl);
+          return;
+        }
+      }
+
+      // 3. Fallback to share sheet only if no direct schemes available
+      await Share.share({ message });
     } catch (err) {
-      // Ignored
+      console.log('Error opening message app:', err);
     }
   };
 

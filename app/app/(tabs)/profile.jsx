@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import api from '../../lib/api';
 import { getUserData, clearAuth, setUserData, getSetting, setSetting } from '../../lib/secureStore';
@@ -199,7 +199,7 @@ export default function ProfileScreen() {
         cancelText="Stay"
         onConfirm={handleLogout}
         onCancel={() => setLogoutModalVisible(false)}
-        type="danger"
+        isDestructive={true}
       />
     </ScrollView>
   );

@@ -8,6 +8,44 @@ import PixelBadge from '../PixelBadge';
 import PixelCard from '../PixelCard';
 import { triggerHaptic } from '../../lib/haptics';
 
+export const GUILD_PERKS = [
+  {
+    id: 'perk-telemetry',
+    minLevel: 1,
+    icon: 'shield-sword',
+    name: 'Squad Telemetry Sync',
+    desc: 'Shared map discovery and instant waypoint unlocks with party',
+  },
+  {
+    id: 'perk-xp-boost',
+    minLevel: 2,
+    icon: 'lightning-bolt-circle',
+    name: 'Guild XP Multiplier (+10%)',
+    desc: '+10% XP bonus on all campus bounty board submissions',
+  },
+  {
+    id: 'perk-radar',
+    minLevel: 3,
+    icon: 'compass-rose',
+    name: 'High-Precision Radar',
+    desc: 'Sub-meter compass bearing & waypoint beacon lock',
+  },
+  {
+    id: 'perk-sonar',
+    minLevel: 4,
+    icon: 'radar',
+    name: 'Expedition Proximity Sonar',
+    desc: 'Extended 100m checkpoint proximity alert radius',
+  },
+  {
+    id: 'perk-master-crest',
+    minLevel: 5,
+    icon: 'crown-outline',
+    name: 'Grandmaster Guild Crest',
+    desc: 'Golden avatar frame and realm leaderboard insignia',
+  },
+];
+
 export default function TeamHubView({
   team,
   copied,
@@ -15,11 +53,15 @@ export default function TeamHubView({
   onShareCode,
   onInviteContacts,
   onRequestLeave,
-  isLeader = false,
+  isCaptain = false,
+  isViceCaptain = false,
+  currentUserId,
   onOpenRenameModal,
+  onManageMember,
 }) {
   const leaderId = typeof team.leader === 'object' ? team.leader._id : team.leader;
   const level = Math.floor((team.score || 0) / 250) + 1;
+  const activeBuffsCount = GUILD_PERKS.filter((p) => level >= p.minLevel).length;
 
   return (
     <View style={styles.container}>
@@ -28,7 +70,7 @@ export default function TeamHubView({
         <View style={styles.headerTop}>
           <View style={styles.nameGroup}>
             <Text style={styles.teamName}>{team.name}</Text>
-            {isLeader ? (
+            {isCaptain ? (
               <TouchableOpacity
                 style={styles.renameBtn}
                 onPress={() => {
@@ -55,7 +97,7 @@ export default function TeamHubView({
 
         <ProgressBar
           current={team.score || 0}
-          max={250}
+          max={level * 250}
           label={`NEXT GUILD RANK (LVL ${level + 1})`}
         />
       </PixelCard>
@@ -114,9 +156,18 @@ export default function TeamHubView({
 
         <View style={styles.membersList}>
           {team.members?.map((member, index) => {
-            const isLeader = member._id === leaderId;
+            const memberId = typeof member === 'object' ? member._id : member;
+            const isMemberLeader = memberId === leaderId;
+            const isMemberViceCaptain =
+              team.viceCaptains &&
+              team.viceCaptains.some((vc) => (typeof vc === 'object' ? vc._id : vc) === memberId);
+            const isSelf = memberId === currentUserId;
+            const canManage =
+              (isCaptain && !isMemberLeader && !isSelf) ||
+              (isViceCaptain && !isMemberLeader && !isMemberViceCaptain && !isSelf);
+
             return (
-              <View key={member._id || index} style={styles.memberRow}>
+              <View key={memberId || index} style={styles.memberRow}>
                 <View style={styles.avatarCircle}>
                   <Text style={styles.avatarLetter}>
                     {(member.name || 'P').charAt(0).toUpperCase()}
@@ -126,57 +177,95 @@ export default function TeamHubView({
                 <View style={styles.memberDetails}>
                   <View style={styles.memberNameRow}>
                     <Text style={styles.memberName}>{member.name}</Text>
-                    {isLeader ? (
+                    {isMemberLeader ? (
                       <View style={styles.leaderBadge}>
                         <Text style={styles.leaderBadgeText}>CAPTAIN</Text>
+                      </View>
+                    ) : isMemberViceCaptain ? (
+                      <View style={styles.vcBadge}>
+                        <Text style={styles.vcBadgeText}>VICE-CAPTAIN</Text>
                       </View>
                     ) : null}
                   </View>
                   <Text style={styles.memberRoleSub}>
-                    {isLeader ? 'Party Vanguard · Lead Scout' : 'Guild Companion · Active'}
+                    {isMemberLeader
+                      ? 'Party Vanguard · Lead Scout'
+                      : isMemberViceCaptain
+                        ? 'Party Officer · Vice-Captain'
+                        : 'Guild Companion · Active'}
                   </Text>
                 </View>
+
+                {canManage ? (
+                  <TouchableOpacity
+                    style={styles.manageMemberBtn}
+                    onPress={() => {
+                      triggerHaptic('light');
+                      if (onManageMember) onManageMember(member);
+                    }}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <MaterialCommunityIcons
+                      name="dots-vertical"
+                      size={18}
+                      color={colors.accent.gold}
+                    />
+                  </TouchableOpacity>
+                ) : null}
               </View>
             );
           })}
         </View>
       </PixelCard>
 
-      {/* Active Party Buffs & Guild Perks */}
+      {/* Active Party Buffs & Dynamic Guild Perks */}
       <PixelCard variant="dusk" style={styles.perksCard}>
         <View style={styles.rosterHeader}>
-          <Text style={styles.rosterTitle}>ACTIVE GUILD PERKS</Text>
-          <Text style={styles.memberCount}>3 BUFFS ACTIVE</Text>
+          <Text style={styles.rosterTitle}>GUILD PERKS & BUFFS</Text>
+          <Text style={styles.memberCount}>
+            {activeBuffsCount} / {GUILD_PERKS.length} UNLOCKED
+          </Text>
         </View>
 
         <View style={styles.perksList}>
-          {[
-            {
-              icon: 'shield-sword',
-              name: 'Squad Telemetry Sync',
-              desc: 'Shared map discovery and instant waypoint unlocks',
-            },
-            {
-              icon: 'lightning-bolt-circle',
-              name: 'Guild XP Multiplier',
-              desc: '+10% XP bonus on all campus bounty board submissions',
-            },
-            {
-              icon: 'compass-rose',
-              name: 'High-Precision Radar',
-              desc: 'Sub-meter compass bearing & waypoint beacon lock',
-            },
-          ].map((buff, i) => (
-            <View key={i} style={styles.perkRow}>
-              <View style={styles.perkIconBox}>
-                <MaterialCommunityIcons name={buff.icon} size={16} color={colors.accent.gold} />
+          {GUILD_PERKS.map((buff) => {
+            const isUnlocked = level >= buff.minLevel;
+            return (
+              <View key={buff.id} style={[styles.perkRow, !isUnlocked && styles.perkRowLocked]}>
+                <View style={[styles.perkIconBox, !isUnlocked && styles.perkIconBoxLocked]}>
+                  <MaterialCommunityIcons
+                    name={isUnlocked ? buff.icon : 'lock-outline'}
+                    size={16}
+                    color={isUnlocked ? colors.accent.gold : colors.text.onDark.secondary}
+                  />
+                </View>
+                <View style={styles.perkInfo}>
+                  <View style={styles.perkHeaderRow}>
+                    <Text style={[styles.perkName, !isUnlocked && styles.perkNameLocked]}>
+                      {buff.name}
+                    </Text>
+                    <View
+                      style={[
+                        styles.perkBadge,
+                        isUnlocked ? styles.perkBadgeActive : styles.perkBadgeLocked,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.perkBadgeText,
+                          isUnlocked ? styles.perkBadgeTextActive : styles.perkBadgeTextLocked,
+                        ]}
+                      >
+                        {isUnlocked ? 'ACTIVE' : `LVL ${buff.minLevel}`}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.perkDesc}>{buff.desc}</Text>
+                </View>
               </View>
-              <View style={styles.perkInfo}>
-                <Text style={styles.perkName}>{buff.name}</Text>
-                <Text style={styles.perkDesc}>{buff.desc}</Text>
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       </PixelCard>
 
@@ -287,18 +376,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   actionBtnText: {
-    ...typography.displayPixelXs,
-    fontSize: 9,
+    ...typography.captionBold,
     color: colors.bg.dusk,
   },
   actionBtnTextOutline: {
-    ...typography.displayPixelXs,
-    fontSize: 9,
+    ...typography.captionBold,
     color: colors.text.onDark.primary,
   },
   actionBtnTextContacts: {
-    ...typography.displayPixelXs,
-    fontSize: 9,
+    ...typography.captionBold,
     color: colors.accent.gold,
   },
   rosterCard: {
@@ -307,7 +393,7 @@ const styles = StyleSheet.create({
     padding: spacing.cardPadding,
     borderWidth: 1,
     borderColor: '#3D3560',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   rosterHeader: {
     flexDirection: 'row',
@@ -316,37 +402,33 @@ const styles = StyleSheet.create({
   },
   rosterTitle: {
     ...typography.displayPixelXs,
-    fontSize: 9,
     color: colors.accent.gold,
-    letterSpacing: 1.2,
+    letterSpacing: 1,
   },
   memberCount: {
-    ...typography.displayPixelXs,
-    fontSize: 8,
+    ...typography.caption,
     color: colors.text.onDark.secondary,
   },
   membersList: {
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   memberRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1A33',
+    gap: spacing.sm,
+    backgroundColor: '#1E1933',
     padding: spacing.sm,
     borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#362E52',
-    gap: spacing.sm,
   },
   avatarCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#322A54',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.accent.gold,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   avatarLetter: {
     ...typography.bodyLgBold,
@@ -377,11 +459,31 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: colors.accent.gold,
   },
+  vcBadge: {
+    backgroundColor: 'rgba(62, 207, 142, 0.15)',
+    borderWidth: 1,
+    borderColor: colors.accent.green,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  vcBadgeText: {
+    ...typography.displayPixelXs,
+    fontSize: 6.5,
+    color: colors.accent.green,
+  },
   memberRoleSub: {
     ...typography.caption,
     color: colors.text.onDark.secondary,
     fontSize: 11,
     marginTop: 1,
+  },
+  manageMemberBtn: {
+    padding: 6,
+    backgroundColor: '#2A2247',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#4A3E70',
   },
   leaveButton: {
     backgroundColor: 'rgba(232, 102, 75, 0.15)',
@@ -407,35 +509,76 @@ const styles = StyleSheet.create({
   perkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1A33',
+    backgroundColor: '#1E1933',
     padding: spacing.sm,
     borderRadius: 6,
     borderWidth: 1,
     borderColor: '#362E52',
     gap: spacing.sm,
   },
+  perkRowLocked: {
+    opacity: 0.5,
+    backgroundColor: '#161226',
+    borderColor: '#2A2342',
+  },
   perkIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#292147',
     borderWidth: 1,
     borderColor: colors.accent.gold,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  perkIconBoxLocked: {
+    backgroundColor: '#1E1833',
+    borderColor: '#3D3560',
+  },
   perkInfo: {
     flex: 1,
+    gap: 2,
+  },
+  perkHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   perkName: {
     ...typography.bodyMdBold,
     color: colors.text.onDark.primary,
     fontSize: 12,
   },
+  perkNameLocked: {
+    color: colors.text.onDark.secondary,
+  },
+  perkBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 3,
+    borderWidth: 1,
+  },
+  perkBadgeActive: {
+    backgroundColor: 'rgba(62, 207, 142, 0.15)',
+    borderColor: colors.accent.green,
+  },
+  perkBadgeLocked: {
+    backgroundColor: 'rgba(126, 117, 160, 0.15)',
+    borderColor: '#4A3E70',
+  },
+  perkBadgeText: {
+    ...typography.displayPixelXs,
+    fontSize: 6.5,
+  },
+  perkBadgeTextActive: {
+    color: colors.accent.green,
+  },
+  perkBadgeTextLocked: {
+    color: colors.text.onDark.secondary,
+  },
   perkDesc: {
     ...typography.caption,
     color: colors.text.onDark.secondary,
     fontSize: 10,
-    marginTop: 1,
   },
 });

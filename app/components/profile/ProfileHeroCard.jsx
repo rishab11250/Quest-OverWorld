@@ -4,17 +4,19 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+import { AVATAR_ICONS } from './EditHeroModal';
 
 export default function ProfileHeroCard({ user, team, onOpenEdit }) {
   const router = useRouter();
   const initial = (user?.name || user?.username || 'A').charAt(0).toUpperCase();
+  const isValidAvatar = user?.avatar && AVATAR_ICONS.includes(user.avatar);
 
   return (
     <View style={styles.container}>
       {/* Hero Avatar & Identity Card */}
       <View style={styles.heroCard}>
         <View style={styles.avatarGlow}>
-          {user?.avatar ? (
+          {isValidAvatar ? (
             <MaterialCommunityIcons name={user.avatar} size={28} color={colors.accent.gold} />
           ) : (
             <Text style={styles.avatarText}>{initial}</Text>

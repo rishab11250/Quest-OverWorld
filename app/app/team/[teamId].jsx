@@ -22,6 +22,7 @@ import SubScreenHeader from '../../components/SubScreenHeader';
 import StatusBanner from '../../components/StatusBanner';
 import LoadingScreen from '../../components/LoadingScreen';
 import RenameTeamModal from '../../components/team/RenameTeamModal';
+import { GUILD_PERKS } from '../../components/team/TeamHubView';
 
 export default function TeamDetailScreen() {
   const { teamId } = useLocalSearchParams();
@@ -122,6 +123,7 @@ export default function TeamDetailScreen() {
     user && leaderId && (user._id === leaderId || user.id === leaderId || user.isAdmin)
   );
   const level = Math.floor((team.score || 0) / 250) + 1;
+  const activeBuffsCount = GUILD_PERKS.filter((p) => level >= p.minLevel).length;
 
   return (
     <ScrollView
@@ -218,6 +220,56 @@ export default function TeamDetailScreen() {
                     ) : null}
                   </View>
                   <Text style={styles.memberEmail}>{member.email}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Active Party Buffs & Dynamic Guild Perks */}
+      <View style={styles.perksCard}>
+        <View style={styles.rosterHeader}>
+          <Text style={styles.rosterTitle}>GUILD PERKS & BUFFS</Text>
+          <Text style={styles.memberCount}>
+            {activeBuffsCount} / {GUILD_PERKS.length} UNLOCKED
+          </Text>
+        </View>
+
+        <View style={styles.perksList}>
+          {GUILD_PERKS.map((buff) => {
+            const isUnlocked = level >= buff.minLevel;
+            return (
+              <View key={buff.id} style={[styles.perkRow, !isUnlocked && styles.perkRowLocked]}>
+                <View style={[styles.perkIconBox, !isUnlocked && styles.perkIconBoxLocked]}>
+                  <MaterialCommunityIcons
+                    name={isUnlocked ? buff.icon : 'lock-outline'}
+                    size={16}
+                    color={isUnlocked ? colors.accent.gold : colors.text.onDark.secondary}
+                  />
+                </View>
+                <View style={styles.perkInfo}>
+                  <View style={styles.perkHeaderRow}>
+                    <Text style={[styles.perkName, !isUnlocked && styles.perkNameLocked]}>
+                      {buff.name}
+                    </Text>
+                    <View
+                      style={[
+                        styles.perkBadge,
+                        isUnlocked ? styles.perkBadgeActive : styles.perkBadgeLocked,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.perkBadgeText,
+                          isUnlocked ? styles.perkBadgeTextActive : styles.perkBadgeTextLocked,
+                        ]}
+                      >
+                        {isUnlocked ? 'ACTIVE' : `LVL ${buff.minLevel}`}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.perkDesc}>{buff.desc}</Text>
                 </View>
               </View>
             );
@@ -376,7 +428,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: '#1E1933',
+    backgroundColor: '#1E1A33',
     padding: spacing.sm,
     borderRadius: 6,
   },
@@ -445,5 +497,91 @@ const styles = StyleSheet.create({
   backButtonText: {
     ...typography.captionBold,
     color: colors.bg.dusk,
+  },
+  perksCard: {
+    backgroundColor: colors.bg.duskRaised,
+    borderRadius: 8,
+    padding: spacing.cardPadding,
+    borderWidth: 1,
+    borderColor: '#3D3560',
+    gap: spacing.sm,
+  },
+  perksList: {
+    gap: spacing.xs,
+  },
+  perkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E1A33',
+    padding: spacing.sm,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#362E52',
+    gap: spacing.sm,
+  },
+  perkRowLocked: {
+    opacity: 0.5,
+    backgroundColor: '#161226',
+    borderColor: '#2A2342',
+  },
+  perkIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#292147',
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  perkIconBoxLocked: {
+    backgroundColor: '#1E1833',
+    borderColor: '#3D3560',
+  },
+  perkInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  perkHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  perkName: {
+    ...typography.bodyMdBold,
+    color: colors.text.onDark.primary,
+    fontSize: 12,
+  },
+  perkNameLocked: {
+    color: colors.text.onDark.secondary,
+  },
+  perkBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 3,
+    borderWidth: 1,
+  },
+  perkBadgeActive: {
+    backgroundColor: 'rgba(62, 207, 142, 0.15)',
+    borderColor: colors.accent.green,
+  },
+  perkBadgeLocked: {
+    backgroundColor: 'rgba(126, 117, 160, 0.15)',
+    borderColor: '#4A3E70',
+  },
+  perkBadgeText: {
+    ...typography.displayPixelXs,
+    fontSize: 6.5,
+  },
+  perkBadgeTextActive: {
+    color: colors.accent.green,
+  },
+  perkBadgeTextLocked: {
+    color: colors.text.onDark.secondary,
+  },
+  perkDesc: {
+    ...typography.caption,
+    color: colors.text.onDark.secondary,
+    fontSize: 10,
   },
 });

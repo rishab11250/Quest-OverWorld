@@ -8,6 +8,9 @@ const {
   getTeamById,
   leaveTeam,
   updateTeam,
+  kickMember,
+  setViceCaptain,
+  transferLeadership,
 } = require('../controllers/teamController');
 
 // All team routes require authentication
@@ -20,5 +23,8 @@ router.get('/:id', getTeamById);
 router.put('/:id', updateTeam);
 router.patch('/:id', updateTeam);
 router.post('/:id/leave', leaveTeam);
+router.post('/:id/kick/:memberId', kickMember);
+router.post('/:id/roles/vice-captain', setViceCaptain);
+router.post('/:id/transfer-leadership', transferLeadership);
 
 module.exports = router;
