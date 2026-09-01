@@ -138,6 +138,7 @@ export default function MapScreen() {
           currentClue={currentClue}
           userLocation={location}
           currentOrder={quest?.currentOrder || 1}
+          isCompleted={Boolean(quest?.isCompleted)}
           onSelectPin={setSelectedPin}
           onRecenter={handleRecenter}
         />
@@ -217,17 +218,32 @@ export default function MapScreen() {
             </TouchableOpacity>
           </View>
         </PixelCard>
-      ) : currentClue ? (
+      ) : quest?.isCompleted ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>All Stations Unlocked!</Text>
+          <Text style={styles.emptySubtitle}>
+            You have reached every mapped waypoint in this territory.
+          </Text>
+        </View>
+      ) : (
         <PixelCard variant="gold" glow style={styles.clueCard}>
           <View style={styles.clueHeaderRow}>
             <View style={styles.orderBadge}>
-              <Text style={styles.orderBadgeText}>STATION #{quest.currentOrder}</Text>
+              <Text style={styles.orderBadgeText}>
+                STATION #{currentClue?.order || quest?.currentOrder || 1}
+              </Text>
             </View>
-            <Text style={styles.cluePoints}>+{currentClue.points || 100} PTS</Text>
+            <Text style={styles.cluePoints}>+{currentClue?.points || 100} PTS</Text>
           </View>
 
-          <Text style={styles.clueTitle}>{currentClue.title}</Text>
-          <Text style={styles.clueBody}>{currentClue.clue}</Text>
+          <Text style={styles.clueTitle}>
+            {currentClue?.title ||
+              (quest?.checkpoints && quest.checkpoints[0]?.title) ||
+              'Active Waypoint'}
+          </Text>
+          <Text style={styles.clueBody}>
+            {currentClue?.clue || 'Navigate to the waypoint beacon marked on your radar.'}
+          </Text>
 
           {address ? (
             <View style={styles.addressRow}>
@@ -254,13 +270,6 @@ export default function MapScreen() {
             <Text style={styles.scanButtonText}>Scan Station QR</Text>
           </TouchableOpacity>
         </PixelCard>
-      ) : (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>All Stations Unlocked!</Text>
-          <Text style={styles.emptySubtitle}>
-            You have reached every mapped waypoint in this territory.
-          </Text>
-        </View>
       )}
     </ScrollView>
   );

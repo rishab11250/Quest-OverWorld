@@ -79,26 +79,30 @@ const getActiveQuest = async (req, res) => {
 
     const completedIds = new Set(completedProgress.map((p) => p.checkpointId.toString()));
 
-    let completedCheckpoints = [];
-    let currentOrder = 1;
+    const completedCheckpoints = allCheckpoints
+      .filter((cp) => completedIds.has(cp._id.toString()))
+      .map((cp) => ({
+        _id: cp._id,
+        title: cp.title,
+        points: cp.points,
+        order: cp.order,
+        completed: true,
+      }));
 
-    for (const cp of allCheckpoints) {
-      if (completedIds.has(cp._id.toString())) {
-        completedCheckpoints.push({
-          _id: cp._id,
-          title: cp.title,
-          points: cp.points,
-          order: cp.order,
-          completed: true,
-        });
-        currentOrder = cp.order + 1;
-      } else {
-        break;
-      }
-    }
+    const uncompletedCheckpoints = allCheckpoints.filter(
+      (cp) => !completedIds.has(cp._id.toString())
+    );
 
-    const currentCheckpoint = allCheckpoints.find((cp) => cp.order === currentOrder);
-    const isQuestCompleted = currentOrder > allCheckpoints.length;
+    const isQuestCompleted = allCheckpoints.length > 0 && uncompletedCheckpoints.length === 0;
+
+    const currentCheckpoint =
+      !isQuestCompleted && uncompletedCheckpoints.length > 0 ? uncompletedCheckpoints[0] : null;
+
+    const currentOrder = currentCheckpoint
+      ? currentCheckpoint.order
+      : allCheckpoints.length > 0
+        ? allCheckpoints.length
+        : 1;
 
     return res.status(200).json({
       quest: {

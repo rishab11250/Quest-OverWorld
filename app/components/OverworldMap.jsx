@@ -18,6 +18,7 @@ export default function OverworldMap({
   currentClue = null,
   userLocation,
   currentOrder = 1,
+  isCompleted = false,
   onSelectPin,
   onRecenter,
 }) {
@@ -180,16 +181,20 @@ export default function OverworldMap({
 
           <View style={styles.hudTextContainer}>
             <Text style={styles.hudTargetText} numberOfLines={1} ellipsizeMode="tail">
-              {activeCheckpoint
-                ? `STATION #${currentOrder}: ${activeCheckpoint.title.toUpperCase()}`
-                : 'OVERWORLD EXPLORATION RADAR'}
+              {isCompleted
+                ? 'ALL WAYPOINTS CLEARED'
+                : activeCheckpoint
+                  ? `STATION #${currentOrder}: ${activeCheckpoint.title.toUpperCase()}`
+                  : 'OVERWORLD EXPLORATION RADAR'}
             </Text>
             <Text style={styles.hudTargetSub}>
-              {hasCheckpoints
-                ? `Step ${currentOrder} of ${checkpoints.length} Waypoints`
-                : userLocation
-                  ? `${userLocation.latitude.toFixed(4)}° N, ${userLocation.longitude.toFixed(4)}° E`
-                  : 'Acquiring GPS Telemetry...'}
+              {isCompleted
+                ? 'Sector 100% Explored'
+                : hasCheckpoints
+                  ? `Step ${currentOrder} of ${checkpoints.length} Waypoints`
+                  : userLocation
+                    ? `${userLocation.latitude.toFixed(4)}° N, ${userLocation.longitude.toFixed(4)}° E`
+                    : 'Acquiring GPS Telemetry...'}
             </Text>
           </View>
         </View>
@@ -204,7 +209,11 @@ export default function OverworldMap({
 
           <View style={styles.distanceBadge}>
             <Text style={styles.distanceText}>
-              {targetDistance != null ? formatDistance(targetDistance) : 'RADAR ACTIVE'}
+              {isCompleted
+                ? 'CLEARED'
+                : targetDistance != null
+                  ? formatDistance(targetDistance)
+                  : 'RADAR ACTIVE'}
             </Text>
           </View>
         </View>

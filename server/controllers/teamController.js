@@ -1,12 +1,16 @@
 const Team = require('../models/Team');
 
-// Helper to populate all team references
-const populateTeam = (query) => {
-  return query
-    .populate('members', 'name email avatar')
-    .populate('leader', 'name email avatar')
-    .populate('viceCaptains', 'name email avatar')
-    .populate('questId', 'name description difficulty xpReward');
+const POPULATE_FIELDS = [
+  { path: 'members', select: 'name email avatar' },
+  { path: 'leader', select: 'name email avatar' },
+  { path: 'viceCaptains', select: 'name email avatar' },
+  { path: 'questId', select: 'name description difficulty xpReward' },
+];
+
+// Helper to populate all team references (supports Document & Query)
+const populateTeam = async (teamOrQuery) => {
+  if (!teamOrQuery) return null;
+  return await teamOrQuery.populate(POPULATE_FIELDS);
 };
 
 // @desc    Create a new team
@@ -193,11 +197,9 @@ const kickMember = async (req, res) => {
       team.viceCaptains && team.viceCaptains.some((vc) => vc.toString() === memberId);
 
     if (targetIsViceCaptain && !isCaptain) {
-      return res
-        .status(403)
-        .json({
-          message: 'Vice-Captains cannot remove other Vice-Captains. Only the Captain can.',
-        });
+      return res.status(403).json({
+        message: 'Vice-Captains cannot remove other Vice-Captains. Only the Captain can.',
+      });
     }
 
     const memberIndex = team.members.findIndex((m) => m.toString() === memberId);
