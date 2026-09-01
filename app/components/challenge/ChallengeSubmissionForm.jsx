@@ -84,9 +84,7 @@ export default function ChallengeSubmissionForm({
               <MaterialCommunityIcons name="timer-sand" size={16} color={colors.accent.coral} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.cooldownTitle}>GUILD PARTY COOLDOWN</Text>
-                <Text style={styles.cooldownTimer}>
-                  Unlock in {formatTimer(cooldownSeconds)}
-                </Text>
+                <Text style={styles.cooldownTimer}>Unlock in {formatTimer(cooldownSeconds)}</Text>
               </View>
             </View>
           ) : null}
@@ -189,10 +187,7 @@ export default function ChallengeSubmissionForm({
             <ActivityIndicator size="small" color={colors.bg.dusk} />
           ) : (
             <Text
-              style={[
-                styles.submitBtnText,
-                inCooldown && { color: colors.text.onDark.secondary },
-              ]}
+              style={[styles.submitBtnText, inCooldown && { color: colors.text.onDark.secondary }]}
             >
               {inCooldown
                 ? `Locked (${formatTimer(cooldownSeconds)})`

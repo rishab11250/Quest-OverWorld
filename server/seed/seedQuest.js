@@ -61,7 +61,8 @@ const sampleCheckpoints = [
 const seed = async () => {
   try {
     const mongoUri = process.env.MONGO_URI;
-    if (!mongoUri) throw new Error('MONGO_URI environment variable is required. Set it in server/.env');
+    if (!mongoUri)
+      throw new Error('MONGO_URI environment variable is required. Set it in server/.env');
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB for seeding...');
 

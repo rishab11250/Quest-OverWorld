@@ -127,7 +127,8 @@ export default function HomeScreen() {
 
             <View style={styles.stationCounterBox}>
               <Text style={styles.stationCounterText}>
-                📍 Station {quest?.currentOrder || 1} of {quest?.totalCheckpoints || quest?.checkpoints?.length || 4}
+                📍 Station {quest?.currentOrder || 1} of{' '}
+                {quest?.totalCheckpoints || quest?.checkpoints?.length || 4}
               </Text>
             </View>
           </View>
@@ -168,7 +169,11 @@ export default function HomeScreen() {
             <View style={styles.roadmapHeader}>
               <Text style={styles.roadmapTitle}>EXPEDITION WAYPOINTS</Text>
               <Text style={styles.roadmapSub}>
-                {Math.max(0, Math.min((quest?.currentOrder || 1) - 1, quest?.totalCheckpoints || 0))} / {quest?.totalCheckpoints || 0} CLEARED
+                {Math.max(
+                  0,
+                  Math.min((quest?.currentOrder || 1) - 1, quest?.totalCheckpoints || 0)
+                )}{' '}
+                / {quest?.totalCheckpoints || 0} CLEARED
               </Text>
             </View>
 
@@ -176,8 +181,8 @@ export default function HomeScreen() {
               {(quest?.checkpoints && quest.checkpoints.length > 0
                 ? quest.checkpoints
                 : quest?.currentClue
-                ? [quest.currentClue]
-                : []
+                  ? [quest.currentClue]
+                  : []
               ).map((wp) => {
                 const isCleared = wp.order < (quest?.currentOrder || 1);
                 const isActive = wp.order === (quest?.currentOrder || 1);
@@ -208,8 +213,8 @@ export default function HomeScreen() {
                             isCleared
                               ? colors.accent.green
                               : isActive
-                              ? colors.accent.gold
-                              : '#5A527A'
+                                ? colors.accent.gold
+                                : '#5A527A'
                           }
                         />
                       </View>

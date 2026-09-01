@@ -1,10 +1,7 @@
 import * as Location from 'expo-location';
 
-/**
- * Request foreground GPS location permissions.
- * @returns {Promise<{ granted: boolean, error?: string }>}
- */
-export const requestLocationPermission = async () => {
+// Internal helper: request foreground GPS permissions
+const requestLocationPermission = async () => {
   try {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
@@ -23,10 +20,7 @@ export const requestLocationPermission = async () => {
   }
 };
 
-/**
- * Fast fetch of last known GPS location cached by the device.
- * @returns {Promise<{ latitude: number, longitude: number } | null>}
- */
+// Fast fetch of last known GPS location cached by the device
 export const getLastKnownLocation = async () => {
   try {
     const lastPos = await Location.getLastKnownPositionAsync();
@@ -43,10 +37,7 @@ export const getLastKnownLocation = async () => {
   }
 };
 
-/**
- * Get current user GPS coordinates with high accuracy.
- * @returns {Promise<{ latitude: number, longitude: number, accuracy?: number } | null>}
- */
+// Get current user GPS coordinates with high accuracy
 export const getCurrentLocation = async () => {
   try {
     const perm = await requestLocationPermission();
@@ -80,11 +71,7 @@ export const getCurrentLocation = async () => {
   }
 };
 
-/**
- * Subscribe to real-time live GPS location updates as the user moves.
- * @param {Function} onLocationUpdate - Callback function receiving coords
- * @returns {Promise<Location.LocationSubscription | null>}
- */
+// Subscribe to real-time live GPS location updates as the user moves
 export const startLocationWatcher = async (onLocationUpdate) => {
   try {
     const perm = await requestLocationPermission();
@@ -114,12 +101,7 @@ export const startLocationWatcher = async (onLocationUpdate) => {
   }
 };
 
-/**
- * Convert GPS latitude & longitude into a human-readable street/campus landmark address.
- * @param {number} latitude
- * @param {number} longitude
- * @returns {Promise<string>}
- */
+// Convert GPS latitude & longitude into a readable campus/street landmark address
 export const reverseGeocodeLocation = async (latitude, longitude) => {
   try {
     if (latitude == null || longitude == null) return '';
@@ -133,9 +115,7 @@ export const reverseGeocodeLocation = async (latitude, longitude) => {
   }
 };
 
-/**
- * Calculate distance between two GPS coordinates in meters using the Haversine formula.
- */
+// Haversine formula: calculate distance between two GPS coordinates in meters
 export const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
   if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
     return null;
@@ -155,32 +135,14 @@ export const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
   return Math.round(R * c);
 };
 
-/**
- * Check if a player is within the radius of a checkpoint.
- */
-export const isWithinRadius = (userLat, userLon, checkLat, checkLon, radius = 50) => {
-  const distance = getDistanceInMeters(userLat, userLon, checkLat, checkLon);
-  if (distance == null) return false;
-  return distance <= radius;
-};
-
-/**
- * Format meters to human readable distance string.
- */
+// Format meters into human-readable distance (e.g. 250m or 1.2km)
 export const formatDistance = (meters) => {
   if (meters == null) return '--';
   if (meters < 1000) return `${meters}m`;
   return `${(meters / 1000).toFixed(1)}km`;
 };
 
-/**
- * Calculate compass bearing angle and cardinal direction from player to target landmark.
- * @param {number} lat1 - Player latitude
- * @param {number} lon1 - Player longitude
- * @param {number} lat2 - Target landmark latitude
- * @param {number} lon2 - Target landmark longitude
- * @returns {{ bearing: number, direction: string, arrow: string, label: string } | null}
- */
+// Calculate compass bearing angle (0-360) and cardinal direction arrow to target
 export const getBearingAndDirection = (lat1, lon1, lat2, lon2) => {
   if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
     return null;

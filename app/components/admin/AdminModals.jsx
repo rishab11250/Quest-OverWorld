@@ -1,5 +1,16 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Modal,
+  ScrollView,
+  Image,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -11,25 +22,28 @@ import spacing from '../../theme/spacing';
 import AdminLocationPickerMap, { CAMPUS_LANDMARKS } from './AdminLocationPickerMap';
 import { triggerHaptic } from '../../lib/haptics';
 
-export function CreateQuestModal({
-  visible,
-  onClose,
-  onSave,
-  form,
-  setForm,
-}) {
+export function CreateQuestModal({ visible, onClose, onSave, form, setForm }) {
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalOverlay}>
         <View style={[styles.modalCard, { maxHeight: '92%' }]}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ gap: spacing.sm }}
+          >
             <View style={styles.modalHeaderRow}>
               <View>
                 <Text style={styles.modalTitle}>Create New Quest</Text>
-                <Text style={styles.modalSub}>Define the expedition name, lore, and point budget</Text>
+                <Text style={styles.modalSub}>
+                  Define the expedition name, lore, and point budget
+                </Text>
               </View>
               <TouchableOpacity onPress={onClose}>
-                <MaterialCommunityIcons name="close" size={20} color={colors.text.onDark.secondary} />
+                <MaterialCommunityIcons
+                  name="close"
+                  size={20}
+                  color={colors.text.onDark.secondary}
+                />
               </TouchableOpacity>
             </View>
 
@@ -82,9 +96,14 @@ export function CreateQuestModal({
             </View>
 
             <View style={styles.questInfoNote}>
-              <MaterialCommunityIcons name="information-outline" size={14} color={colors.text.onDark.secondary} />
+              <MaterialCommunityIcons
+                name="information-outline"
+                size={14}
+                color={colors.text.onDark.secondary}
+              />
               <Text style={styles.questInfoNoteText}>
-                GPS checkpoint locations are set per-station, not per-quest. Add stations after creating this quest.
+                GPS checkpoint locations are set per-station, not per-quest. Add stations after
+                creating this quest.
               </Text>
             </View>
 
@@ -103,7 +122,6 @@ export function CreateQuestModal({
   );
 }
 
-
 export function CreateCheckpointModal({
   visible,
   onClose,
@@ -116,11 +134,14 @@ export function CreateCheckpointModal({
 }) {
   const [modalStep, setModalStep] = useState('map'); // 'map' or 'details'
 
-  const selectedLoc = form.latitude && form.longitude ? {
-    latitude: Number(form.latitude),
-    longitude: Number(form.longitude),
-    landmarkName: form.landmarkName || '',
-  } : null;
+  const selectedLoc =
+    form.latitude && form.longitude
+      ? {
+          latitude: Number(form.latitude),
+          longitude: Number(form.longitude),
+          landmarkName: form.landmarkName || '',
+        }
+      : null;
 
   const handleLocationChange = (coords) => {
     setForm((prev) => ({
@@ -140,7 +161,10 @@ export function CreateCheckpointModal({
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalOverlay}>
         <View style={[styles.modalCard, { maxHeight: '92%' }]}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ gap: spacing.sm }}
+          >
             <View style={styles.modalHeaderRow}>
               <View>
                 <Text style={styles.modalTitle}>Add Checkpoint Station</Text>
@@ -151,7 +175,11 @@ export function CreateCheckpointModal({
                 </Text>
               </View>
               <TouchableOpacity onPress={onClose}>
-                <MaterialCommunityIcons name="close" size={20} color={colors.text.onDark.secondary} />
+                <MaterialCommunityIcons
+                  name="close"
+                  size={20}
+                  color={colors.text.onDark.secondary}
+                />
               </TouchableOpacity>
             </View>
 
@@ -186,9 +214,13 @@ export function CreateCheckpointModal({
                 <MaterialCommunityIcons
                   name="file-document-edit-outline"
                   size={15}
-                  color={modalStep === 'details' ? colors.accent.gold : colors.text.onDark.secondary}
+                  color={
+                    modalStep === 'details' ? colors.accent.gold : colors.text.onDark.secondary
+                  }
                 />
-                <Text style={[styles.stepTabText, modalStep === 'details' && styles.stepTabTextActive]}>
+                <Text
+                  style={[styles.stepTabText, modalStep === 'details' && styles.stepTabTextActive]}
+                >
                   2. CLUES & QR
                 </Text>
               </TouchableOpacity>
@@ -222,7 +254,8 @@ export function CreateCheckpointModal({
                 <View style={styles.coordsChip}>
                   <MaterialCommunityIcons name="pin" size={14} color={colors.accent.green} />
                   <Text style={styles.coordsChipText}>
-                    Location: {Number(form.latitude || 28.5458).toFixed(4)}, {Number(form.longitude || 77.1926).toFixed(4)} (±{form.radius || 50}m)
+                    Location: {Number(form.latitude || 28.5458).toFixed(4)},{' '}
+                    {Number(form.longitude || 77.1926).toFixed(4)} (±{form.radius || 50}m)
                   </Text>
                   <TouchableOpacity onPress={() => setModalStep('map')}>
                     <Text style={styles.changeLocLink}>Change</Text>
@@ -272,7 +305,11 @@ export function CreateCheckpointModal({
                     </ScrollView>
                   ) : (
                     <View style={styles.noQuestNoticeBox}>
-                      <MaterialCommunityIcons name="alert-circle-outline" size={16} color={colors.accent.coral} />
+                      <MaterialCommunityIcons
+                        name="alert-circle-outline"
+                        size={16}
+                        color={colors.accent.coral}
+                      />
                       <Text style={styles.noQuestNoticeText}>
                         No quests created yet. Please create a quest first before adding stations.
                       </Text>
@@ -309,7 +346,8 @@ export function CreateCheckpointModal({
                   <View style={{ flex: 1 }}>
                     <Text style={styles.autoQrTitle}>AUTOMATIC CRYPTO QR BEACON</Text>
                     <Text style={styles.autoQrSub}>
-                      A random non-sequential token & high-res QR code image will be generated automatically.
+                      A random non-sequential token & high-res QR code image will be generated
+                      automatically.
                     </Text>
                   </View>
                 </View>
@@ -341,10 +379,7 @@ export function CreateCheckpointModal({
                 </View>
 
                 <View style={styles.modalBtnRow}>
-                  <TouchableOpacity
-                    style={styles.modalCancel}
-                    onPress={() => setModalStep('map')}
-                  >
+                  <TouchableOpacity style={styles.modalCancel} onPress={() => setModalStep('map')}>
                     <Text style={styles.modalCancelText}>← Back to Map</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.modalSave} onPress={onSave}>
@@ -376,9 +411,7 @@ export function CheckpointQrPreviewModal({ visible, onClose, checkpoint, qrImage
       triggerHaptic('light');
 
       // Strip data URI prefix if present
-      const base64Data = qrImage.includes('base64,')
-        ? qrImage.split('base64,')[1]
-        : qrImage;
+      const base64Data = qrImage.includes('base64,') ? qrImage.split('base64,')[1] : qrImage;
 
       const safeOrder = checkpoint.order || 1;
       const safeToken = checkpoint.qrCode || 'beacon';
@@ -465,11 +498,7 @@ export function CheckpointQrPreviewModal({ visible, onClose, checkpoint, qrImage
           )}
 
           {/* Token String & Copy Button */}
-          <TouchableOpacity
-            style={styles.tokenPill}
-            onPress={handleCopyToken}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={styles.tokenPill} onPress={handleCopyToken} activeOpacity={0.7}>
             <MaterialCommunityIcons
               name={copied ? 'check-bold' : 'content-copy'}
               size={14}
@@ -611,7 +640,8 @@ export function BanPlayerModal({ visible, onClose, onConfirm, player, reason, se
         <View style={styles.modalCard}>
           <Text style={[styles.modalTitle, { color: colors.accent.coral }]}>Ban Adventurer</Text>
           <Text style={styles.modalSub}>
-            Suspending <Text style={{ fontWeight: 'bold', color: '#FFF' }}>{player.name}</Text> ({player.email}) will immediately lock their account and revoke party rewards.
+            Suspending <Text style={{ fontWeight: 'bold', color: '#FFF' }}>{player.name}</Text> (
+            {player.email}) will immediately lock their account and revoke party rewards.
           </Text>
 
           <TextInput
@@ -688,9 +718,14 @@ export function DeletePlayerModal({ visible, onClose, onConfirm, player, loading
 
           {/* Warning Callout Box */}
           <View style={styles.deleteWarningBox}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={16} color={colors.accent.coral} />
+            <MaterialCommunityIcons
+              name="alert-circle-outline"
+              size={16}
+              color={colors.accent.coral}
+            />
             <Text style={styles.deleteWarningText}>
-              This will permanently delete their account, game progress, and remove them from all guilds. This cannot be undone.
+              This will permanently delete their account, game progress, and remove them from all
+              guilds. This cannot be undone.
             </Text>
           </View>
 
@@ -732,7 +767,9 @@ export function BanGuildModal({ visible, onClose, onConfirm, guild, reason, setR
             🚫 Ban Guild Party
           </Text>
           <Text style={styles.modalSub}>
-            Banning <Text style={{ color: colors.accent.gold, fontWeight: '800' }}>{guild.name}</Text> will lock all party members from verifying checkpoints and solving bounties.
+            Banning{' '}
+            <Text style={{ color: colors.accent.gold, fontWeight: '800' }}>{guild.name}</Text> will
+            lock all party members from verifying checkpoints and solving bounties.
           </Text>
           <TextInput
             style={[styles.input, { height: 80 }]}

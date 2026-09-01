@@ -139,9 +139,13 @@ export default function LeaderboardScreen() {
         </View>
 
         <View style={styles.leagueRulesBox}>
-          <Text style={styles.ruleItem}>🏆 Top guild claims the Mythic Grand Arch-Master Title.</Text>
+          <Text style={styles.ruleItem}>
+            🏆 Top guild claims the Mythic Grand Arch-Master Title.
+          </Text>
           <Text style={styles.ruleItem}>📍 Waypoint Discoveries: +100-250 PTS per station.</Text>
-          <Text style={styles.ruleItem}>⚡ Photo & Riddle Bounties: +100-300 PTS on verification.</Text>
+          <Text style={styles.ruleItem}>
+            ⚡ Photo & Riddle Bounties: +100-300 PTS on verification.
+          </Text>
         </View>
       </PixelCard>
     </ScrollView>

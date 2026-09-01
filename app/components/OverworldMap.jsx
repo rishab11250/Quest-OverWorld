@@ -11,9 +11,30 @@ import { getTimeOfDayAtmosphere } from '../theme/atmosphere';
 // Structured campus landmark zones linked directly to checkpoint sequence
 const ZONE_ANCHORS = [
   { order: 1, name: 'NORTH QUAD', sub: 'Station 1 · Whispering Oak', icon: 'tree', x: 45, y: 35 },
-  { order: 2, name: 'CLOCKTOWER PLAZA', sub: 'Station 2 · Western Steps', icon: 'clock-outline', x: 200, y: 110 },
-  { order: 3, name: 'ALUMNI WATERS', sub: 'Station 3 · Fountain Rim', icon: 'water', x: 45, y: 220 },
-  { order: 4, name: 'FOUNDERS GROUNDS', sub: 'Station 4 · Grand Vault', icon: 'pillar', x: 200, y: 295 },
+  {
+    order: 2,
+    name: 'CLOCKTOWER PLAZA',
+    sub: 'Station 2 · Western Steps',
+    icon: 'clock-outline',
+    x: 200,
+    y: 110,
+  },
+  {
+    order: 3,
+    name: 'ALUMNI WATERS',
+    sub: 'Station 3 · Fountain Rim',
+    icon: 'water',
+    x: 45,
+    y: 220,
+  },
+  {
+    order: 4,
+    name: 'FOUNDERS GROUNDS',
+    sub: 'Station 4 · Grand Vault',
+    icon: 'pillar',
+    x: 200,
+    y: 295,
+  },
 ];
 
 export default function OverworldMap({
@@ -138,7 +159,9 @@ export default function OverworldMap({
 
           <View style={styles.hudTextContainer}>
             <Text style={styles.hudTargetText} numberOfLines={1} ellipsizeMode="tail">
-              {activeCheckpoint ? `STATION #${currentOrder}: ${activeCheckpoint.title.toUpperCase()}` : 'ALL QUESTS CLEARED'}
+              {activeCheckpoint
+                ? `STATION #${currentOrder}: ${activeCheckpoint.title.toUpperCase()}`
+                : 'ALL QUESTS CLEARED'}
             </Text>
             <Text style={styles.hudTargetSub}>
               {currentOrder <= 4 ? `Step ${currentOrder} of 4 Waypoints` : 'Campus Vault Unlocked'}
@@ -180,7 +203,11 @@ export default function OverworldMap({
         <View
           style={[
             styles.trailSegment,
-            currentOrder > 2 ? styles.trailCleared : currentOrder === 2 ? styles.trailActive : styles.trailLocked,
+            currentOrder > 2
+              ? styles.trailCleared
+              : currentOrder === 2
+                ? styles.trailActive
+                : styles.trailLocked,
             { top: 183, left: 45, width: 190, transform: [{ rotate: '-35.3deg' }] },
           ]}
         />
@@ -188,7 +215,11 @@ export default function OverworldMap({
         <View
           style={[
             styles.trailSegment,
-            currentOrder > 3 ? styles.trailCleared : currentOrder === 3 ? styles.trailActive : styles.trailLocked,
+            currentOrder > 3
+              ? styles.trailCleared
+              : currentOrder === 3
+                ? styles.trailActive
+                : styles.trailLocked,
             { top: 275, left: 54, width: 172, transform: [{ rotate: '25.8deg' }] },
           ]}
         />
@@ -200,10 +231,7 @@ export default function OverworldMap({
           const isLocked = node.order > currentOrder;
 
           return (
-            <View
-              key={node._id}
-              style={[styles.nodeContainer, { left: node.x, top: node.y }]}
-            >
+            <View key={node._id} style={[styles.nodeContainer, { left: node.x, top: node.y }]}>
               {/* Active Pulse Ring */}
               {isActive ? (
                 <Animated.View

@@ -173,7 +173,9 @@ const updateTeam = async (req, res) => {
 
     // Check if requester is leader or admin
     if (team.leader.toString() !== req.user._id.toString() && !req.user.isAdmin) {
-      return res.status(403).json({ message: 'Only the party leader or admin can rename the guild' });
+      return res
+        .status(403)
+        .json({ message: 'Only the party leader or admin can rename the guild' });
     }
 
     team.name = name.trim();

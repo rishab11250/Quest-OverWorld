@@ -192,14 +192,7 @@ const getAllAdminCheckpoints = async (req, res) => {
 const createCheckpoint = async (req, res) => {
   try {
     const { questId, title, clue, latitude, longitude, radius, points, order } = req.body;
-    if (
-      !questId ||
-      !title ||
-      !clue ||
-      latitude == null ||
-      longitude == null ||
-      order == null
-    ) {
+    if (!questId || !title || !clue || latitude == null || longitude == null || order == null) {
       return res.status(400).json({ message: 'Please provide all required checkpoint fields.' });
     }
 
@@ -469,6 +462,13 @@ const rejectSubmission = async (req, res) => {
 // ================= SYSTEM ACTIONS ================= //
 
 const reseedDemoData = async (req, res) => {
+  // Prevent wiping live event database in production
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_RESEED !== 'true') {
+    return res.status(403).json({
+      message: 'Reseeding demo data is disabled in production environment.',
+    });
+  }
+
   try {
     // Re-seed Quest
     await Quest.deleteMany({});
@@ -597,9 +597,7 @@ const getAllPlayers = async (req, res) => {
     const teams = await Team.find().select('name code score leader members');
 
     const players = users.map((u) => {
-      const userTeam = teams.find((t) =>
-        t.members.some((m) => m.toString() === u._id.toString())
-      );
+      const userTeam = teams.find((t) => t.members.some((m) => m.toString() === u._id.toString()));
       const isLeader = userTeam && userTeam.leader.toString() === u._id.toString();
 
       return {
@@ -614,12 +612,12 @@ const getAllPlayers = async (req, res) => {
         createdAt: u.createdAt,
         team: userTeam
           ? {
-              _id: userTeam._id,
-              name: userTeam.name,
-              code: userTeam.code,
-              score: userTeam.score,
-              isLeader,
-            }
+            _id: userTeam._id,
+            name: userTeam.name,
+            code: userTeam.code,
+            score: userTeam.score,
+            isLeader,
+          }
           : null,
       };
     });
@@ -639,7 +637,9 @@ const updatePlayerStatus = async (req, res) => {
     const { status, banReason } = req.body;
 
     if (!['active', 'suspended', 'banned'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status. Must be active, suspended, or banned.' });
+      return res
+        .status(400)
+        .json({ message: 'Invalid status. Must be active, suspended, or banned.' });
     }
 
     const user = await User.findById(userId);
@@ -654,7 +654,7 @@ const updatePlayerStatus = async (req, res) => {
 
     user.status = status;
     user.isBanned = status === 'banned';
-    user.banReason = status === 'banned' ? (banReason || 'Administrative penalty') : '';
+    user.banReason = status === 'banned' ? banReason || 'Administrative penalty' : '';
 
     await user.save();
 
@@ -671,7 +671,9 @@ const updatePlayerStatus = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message || 'Server error updating player status' });
+    return res
+      .status(500)
+      .json({ message: error.message || 'Server error updating player status' });
   }
 };
 
@@ -689,7 +691,9 @@ const updatePlayerRole = async (req, res) => {
     }
 
     if (user._id.toString() === req.user._id.toString() && !isAdmin) {
-      return res.status(400).json({ message: 'You cannot revoke your own administrator privileges.' });
+      return res
+        .status(400)
+        .json({ message: 'You cannot revoke your own administrator privileges.' });
     }
 
     user.isAdmin = !!isAdmin;
@@ -765,7 +769,8 @@ const deletePlayer = async (req, res) => {
     // Security: Only banned players can be permanently deleted
     if (!user.isBanned && user.status !== 'banned') {
       return res.status(400).json({
-        message: 'Only banned players can be removed from the database. Please ban the player first before deleting.',
+        message:
+          'Only banned players can be removed from the database. Please ban the player first before deleting.',
       });
     }
 

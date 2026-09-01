@@ -45,17 +45,14 @@ const latLonToWorldPixels = (lat, lon, zoom) => {
   const n = Math.pow(2, zoom);
   const worldX = ((lon + 180) / 360) * 256 * n;
   const latRad = (lat * Math.PI) / 180;
-  const worldY =
-    ((1 - Math.asinh(Math.tan(latRad)) / Math.PI) / 2) * 256 * n;
+  const worldY = ((1 - Math.asinh(Math.tan(latRad)) / Math.PI) / 2) * 256 * n;
   return { worldX, worldY };
 };
 
 const worldPixelsToLatLon = (worldX, worldY, zoom) => {
   const n = Math.pow(2, zoom);
   const lon = (worldX / (256 * n)) * 360 - 180;
-  const latRad = Math.atan(
-    Math.sinh(Math.PI * (1 - (2 * worldY) / (256 * n)))
-  );
+  const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * worldY) / (256 * n))));
   const lat = (latRad * 180) / Math.PI;
   return {
     latitude: Number(lat.toFixed(6)),
@@ -352,10 +349,7 @@ export default function AdminLocationPickerMap({
           userScreenY >= -40 &&
           userScreenY <= mapHeight + 40 && (
             <View
-              style={[
-                styles.userLocationMarker,
-                { left: userScreenX - 14, top: userScreenY - 14 },
-              ]}
+              style={[styles.userLocationMarker, { left: userScreenX - 14, top: userScreenY - 14 }]}
               pointerEvents="none"
             >
               <View style={styles.userLocationPulse} />
@@ -447,7 +441,11 @@ export default function AdminLocationPickerMap({
         {!readOnly && onRadiusChange ? (
           <View style={styles.geofenceRow}>
             <View style={styles.geofenceLabelGroup}>
-              <MaterialCommunityIcons name="radius-outline" size={13} color={colors.text.onDark.secondary} />
+              <MaterialCommunityIcons
+                name="radius-outline"
+                size={13}
+                color={colors.text.onDark.secondary}
+              />
               <Text style={styles.radiusLabel}>GEOFENCE RADIUS:</Text>
             </View>
             <View style={styles.radiusButtonGroup}>
@@ -462,10 +460,7 @@ export default function AdminLocationPickerMap({
                   activeOpacity={0.8}
                 >
                   <Text
-                    style={[
-                      styles.radiusPillText,
-                      radius === r && styles.radiusPillTextActive,
-                    ]}
+                    style={[styles.radiusPillText, radius === r && styles.radiusPillTextActive]}
                   >
                     ±{r}m
                   </Text>

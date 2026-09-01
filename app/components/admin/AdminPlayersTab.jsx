@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
@@ -36,7 +44,8 @@ export default function AdminPlayersTab({
     if (filter === 'ALL') return !p.isBanned && p.status !== 'banned';
     if (filter === 'PLAYERS') return !p.isAdmin && !p.isBanned && p.status !== 'banned';
     if (filter === 'BANNED') return p.isBanned || p.status === 'banned';
-    if (filter === 'ADMIN' || filter === 'ADMINS') return p.isAdmin && !p.isBanned && p.status !== 'banned';
+    if (filter === 'ADMIN' || filter === 'ADMINS')
+      return p.isAdmin && !p.isBanned && p.status !== 'banned';
     return true;
   });
 
@@ -54,7 +63,6 @@ export default function AdminPlayersTab({
     if (filter === 'DISBANDED') return t.isDisbanded || t.status === 'disbanded';
     return true;
   });
-
 
   const handleConfirmDisband = (team) => {
     Alert.alert(
@@ -97,7 +105,9 @@ export default function AdminPlayersTab({
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>GUILD & ROSTER CONTROLLER</Text>
-        <Text style={styles.subtitle}>Manage campus parties, player privileges, and penalty bans</Text>
+        <Text style={styles.subtitle}>
+          Manage campus parties, player privileges, and penalty bans
+        </Text>
       </View>
 
       {/* Section Mode Switcher: GUILDS vs ADVENTURERS */}
@@ -174,38 +184,40 @@ export default function AdminPlayersTab({
 
       {/* Filter Tabs */}
       <View style={styles.filterRow}>
-        {(sectionMode === 'GUILDS' ? ['ALL', 'ACTIVE', 'BANNED', 'DISBANDED'] : ['ALL', 'PLAYERS', 'BANNED', 'ADMIN']).map(
-          (f) => (
-            <TouchableOpacity
-              key={f}
-              style={[styles.filterChip, filter === f && styles.filterChipActive]}
-              onPress={() => {
-                triggerHaptic('light');
-                setFilter(f);
-              }}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.filterChipText, filter === f && styles.filterChipTextActive]}>
-                {f} (
-                {sectionMode === 'GUILDS'
-                  ? teams.filter((t) => {
-                      if (f === 'ACTIVE') return t.status === 'active' && !t.isBanned && !t.isDisbanded;
-                      if (f === 'BANNED') return t.isBanned || t.status === 'banned';
-                      if (f === 'DISBANDED') return t.isDisbanded || t.status === 'disbanded';
-                      return true;
-                    }).length
-                  : players.filter((p) => {
-                      if (f === 'ALL') return !p.isBanned && p.status !== 'banned';
-                      if (f === 'PLAYERS') return !p.isAdmin && !p.isBanned && p.status !== 'banned';
-                      if (f === 'BANNED') return p.isBanned || p.status === 'banned';
-                      if (f === 'ADMIN') return p.isAdmin && !p.isBanned && p.status !== 'banned';
-                      return true;
-                    }).length}
-                )
-              </Text>
-            </TouchableOpacity>
-          )
-        )}
+        {(sectionMode === 'GUILDS'
+          ? ['ALL', 'ACTIVE', 'BANNED', 'DISBANDED']
+          : ['ALL', 'PLAYERS', 'BANNED', 'ADMIN']
+        ).map((f) => (
+          <TouchableOpacity
+            key={f}
+            style={[styles.filterChip, filter === f && styles.filterChipActive]}
+            onPress={() => {
+              triggerHaptic('light');
+              setFilter(f);
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterChipText, filter === f && styles.filterChipTextActive]}>
+              {f} (
+              {sectionMode === 'GUILDS'
+                ? teams.filter((t) => {
+                    if (f === 'ACTIVE')
+                      return t.status === 'active' && !t.isBanned && !t.isDisbanded;
+                    if (f === 'BANNED') return t.isBanned || t.status === 'banned';
+                    if (f === 'DISBANDED') return t.isDisbanded || t.status === 'disbanded';
+                    return true;
+                  }).length
+                : players.filter((p) => {
+                    if (f === 'ALL') return !p.isBanned && p.status !== 'banned';
+                    if (f === 'PLAYERS') return !p.isAdmin && !p.isBanned && p.status !== 'banned';
+                    if (f === 'BANNED') return p.isBanned || p.status === 'banned';
+                    if (f === 'ADMIN') return p.isAdmin && !p.isBanned && p.status !== 'banned';
+                    return true;
+                  }).length}
+              )
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Loading state */}
@@ -219,7 +231,9 @@ export default function AdminPlayersTab({
         filteredTeams.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>No Guild Parties Found</Text>
-            <Text style={styles.emptySub}>No active, banned, or disbanded guilds match your filter.</Text>
+            <Text style={styles.emptySub}>
+              No active, banned, or disbanded guilds match your filter.
+            </Text>
           </View>
         ) : (
           <View style={styles.list}>
@@ -240,9 +254,19 @@ export default function AdminPlayersTab({
                         <MaterialCommunityIcons
                           name={isDisbanded ? 'shield-off-outline' : 'shield-sword'}
                           size={18}
-                          color={isDisbanded ? colors.text.onDark.secondary : isBanned ? colors.accent.coral : colors.accent.gold}
+                          color={
+                            isDisbanded
+                              ? colors.text.onDark.secondary
+                              : isBanned
+                                ? colors.accent.coral
+                                : colors.accent.gold
+                          }
                         />
-                        <Text style={[styles.guildTitle, isDisbanded && styles.guildTitleDisbanded]}>{team.name}</Text>
+                        <Text
+                          style={[styles.guildTitle, isDisbanded && styles.guildTitleDisbanded]}
+                        >
+                          {team.name}
+                        </Text>
                       </View>
                       <Text style={styles.guildCode}>PARTY CODE: #{team.code}</Text>
                     </View>
@@ -250,13 +274,21 @@ export default function AdminPlayersTab({
                     <View
                       style={[
                         styles.statusBadge,
-                        isDisbanded ? styles.badgeDisbanded : isBanned ? styles.badgeBanned : styles.badgeActive,
+                        isDisbanded
+                          ? styles.badgeDisbanded
+                          : isBanned
+                            ? styles.badgeBanned
+                            : styles.badgeActive,
                       ]}
                     >
                       <Text
                         style={[
                           styles.statusBadgeText,
-                          isDisbanded ? styles.badgeTextDisbanded : isBanned ? styles.badgeTextBanned : styles.badgeTextActive,
+                          isDisbanded
+                            ? styles.badgeTextDisbanded
+                            : isBanned
+                              ? styles.badgeTextBanned
+                              : styles.badgeTextActive,
                         ]}
                       >
                         {isDisbanded ? 'DISBANDED' : isBanned ? 'BANNED' : 'ACTIVE'}
@@ -274,15 +306,20 @@ export default function AdminPlayersTab({
                     </View>
                     <View style={styles.telemetryItem}>
                       <Text style={styles.telemetryLabel}>EXPEDITION XP</Text>
-                      <Text style={[styles.telemetryVal, { color: isDisbanded ? colors.text.onDark.secondary : colors.accent.green }]}>
+                      <Text
+                        style={[
+                          styles.telemetryVal,
+                          {
+                            color: isDisbanded ? colors.text.onDark.secondary : colors.accent.green,
+                          },
+                        ]}
+                      >
                         {team.score || 0} PTS
                       </Text>
                     </View>
                     <View style={styles.telemetryItem}>
                       <Text style={styles.telemetryLabel}>PARTY SIZE</Text>
-                      <Text style={styles.telemetryVal}>
-                        {team.members?.length || 0} Members
-                      </Text>
+                      <Text style={styles.telemetryVal}>{team.members?.length || 0} Members</Text>
                     </View>
                   </View>
 
@@ -313,14 +350,22 @@ export default function AdminPlayersTab({
                   {/* Ban or Disband Notice */}
                   {isBanned && team.banReason ? (
                     <View style={styles.banNoticeBox}>
-                      <MaterialCommunityIcons name="alert-circle-outline" size={14} color={colors.accent.coral} />
+                      <MaterialCommunityIcons
+                        name="alert-circle-outline"
+                        size={14}
+                        color={colors.accent.coral}
+                      />
                       <Text style={styles.banNoticeText}>Ban Reason: {team.banReason}</Text>
                     </View>
                   ) : null}
 
                   {isDisbanded ? (
                     <View style={styles.disbandNoticeBox}>
-                      <MaterialCommunityIcons name="information-outline" size={14} color={colors.text.onDark.secondary} />
+                      <MaterialCommunityIcons
+                        name="information-outline"
+                        size={14}
+                        color={colors.text.onDark.secondary}
+                      />
                       <Text style={styles.disbandNoticeText}>
                         Disbanded: {team.disbandReason || 'Party dissolved by Guild Master Admin'}
                       </Text>
@@ -339,7 +384,11 @@ export default function AdminPlayersTab({
                           }}
                           activeOpacity={0.8}
                         >
-                          <MaterialCommunityIcons name="backup-restore" size={14} color={colors.accent.green} />
+                          <MaterialCommunityIcons
+                            name="backup-restore"
+                            size={14}
+                            color={colors.accent.green}
+                          />
                           <Text style={styles.restoreBtnText}>Restore Guild</Text>
                         </TouchableOpacity>
 
@@ -348,7 +397,11 @@ export default function AdminPlayersTab({
                           onPress={() => handleConfirmPurge(team)}
                           activeOpacity={0.8}
                         >
-                          <MaterialCommunityIcons name="trash-can" size={14} color={colors.accent.coral} />
+                          <MaterialCommunityIcons
+                            name="trash-can"
+                            size={14}
+                            color={colors.accent.coral}
+                          />
                           <Text style={styles.purgeBtnText}>Purge Permanently</Text>
                         </TouchableOpacity>
                       </>
@@ -363,7 +416,11 @@ export default function AdminPlayersTab({
                             }}
                             activeOpacity={0.8}
                           >
-                            <MaterialCommunityIcons name="lock-open-outline" size={14} color="#FFF" />
+                            <MaterialCommunityIcons
+                              name="lock-open-outline"
+                              size={14}
+                              color="#FFF"
+                            />
                             <Text style={styles.unbanBtnText}>Unban Guild</Text>
                           </TouchableOpacity>
                         ) : (
@@ -375,7 +432,11 @@ export default function AdminPlayersTab({
                             }}
                             activeOpacity={0.8}
                           >
-                            <MaterialCommunityIcons name="cancel" size={14} color={colors.accent.coral} />
+                            <MaterialCommunityIcons
+                              name="cancel"
+                              size={14}
+                              color={colors.accent.coral}
+                            />
                             <Text style={styles.banBtnText}>Ban Guild</Text>
                           </TouchableOpacity>
                         )}
@@ -385,7 +446,11 @@ export default function AdminPlayersTab({
                           onPress={() => handleConfirmDisband(team)}
                           activeOpacity={0.8}
                         >
-                          <MaterialCommunityIcons name="trash-can-outline" size={14} color={colors.accent.coral} />
+                          <MaterialCommunityIcons
+                            name="trash-can-outline"
+                            size={14}
+                            color={colors.accent.coral}
+                          />
                           <Text style={styles.disbandBtnText}>Disband Party</Text>
                         </TouchableOpacity>
                       </>
@@ -396,174 +461,187 @@ export default function AdminPlayersTab({
             })}
           </View>
         )
+      ) : /* ================= ADVENTURERS / PLAYERS LIST ================= */
+      filteredPlayers.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>No Adventurers Found</Text>
+          <Text style={styles.emptySub}>No players match your search filter criteria.</Text>
+        </View>
       ) : (
-        /* ================= ADVENTURERS / PLAYERS LIST ================= */
-        filteredPlayers.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No Adventurers Found</Text>
-            <Text style={styles.emptySub}>No players match your search filter criteria.</Text>
-          </View>
-        ) : (
-          <View style={styles.list}>
-            {filteredPlayers.map((player) => {
-              const isBanned = player.isBanned || player.status === 'banned';
+        <View style={styles.list}>
+          {filteredPlayers.map((player) => {
+            const isBanned = player.isBanned || player.status === 'banned';
 
-              return (
-                <PixelCard
-                  key={player._id}
-                  variant={isBanned ? 'coral' : player.isAdmin ? 'gold' : 'dusk'}
-                  style={styles.playerCard}
-                >
-                  {/* Top Row: Avatar + Name + Status */}
-                  <View style={styles.playerTop}>
-                    <View style={[styles.avatarBox, isBanned && styles.avatarBanned]}>
-                      <Text style={styles.avatarLetter}>
-                        {(player.name || 'A').charAt(0).toUpperCase()}
-                      </Text>
+            return (
+              <PixelCard
+                key={player._id}
+                variant={isBanned ? 'coral' : player.isAdmin ? 'gold' : 'dusk'}
+                style={styles.playerCard}
+              >
+                {/* Top Row: Avatar + Name + Status */}
+                <View style={styles.playerTop}>
+                  <View style={[styles.avatarBox, isBanned && styles.avatarBanned]}>
+                    <Text style={styles.avatarLetter}>
+                      {(player.name || 'A').charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+
+                  <View style={styles.playerInfo}>
+                    <View style={styles.nameRow}>
+                      <Text style={styles.playerName}>{player.name}</Text>
+                      {player.isAdmin ? (
+                        <View style={styles.adminTag}>
+                          <Text style={styles.adminTagText}>ADMIN</Text>
+                        </View>
+                      ) : null}
                     </View>
+                    <Text style={styles.playerEmail}>{player.email}</Text>
+                  </View>
 
-                    <View style={styles.playerInfo}>
-                      <View style={styles.nameRow}>
-                        <Text style={styles.playerName}>{player.name}</Text>
-                        {player.isAdmin ? (
-                          <View style={styles.adminTag}>
-                            <Text style={styles.adminTagText}>ADMIN</Text>
-                          </View>
-                        ) : null}
-                      </View>
-                      <Text style={styles.playerEmail}>{player.email}</Text>
-                    </View>
-
-                    <View
+                  <View
+                    style={[styles.statusBadge, isBanned ? styles.badgeBanned : styles.badgeActive]}
+                  >
+                    <Text
                       style={[
-                        styles.statusBadge,
-                        isBanned ? styles.badgeBanned : styles.badgeActive,
+                        styles.statusBadgeText,
+                        isBanned ? styles.badgeTextBanned : styles.badgeTextActive,
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.statusBadgeText,
-                          isBanned ? styles.badgeTextBanned : styles.badgeTextActive,
-                        ]}
+                      {isBanned ? 'BANNED' : 'ACTIVE'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Team & Points telemetry */}
+                <View style={styles.telemetryRow}>
+                  <View style={styles.telemetryItem}>
+                    <Text style={styles.telemetryLabel}>GUILD PARTY</Text>
+                    <Text style={styles.telemetryVal}>
+                      {player.team
+                        ? `${player.team.name} ${player.team.isLeader ? '👑' : ''}`
+                        : 'No Party'}
+                    </Text>
+                  </View>
+                  <View style={styles.telemetryItem}>
+                    <Text style={styles.telemetryLabel}>TOTAL XP</Text>
+                    <Text style={[styles.telemetryVal, { color: colors.accent.green }]}>
+                      {player.score || 0} PTS
+                    </Text>
+                  </View>
+                  <View style={styles.telemetryItem}>
+                    <Text style={styles.telemetryLabel}>ACCOUNT ROLE</Text>
+                    <Text style={styles.telemetryVal}>
+                      {player.isAdmin ? 'Guild Master' : 'Adventurer'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Ban Notice */}
+                {isBanned && player.banReason ? (
+                  <View style={styles.banNoticeBox}>
+                    <MaterialCommunityIcons
+                      name="alert-circle-outline"
+                      size={14}
+                      color={colors.accent.coral}
+                    />
+                    <Text style={styles.banNoticeText}>Reason: {player.banReason}</Text>
+                  </View>
+                ) : null}
+
+                {/* Actions Row */}
+                <View style={styles.actionRow}>
+                  {isBanned ? (
+                    <>
+                      <TouchableOpacity
+                        style={styles.unbanBtn}
+                        onPress={() => {
+                          triggerHaptic('medium');
+                          onUpdateStatus(player._id, 'active');
+                        }}
+                        activeOpacity={0.8}
                       >
-                        {isBanned ? 'BANNED' : 'ACTIVE'}
-                      </Text>
-                    </View>
-                  </View>
+                        <MaterialCommunityIcons name="lock-open-outline" size={14} color="#000" />
+                        <Text style={styles.unbanBtnText}>Unban Player</Text>
+                      </TouchableOpacity>
 
-                  {/* Team & Points telemetry */}
-                  <View style={styles.telemetryRow}>
-                    <View style={styles.telemetryItem}>
-                      <Text style={styles.telemetryLabel}>GUILD PARTY</Text>
-                      <Text style={styles.telemetryVal}>
-                        {player.team ? `${player.team.name} ${player.team.isLeader ? '👑' : ''}` : 'No Party'}
-                      </Text>
-                    </View>
-                    <View style={styles.telemetryItem}>
-                      <Text style={styles.telemetryLabel}>TOTAL XP</Text>
-                      <Text style={[styles.telemetryVal, { color: colors.accent.green }]}>
-                        {player.score || 0} PTS
-                      </Text>
-                    </View>
-                    <View style={styles.telemetryItem}>
-                      <Text style={styles.telemetryLabel}>ACCOUNT ROLE</Text>
-                      <Text style={styles.telemetryVal}>
-                        {player.isAdmin ? 'Guild Master' : 'Adventurer'}
-                      </Text>
-                    </View>
-                  </View>
+                      <TouchableOpacity
+                        style={styles.purgePlayerBtn}
+                        onPress={() => {
+                          triggerHaptic('warning');
+                          if (onOpenDeletePlayerModal) {
+                            onOpenDeletePlayerModal(player);
+                          }
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <MaterialCommunityIcons
+                          name="trash-can-outline"
+                          size={14}
+                          color={colors.accent.coral}
+                        />
+                        <Text style={styles.purgePlayerBtnText}>Delete Player</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <>
+                      <TouchableOpacity
+                        style={styles.banBtn}
+                        onPress={() => {
+                          triggerHaptic('light');
+                          onOpenBanModal(player);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <MaterialCommunityIcons
+                          name="cancel"
+                          size={14}
+                          color={colors.accent.coral}
+                        />
+                        <Text style={styles.banBtnText}>Ban Player</Text>
+                      </TouchableOpacity>
 
-                  {/* Ban Notice */}
-                  {isBanned && player.banReason ? (
-                    <View style={styles.banNoticeBox}>
-                      <MaterialCommunityIcons name="alert-circle-outline" size={14} color={colors.accent.coral} />
-                      <Text style={styles.banNoticeText}>Reason: {player.banReason}</Text>
-                    </View>
-                  ) : null}
+                      <TouchableOpacity
+                        style={styles.roleBtn}
+                        onPress={() => {
+                          triggerHaptic('selection');
+                          onToggleRole(player._id, !player.isAdmin);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <MaterialCommunityIcons
+                          name={player.isAdmin ? 'shield-remove-outline' : 'shield-crown-outline'}
+                          size={14}
+                          color={colors.accent.gold}
+                        />
+                        <Text style={styles.roleBtnText}>
+                          {player.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                        </Text>
+                      </TouchableOpacity>
 
-                  {/* Actions Row */}
-                  <View style={styles.actionRow}>
-                    {isBanned ? (
-                      <>
+                      {player.team ? (
                         <TouchableOpacity
-                          style={styles.unbanBtn}
+                          style={styles.kickBtn}
                           onPress={() => {
                             triggerHaptic('medium');
-                            onUpdateStatus(player._id, 'active');
-                          }}
-                          activeOpacity={0.8}
-                        >
-                          <MaterialCommunityIcons name="lock-open-outline" size={14} color="#000" />
-                          <Text style={styles.unbanBtnText}>Unban Player</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          style={styles.purgePlayerBtn}
-                          onPress={() => {
-                            triggerHaptic('warning');
-                            if (onOpenDeletePlayerModal) {
-                              onOpenDeletePlayerModal(player);
-                            }
-                          }}
-                          activeOpacity={0.8}
-                        >
-                          <MaterialCommunityIcons name="trash-can-outline" size={14} color={colors.accent.coral} />
-                          <Text style={styles.purgePlayerBtnText}>Delete Player</Text>
-                        </TouchableOpacity>
-                      </>
-                    ) : (
-                      <>
-                        <TouchableOpacity
-                          style={styles.banBtn}
-                          onPress={() => {
-                            triggerHaptic('light');
-                            onOpenBanModal(player);
-                          }}
-                          activeOpacity={0.8}
-                        >
-                          <MaterialCommunityIcons name="cancel" size={14} color={colors.accent.coral} />
-                          <Text style={styles.banBtnText}>Ban Player</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          style={styles.roleBtn}
-                          onPress={() => {
-                            triggerHaptic('selection');
-                            onToggleRole(player._id, !player.isAdmin);
+                            onKickPlayer(player._id);
                           }}
                           activeOpacity={0.8}
                         >
                           <MaterialCommunityIcons
-                            name={player.isAdmin ? 'shield-remove-outline' : 'shield-crown-outline'}
+                            name="account-minus-outline"
                             size={14}
-                            color={colors.accent.gold}
+                            color={colors.accent.coral}
                           />
-                          <Text style={styles.roleBtnText}>
-                            {player.isAdmin ? 'Revoke Admin' : 'Make Admin'}
-                          </Text>
+                          <Text style={styles.kickBtnText}>Kick</Text>
                         </TouchableOpacity>
-
-                        {player.team ? (
-                          <TouchableOpacity
-                            style={styles.kickBtn}
-                            onPress={() => {
-                              triggerHaptic('medium');
-                              onKickPlayer(player._id);
-                            }}
-                            activeOpacity={0.8}
-                          >
-                            <MaterialCommunityIcons name="account-minus-outline" size={14} color={colors.accent.coral} />
-                            <Text style={styles.kickBtnText}>Kick</Text>
-                          </TouchableOpacity>
-                        ) : null}
-                      </>
-                    )}
-                  </View>
-                </PixelCard>
-              );
-            })}
-          </View>
-        )
+                      ) : null}
+                    </>
+                  )}
+                </View>
+              </PixelCard>
+            );
+          })}
+        </View>
       )}
     </View>
   );

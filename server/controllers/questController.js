@@ -43,8 +43,8 @@ const getActiveQuest = async (req, res) => {
       if (activeQuests.length > 1) {
         console.warn(
           `[WARN] single-active-quest violation: ${activeQuests.length} active quests found — ` +
-          activeQuests.map((q) => `"${q.name}" (${q._id})`).join(', ') +
-          '. Routing to first. Fix via admin dashboard.'
+            activeQuests.map((q) => `"${q.name}" (${q._id})`).join(', ') +
+            '. Routing to first. Fix via admin dashboard.'
         );
       }
 

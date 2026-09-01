@@ -1,12 +1,6 @@
 import api from './api';
 
-/**
- * Upload an image from React Native client to Cloudinary / server CDN.
- * Returns hosted image URL string (e.g. https://res.cloudinary.com/... or /uploads/...).
- * @param {string} base64OrUri
- * @param {string} folder
- * @returns {Promise<string>}
- */
+// Upload photo to backend CDN/Cloudinary endpoint, returns hosted URL
 export const uploadPhoto = async (base64OrUri, folder = 'quest_overworld_proofs') => {
   if (!base64OrUri) return '';
   if (base64OrUri.startsWith('http://') || base64OrUri.startsWith('https://')) {

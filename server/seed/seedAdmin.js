@@ -5,7 +5,8 @@ const User = require('../models/User');
 const seedAdmin = async () => {
   try {
     const mongoUri = process.env.MONGO_URI;
-    if (!mongoUri) throw new Error('MONGO_URI environment variable is required. Set it in server/.env');
+    if (!mongoUri)
+      throw new Error('MONGO_URI environment variable is required. Set it in server/.env');
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB for admin creation...');
 
@@ -15,7 +16,9 @@ const seedAdmin = async () => {
     const adminName = process.env.ADMIN_NAME || 'Guild Master Admin';
 
     if (!adminEmail || !adminPassword) {
-      throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be configured in environment variables.');
+      throw new Error(
+        'ADMIN_EMAIL and ADMIN_PASSWORD must be configured in environment variables.'
+      );
     }
 
     const passwordHash = await User.hashPassword(adminPassword);

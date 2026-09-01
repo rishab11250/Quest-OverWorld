@@ -7,11 +7,7 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-/**
- * Normalize base64 image data to a valid data URI if needed.
- * @param {string} input
- * @returns {string} Valid data URI or URL
- */
+// Turns raw base64 or raw strings into standard data URIs
 const normalizeImageData = (input) => {
   if (!input || typeof input !== 'string') return '';
   const trimmed = input.trim();
@@ -39,12 +35,7 @@ const normalizeImageData = (input) => {
   return `data:${mime};base64,${trimmed}`;
 };
 
-/**
- * Upload an image (base64 string or binary data URI) to Cloudinary.
- * @param {string} base64OrDataUrl
- * @param {string} folder
- * @returns {Promise<string>} Hosted Cloudinary HTTPS URL or CDN URL
- */
+// Uploads proof images to Cloudinary (falls back to local /uploads if unconfigured)
 const uploadImage = async (base64OrDataUrl, folder = 'quest_overworld_proofs') => {
   if (!base64OrDataUrl) return '';
 

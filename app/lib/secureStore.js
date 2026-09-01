@@ -28,7 +28,7 @@ export const getToken = async () => {
   }
 };
 
-export const removeToken = async () => {
+const removeToken = async () => {
   try {
     if (Platform.OS === 'web') {
       localStorage.removeItem(TOKEN_KEY);

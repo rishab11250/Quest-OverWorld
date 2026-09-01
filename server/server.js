@@ -62,7 +62,8 @@ app.post('/api/upload', async (req, res) => {
     return res.status(200).json({ url });
   } catch (err) {
     console.error('[Upload Error]', err.message);
-    const msg = process.env.NODE_ENV === 'production' ? 'Upload failed' : err.message || 'Upload failed';
+    const msg =
+      process.env.NODE_ENV === 'production' ? 'Upload failed' : err.message || 'Upload failed';
     return res.status(500).json({ message: msg });
   }
 });

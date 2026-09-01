@@ -2,7 +2,9 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 if (!process.env.JWT_SECRET) {
-  throw new Error('FATAL: JWT_SECRET environment variable is not set. Server cannot start without it.');
+  throw new Error(
+    'FATAL: JWT_SECRET environment variable is not set. Server cannot start without it.'
+  );
 }
 
 // Helper to sign JWT token

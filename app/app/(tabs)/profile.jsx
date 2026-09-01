@@ -247,7 +247,9 @@ export default function ProfileScreen() {
           </View>
           <Switch
             value={highAccuracyGps}
-            onValueChange={(val) => handleToggleSetting('high_accuracy_gps', val, setHighAccuracyGps)}
+            onValueChange={(val) =>
+              handleToggleSetting('high_accuracy_gps', val, setHighAccuracyGps)
+            }
             trackColor={{ false: '#3D3560', true: colors.accent.gold }}
             thumbColor={highAccuracyGps ? colors.bg.dusk : '#7E75A0'}
           />
@@ -300,11 +302,7 @@ export default function ProfileScreen() {
 
         <View style={styles.divider} />
 
-        <TouchableOpacity
-          style={styles.cacheBtn}
-          onPress={handleClearCache}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.cacheBtn} onPress={handleClearCache} activeOpacity={0.8}>
           <MaterialCommunityIcons
             name={cacheCleared ? 'check-circle' : 'cached'}
             size={16}

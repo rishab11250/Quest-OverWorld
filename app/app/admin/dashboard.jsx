@@ -105,15 +105,16 @@ export default function AdminDashboardScreen() {
   const fetchAdminData = useCallback(async () => {
     try {
       setError('');
-      const [overviewRes, playersRes, teamsRes, questsRes, checkRes, challRes, subRes] = await Promise.all([
-        api.get('/admin/overview'),
-        api.get('/admin/players'),
-        api.get('/admin/teams'),
-        api.get('/admin/quests'),
-        api.get('/admin/checkpoints'),
-        api.get('/admin/challenges'),
-        api.get('/admin/submissions/pending'),
-      ]);
+      const [overviewRes, playersRes, teamsRes, questsRes, checkRes, challRes, subRes] =
+        await Promise.all([
+          api.get('/admin/overview'),
+          api.get('/admin/players'),
+          api.get('/admin/teams'),
+          api.get('/admin/quests'),
+          api.get('/admin/checkpoints'),
+          api.get('/admin/challenges'),
+          api.get('/admin/submissions/pending'),
+        ]);
 
       setOverview(overviewRes);
       setPlayers(playersRes.players || []);
@@ -391,7 +392,10 @@ export default function AdminDashboardScreen() {
     const lat = parseFloat(checkpointForm.latitude);
     const lon = parseFloat(checkpointForm.longitude);
     if (isNaN(lat) || isNaN(lon)) {
-      Alert.alert('Physical Location Required', 'Please drop a pin on the interactive campus map to set the exact GPS coordinates.');
+      Alert.alert(
+        'Physical Location Required',
+        'Please drop a pin on the interactive campus map to set the exact GPS coordinates.'
+      );
       return;
     }
 
@@ -579,7 +583,11 @@ export default function AdminDashboardScreen() {
         <AdminHeader adminProfile={adminProfile} onLogout={handleLogout} />
 
         <StatusBanner type="error" message={error} onDismiss={() => setError('')} />
-        <StatusBanner type="success" message={actionSuccess} onDismiss={() => setActionSuccess('')} />
+        <StatusBanner
+          type="success"
+          message={actionSuccess}
+          onDismiss={() => setActionSuccess('')}
+        />
 
         {activeTab === 'overview' && (
           <AdminOverviewTab

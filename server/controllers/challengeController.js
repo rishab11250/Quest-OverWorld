@@ -296,7 +296,9 @@ const getChallengeAttemptStatus = async (req, res) => {
       nextPointsPreview: getPointsForAttempt(challenge.points, attemptRecord.attempts + 1),
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message || 'Server error fetching attempt status' });
+    return res
+      .status(500)
+      .json({ message: error.message || 'Server error fetching attempt status' });
   }
 };
 
@@ -309,7 +311,9 @@ const solveChallenge = async (req, res) => {
 
     const team = await Team.findOne({ members: req.user._id });
     if (!team) {
-      return res.status(400).json({ message: 'You must belong to an active party to solve bounties.' });
+      return res
+        .status(400)
+        .json({ message: 'You must belong to an active party to solve bounties.' });
     }
 
     if (team.isBanned || team.status === 'banned') {
@@ -326,7 +330,9 @@ const solveChallenge = async (req, res) => {
 
     // Photo challenges must go through submit endpoint, not solve
     if (challenge.category === 'photo' || challenge.verificationType === 'manual_review') {
-      return res.status(400).json({ message: 'Photo proof challenges must be submitted with photo capture.' });
+      return res
+        .status(400)
+        .json({ message: 'Photo proof challenges must be submitted with photo capture.' });
     }
 
     if (!answer || !answer.trim()) {
@@ -351,7 +357,9 @@ const solveChallenge = async (req, res) => {
 
     // 1. Check if already solved
     if (attemptRecord.status === 'solved') {
-      return res.status(400).json({ message: 'This bounty has already been cleared by your party!' });
+      return res
+        .status(400)
+        .json({ message: 'This bounty has already been cleared by your party!' });
     }
 
     // 2. Check if permanently locked (after 4 failed attempts)
@@ -483,4 +491,3 @@ module.exports = {
   getChallengeAttemptStatus,
   solveChallenge,
 };
-
