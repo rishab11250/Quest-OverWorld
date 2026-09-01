@@ -3,6 +3,8 @@ import { StyleSheet, ScrollView, RefreshControl, Share } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import api from '../../lib/api';
+import { getUserData } from '../../lib/secureStore';
+import { triggerHaptic } from '../../lib/haptics';
 import colors from '../../theme/colors';
 import spacing from '../../theme/spacing';
 
@@ -12,12 +14,15 @@ import ConfirmModal from '../../components/ConfirmModal';
 import TeamAuthCard from '../../components/team/TeamAuthCard';
 import TeamHubView from '../../components/team/TeamHubView';
 import InviteContactsModal from '../../components/team/InviteContactsModal';
+import RenameTeamModal from '../../components/team/RenameTeamModal';
 
 export default function TeamScreen() {
+  const [user, setUser] = useState(null);
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const [successBanner, setSuccessBanner] = useState('');
 
   // Form states
   const [activeTab, setActiveTab] = useState('join'); // 'join' | 'create'
@@ -27,12 +32,19 @@ export default function TeamScreen() {
   const [copied, setCopied] = useState(false);
   const [leaveModalVisible, setLeaveModalVisible] = useState(false);
   const [contactsModalVisible, setContactsModalVisible] = useState(false);
+  const [renameModalVisible, setRenameModalVisible] = useState(false);
+  const [renaming, setRenaming] = useState(false);
 
   const fetchMyTeam = useCallback(async (isSilent = false) => {
     try {
       if (!isSilent) setError('');
-      const data = await api.get('/teams/me');
-      setTeam(data.team);
+      const [userData, teamData] = await Promise.all([
+        getUserData(),
+        api.get('/teams/me').catch(() => ({ team: null })),
+      ]);
+
+      if (userData) setUser(userData);
+      setTeam(teamData?.team || null);
     } catch (err) {
       if (!isSilent) setError(err.message || 'Failed to load team data.');
     } finally {
@@ -110,6 +122,26 @@ export default function TeamScreen() {
     }
   };
 
+  const handleRenameTeam = async (newName) => {
+    if (!team) return;
+    setRenaming(true);
+    try {
+      const res = await api.put(`/teams/${team._id}`, { name: newName });
+      if (res?.team) {
+        setTeam(res.team);
+        triggerHaptic('success');
+        setSuccessBanner(`Guild party renamed to "${res.team.name}"!`);
+        setTimeout(() => setSuccessBanner(''), 4000);
+      }
+      setRenameModalVisible(false);
+    } catch (err) {
+      triggerHaptic('error');
+      setError(err.message || 'Failed to rename party.');
+    } finally {
+      setRenaming(false);
+    }
+  };
+
   const handleConfirmLeave = async () => {
     setLeaveModalVisible(false);
     if (!team) return;
@@ -129,6 +161,11 @@ export default function TeamScreen() {
     return <LoadingScreen message="Assembling Party Guild..." />;
   }
 
+  const leaderId = typeof team?.leader === 'object' ? team?.leader?._id : team?.leader;
+  const isLeader = Boolean(
+    user && leaderId && (user._id === leaderId || user.id === leaderId || user.isAdmin)
+  );
+
   return (
     <ScrollView
       style={styles.container}
@@ -142,6 +179,7 @@ export default function TeamScreen() {
       }
     >
       <StatusBanner type="error" message={error} />
+      {successBanner ? <StatusBanner type="success" message={successBanner} /> : null}
 
       {!team ? (
         <TeamAuthCard
@@ -166,11 +204,21 @@ export default function TeamScreen() {
           onShareCode={handleShareCode}
           onInviteContacts={() => setContactsModalVisible(true)}
           onRequestLeave={() => setLeaveModalVisible(false) || setLeaveModalVisible(true)}
+          isLeader={isLeader}
+          onOpenRenameModal={() => setRenameModalVisible(true)}
         />
       )}
 
       {team ? (
         <>
+          <RenameTeamModal
+            visible={renameModalVisible}
+            currentName={team.name}
+            onClose={() => setRenameModalVisible(false)}
+            onRename={handleRenameTeam}
+            loading={renaming}
+          />
+
           <ConfirmModal
             visible={leaveModalVisible}
             title="Leave Party?"

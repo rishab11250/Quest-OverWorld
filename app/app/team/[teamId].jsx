@@ -9,8 +9,11 @@ import {
   Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import api from '../../lib/api';
+import { getUserData } from '../../lib/secureStore';
+import { triggerHaptic } from '../../lib/haptics';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
@@ -18,21 +21,27 @@ import spacing from '../../theme/spacing';
 import SubScreenHeader from '../../components/SubScreenHeader';
 import StatusBanner from '../../components/StatusBanner';
 import LoadingScreen from '../../components/LoadingScreen';
+import RenameTeamModal from '../../components/team/RenameTeamModal';
 
 export default function TeamDetailScreen() {
   const { teamId } = useLocalSearchParams();
   const router = useRouter();
+  const [user, setUser] = useState(null);
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const [successBanner, setSuccessBanner] = useState('');
   const [copied, setCopied] = useState(false);
+  const [renameModalVisible, setRenameModalVisible] = useState(false);
+  const [renaming, setRenaming] = useState(false);
 
   const fetchTeam = useCallback(async () => {
     if (!teamId) return;
     try {
       setError('');
-      const data = await api.get(`/teams/${teamId}`);
+      const [userData, data] = await Promise.all([getUserData(), api.get(`/teams/${teamId}`)]);
+      if (userData) setUser(userData);
       setTeam(data.team);
     } catch (err) {
       setError(err.message || 'Failed to load team details.');
@@ -69,6 +78,26 @@ export default function TeamDetailScreen() {
     }
   };
 
+  const handleRenameTeam = async (newName) => {
+    if (!team) return;
+    setRenaming(true);
+    try {
+      const res = await api.put(`/teams/${team._id}`, { name: newName });
+      if (res?.team) {
+        setTeam(res.team);
+        triggerHaptic('success');
+        setSuccessBanner(`Guild party renamed to "${res.team.name}"!`);
+        setTimeout(() => setSuccessBanner(''), 4000);
+      }
+      setRenameModalVisible(false);
+    } catch (err) {
+      triggerHaptic('error');
+      setError(err.message || 'Failed to rename party.');
+    } finally {
+      setRenaming(false);
+    }
+  };
+
   if (loading && !refreshing) {
     return <LoadingScreen message="Inspecting Party Codex..." />;
   }
@@ -89,6 +118,9 @@ export default function TeamDetailScreen() {
   }
 
   const leaderId = typeof team.leader === 'object' ? team.leader._id : team.leader;
+  const isLeader = Boolean(
+    user && leaderId && (user._id === leaderId || user.id === leaderId || user.isAdmin)
+  );
   const level = Math.floor((team.score || 0) / 250) + 1;
 
   return (
@@ -107,7 +139,23 @@ export default function TeamDetailScreen() {
 
       {/* Team Header & XP */}
       <View style={styles.header}>
-        <Text style={styles.teamName}>{team.name}</Text>
+        <View style={styles.nameRow}>
+          <Text style={styles.teamName}>{team.name}</Text>
+          {isLeader ? (
+            <TouchableOpacity
+              style={styles.renameBtn}
+              onPress={() => {
+                triggerHaptic('light');
+                setRenameModalVisible(true);
+              }}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <MaterialCommunityIcons name="pencil-outline" size={15} color={colors.accent.gold} />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+
         <View style={styles.xpRow}>
           <Text style={styles.xpText}>+{team.score || 0} PTS</Text>
           <View style={styles.lvlBadge}>
@@ -117,6 +165,7 @@ export default function TeamDetailScreen() {
       </View>
 
       <StatusBanner type="error" message={error} />
+      {successBanner ? <StatusBanner type="success" message={successBanner} /> : null}
 
       {/* Invite / Join Code Card */}
       <View style={styles.codeCard}>
@@ -150,7 +199,7 @@ export default function TeamDetailScreen() {
 
         <View style={styles.membersList}>
           {team.members?.map((member, index) => {
-            const isLeader = member._id === leaderId;
+            const memberIsLeader = member._id === leaderId;
             return (
               <View key={member._id || index} style={styles.memberRow}>
                 <View style={styles.avatarCircle}>
@@ -162,7 +211,7 @@ export default function TeamDetailScreen() {
                 <View style={styles.memberDetails}>
                   <View style={styles.memberNameRow}>
                     <Text style={styles.memberName}>{member.name}</Text>
-                    {isLeader ? (
+                    {memberIsLeader ? (
                       <View style={styles.leaderBadge}>
                         <Text style={styles.leaderBadgeText}>CAPTAIN</Text>
                       </View>
@@ -175,6 +224,14 @@ export default function TeamDetailScreen() {
           })}
         </View>
       </View>
+
+      <RenameTeamModal
+        visible={renameModalVisible}
+        currentName={team.name}
+        onClose={() => setRenameModalVisible(false)}
+        onRename={handleRenameTeam}
+        loading={renaming}
+      />
     </ScrollView>
   );
 }
@@ -186,55 +243,46 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.screenPadding,
-    paddingTop: spacing.xxl,
+    gap: spacing.md,
     paddingBottom: spacing.xxxl,
-    gap: spacing.md,
-  },
-  errorContainer: {
-    flex: 1,
-    backgroundColor: colors.bg.dusk,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.screenPadding,
-    gap: spacing.md,
-  },
-  errorText: {
-    ...typography.bodyLg,
-    color: colors.accent.coral,
-    textAlign: 'center',
-  },
-  backButton: {
-    backgroundColor: colors.accent.gold,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: 6,
-  },
-  backButtonText: {
-    ...typography.bodyMd,
-    fontWeight: '800',
-    color: colors.bg.dusk,
   },
   header: {
-    marginBottom: spacing.xs,
+    backgroundColor: colors.bg.duskRaised,
+    borderRadius: 8,
+    padding: spacing.cardPadding,
+    borderWidth: 1,
+    borderColor: '#3D3560',
+    gap: spacing.xs,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   teamName: {
-    ...typography.displayXl,
-    color: colors.text.onDark.primary,
+    ...typography.displayPixelSm,
+    color: colors.accent.gold,
+    letterSpacing: 1.5,
+  },
+  renameBtn: {
+    padding: 4,
+    backgroundColor: '#2A2247',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#4A3E70',
   },
   xpRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
   },
   xpText: {
-    ...typography.monoSm,
-    color: colors.accent.gold,
-    fontWeight: '800',
-    fontSize: 16,
+    ...typography.captionBold,
+    color: colors.accent.green,
+    fontSize: 14,
   },
   lvlBadge: {
-    backgroundColor: '#322A54',
+    backgroundColor: 'rgba(242, 200, 75, 0.15)',
     borderWidth: 1,
     borderColor: colors.accent.gold,
     paddingHorizontal: 8,
@@ -242,8 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   lvlBadgeText: {
-    ...typography.caption,
-    fontWeight: '900',
+    ...typography.captionBold,
     color: colors.accent.gold,
     fontSize: 10,
   },
@@ -260,8 +307,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   codeLabel: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.captionBold,
     color: colors.accent.gold,
     letterSpacing: 1.2,
   },
@@ -270,11 +316,10 @@ const styles = StyleSheet.create({
     color: colors.text.onDark.secondary,
   },
   codeValue: {
-    ...typography.monoSm,
-    fontSize: 32,
-    fontWeight: '900',
-    color: colors.text.onDark.primary,
-    letterSpacing: 8,
+    ...typography.displayPixelLg,
+    fontSize: 24,
+    color: colors.accent.gold,
+    letterSpacing: 6,
     marginVertical: spacing.xs,
   },
   codeActions: {
@@ -289,19 +334,17 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
   },
+  actionBtnText: {
+    ...typography.captionBold,
+    color: colors.bg.dusk,
+  },
   actionBtnOutline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#4A4170',
   },
-  actionBtnText: {
-    ...typography.caption,
-    fontWeight: '900',
-    color: colors.bg.dusk,
-  },
   actionBtnTextOutline: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.captionBold,
     color: colors.text.onDark.primary,
   },
   rosterCard: {
@@ -310,7 +353,7 @@ const styles = StyleSheet.create({
     padding: spacing.cardPadding,
     borderWidth: 1,
     borderColor: '#3D3560',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   rosterHeader: {
     flexDirection: 'row',
@@ -318,42 +361,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rosterTitle: {
-    ...typography.caption,
-    fontWeight: '800',
+    ...typography.displayPixelXs,
     color: colors.accent.gold,
-    letterSpacing: 1.2,
+    letterSpacing: 1,
   },
   memberCount: {
     ...typography.caption,
     color: colors.text.onDark.secondary,
   },
   membersList: {
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   memberRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1A33',
+    gap: spacing.sm,
+    backgroundColor: '#1E1933',
     padding: spacing.sm,
     borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#362E52',
-    gap: spacing.sm,
   },
   avatarCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#322A54',
+    backgroundColor: '#2A2247',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.accent.gold,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   avatarLetter: {
-    ...typography.bodyLg,
-    fontWeight: '900',
+    ...typography.captionBold,
     color: colors.accent.gold,
+    fontSize: 14,
   },
   memberDetails: {
     flex: 1,
@@ -361,29 +401,49 @@ const styles = StyleSheet.create({
   memberNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 6,
   },
   memberName: {
-    ...typography.bodyLg,
-    fontWeight: '700',
+    ...typography.bodyMdBold,
     color: colors.text.onDark.primary,
   },
   leaderBadge: {
-    backgroundColor: 'rgba(242, 200, 75, 0.15)',
-    borderWidth: 1,
-    borderColor: colors.accent.gold,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 3,
+    backgroundColor: colors.accent.gold,
+    paddingHorizontal: 4,
+    borderRadius: 2,
   },
   leaderBadgeText: {
-    ...typography.caption,
-    fontSize: 9,
+    ...typography.displayPixelXs,
+    fontSize: 6.5,
+    color: colors.bg.dusk,
     fontWeight: '900',
-    color: colors.accent.gold,
   },
   memberEmail: {
     ...typography.caption,
     color: colors.text.onDark.secondary,
+    fontSize: 11,
+  },
+  errorContainer: {
+    flex: 1,
+    backgroundColor: colors.bg.dusk,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.screenPadding,
+    gap: spacing.md,
+  },
+  errorText: {
+    ...typography.bodyMd,
+    color: colors.accent.coral,
+    textAlign: 'center',
+  },
+  backButton: {
+    backgroundColor: colors.accent.gold,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 6,
+  },
+  backButtonText: {
+    ...typography.captionBold,
+    color: colors.bg.dusk,
   },
 });

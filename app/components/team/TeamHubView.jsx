@@ -15,6 +15,8 @@ export default function TeamHubView({
   onShareCode,
   onInviteContacts,
   onRequestLeave,
+  isLeader = false,
+  onOpenRenameModal,
 }) {
   const leaderId = typeof team.leader === 'object' ? team.leader._id : team.leader;
   const level = Math.floor((team.score || 0) / 250) + 1;
@@ -24,7 +26,26 @@ export default function TeamHubView({
       {/* Team Header & XP */}
       <PixelCard variant="gold" glow style={styles.headerCard}>
         <View style={styles.headerTop}>
-          <Text style={styles.teamName}>{team.name}</Text>
+          <View style={styles.nameGroup}>
+            <Text style={styles.teamName}>{team.name}</Text>
+            {isLeader ? (
+              <TouchableOpacity
+                style={styles.renameBtn}
+                onPress={() => {
+                  triggerHaptic('light');
+                  if (onOpenRenameModal) onOpenRenameModal();
+                }}
+                activeOpacity={0.7}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <MaterialCommunityIcons
+                  name="pencil-outline"
+                  size={15}
+                  color={colors.accent.gold}
+                />
+              </TouchableOpacity>
+            ) : null}
+          </View>
           <PixelBadge label={`LVL ${level}`} variant="gold" icon="shield-crown" />
         </View>
 
@@ -184,9 +205,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  nameGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    paddingRight: 8,
+  },
   teamName: {
     ...typography.headingLg,
     color: colors.text.onDark.primary,
+  },
+  renameBtn: {
+    padding: 4,
+    backgroundColor: '#2A2247',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#4A3E70',
   },
   xpRow: {
     flexDirection: 'row',
