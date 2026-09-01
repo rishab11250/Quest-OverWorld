@@ -8,34 +8,10 @@ import { formatDistance, getDistanceInMeters, getBearingAndDirection } from '../
 import { triggerHaptic } from '../lib/haptics';
 import { getTimeOfDayAtmosphere } from '../theme/atmosphere';
 
-// Structured campus landmark zones linked directly to checkpoint sequence
-const ZONE_ANCHORS = [
-  { order: 1, name: 'NORTH QUAD', sub: 'Station 1 · Whispering Oak', icon: 'tree', x: 45, y: 35 },
-  {
-    order: 2,
-    name: 'CLOCKTOWER PLAZA',
-    sub: 'Station 2 · Western Steps',
-    icon: 'clock-outline',
-    x: 200,
-    y: 110,
-  },
-  {
-    order: 3,
-    name: 'ALUMNI WATERS',
-    sub: 'Station 3 · Fountain Rim',
-    icon: 'water',
-    x: 45,
-    y: 220,
-  },
-  {
-    order: 4,
-    name: 'FOUNDERS GROUNDS',
-    sub: 'Station 4 · Grand Vault',
-    icon: 'pillar',
-    x: 200,
-    y: 295,
-  },
-];
+const MAP_WIDTH = 320;
+const MAP_HEIGHT = 340;
+const MAP_CENTER_X = MAP_WIDTH / 2;
+const MAP_CENTER_Y = MAP_HEIGHT / 2;
 
 export default function OverworldMap({
   checkpoints = [],
@@ -77,7 +53,7 @@ export default function OverworldMap({
     const sonarLoop = Animated.loop(
       Animated.timing(sonarAnim, {
         toValue: 1,
-        duration: 3000,
+        duration: 2800,
         easing: Easing.out(Easing.ease),
         useNativeDriver: true,
       })
@@ -86,56 +62,102 @@ export default function OverworldMap({
     return () => sonarLoop.stop();
   }, [sonarAnim]);
 
-  // Find active checkpoint
+  const hasCheckpoints = Array.isArray(checkpoints) && checkpoints.length > 0;
+
+  // Active target checkpoint
   const activeCheckpoint =
-    currentClue || checkpoints.find((c) => c.order === currentOrder) || checkpoints[0] || null;
+    currentClue ||
+    (hasCheckpoints ? checkpoints.find((c) => c.order === currentOrder) || checkpoints[0] : null);
 
   // Calculate distance & bearing between user and active target
   let targetDistance = null;
   let compassInfo = null;
 
-  if (userLocation && activeCheckpoint) {
+  if (userLocation?.latitude && activeCheckpoint?.latitude) {
     targetDistance = getDistanceInMeters(
       userLocation.latitude,
       userLocation.longitude,
-      activeCheckpoint.latitude || 28.5458,
-      activeCheckpoint.longitude || 77.1926
+      activeCheckpoint.latitude,
+      activeCheckpoint.longitude
     );
 
     compassInfo = getBearingAndDirection(
       userLocation.latitude,
       userLocation.longitude,
-      activeCheckpoint.latitude || 28.5458,
-      activeCheckpoint.longitude || 77.1926
+      activeCheckpoint.latitude,
+      activeCheckpoint.longitude
     );
   }
 
-  // Map checkpoints to structured nodes
-  const nodesToRender = ZONE_ANCHORS.map((zone) => {
-    const cpData = checkpoints.find((c) => c.order === zone.order) || {};
-    return {
-      ...zone,
-      ...cpData,
-      _id: cpData._id || `station-${zone.order}`,
-      title: cpData.title || zone.name,
-      order: zone.order,
-      points: cpData.points || 100,
-    };
-  });
+  // Dynamic GPS Projection: Project real lat/lng coordinates onto canvas
+  const nodesToRender = [];
+  let playerCanvasX = MAP_CENTER_X;
+  let playerCanvasY = MAP_CENTER_Y;
 
-  // Player position dynamically follows path toward active station
-  const activeNode = nodesToRender.find((n) => n.order === currentOrder) || nodesToRender[0];
-  const prevNode = nodesToRender.find((n) => n.order === currentOrder - 1) || activeNode;
-  const playerX = Math.round((prevNode.x + activeNode.x) / 2) + 20;
-  const playerY = Math.round((prevNode.y + activeNode.y) / 2) + 15;
+  if (hasCheckpoints) {
+    const validPoints = checkpoints.filter((cp) => cp.latitude && cp.longitude);
+    const allLats = validPoints.map((p) => p.latitude);
+    const allLngs = validPoints.map((p) => p.longitude);
+
+    if (userLocation?.latitude) {
+      allLats.push(userLocation.latitude);
+      allLngs.push(userLocation.longitude);
+    }
+
+    const minLat = Math.min(...allLats);
+    const maxLat = Math.max(...allLats);
+    const minLng = Math.min(...allLngs);
+    const maxLng = Math.max(...allLngs);
+
+    const latSpan = Math.max(maxLat - minLat, 0.001);
+    const lngSpan = Math.max(maxLng - minLng, 0.001);
+
+    const PADDING_X = 50;
+    const PADDING_Y = 50;
+    const USABLE_W = MAP_WIDTH - PADDING_X * 2;
+    const USABLE_H = MAP_HEIGHT - PADDING_Y * 2;
+
+    checkpoints.forEach((cp, idx) => {
+      let x = MAP_CENTER_X;
+      let y = MAP_CENTER_Y;
+
+      if (cp.latitude && cp.longitude) {
+        x = PADDING_X + ((cp.longitude - minLng) / lngSpan) * USABLE_W;
+        y = MAP_HEIGHT - PADDING_Y - ((cp.latitude - minLat) / latSpan) * USABLE_H;
+      } else {
+        // Fallback evenly distributed if coordinates are pending
+        x = PADDING_X + (idx / Math.max(checkpoints.length - 1, 1)) * USABLE_W;
+        y = PADDING_Y + (idx / Math.max(checkpoints.length - 1, 1)) * USABLE_H;
+      }
+
+      nodesToRender.push({
+        ...cp,
+        _id: cp._id || `station-${cp.order || idx + 1}`,
+        title: cp.title || `Station ${cp.order || idx + 1}`,
+        order: cp.order || idx + 1,
+        points: cp.points || 100,
+        x: Math.round(x),
+        y: Math.round(y),
+      });
+    });
+
+    if (userLocation?.latitude) {
+      playerCanvasX = Math.round(
+        PADDING_X + ((userLocation.longitude - minLng) / lngSpan) * USABLE_W
+      );
+      playerCanvasY = Math.round(
+        MAP_HEIGHT - PADDING_Y - ((userLocation.latitude - minLat) / latSpan) * USABLE_H
+      );
+    }
+  }
 
   const sonarScale = sonarAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 3.2],
+    outputRange: [1, 3.4],
   });
   const sonarOpacity = sonarAnim.interpolate({
     inputRange: [0, 0.2, 1],
-    outputRange: [0.8, 0.5, 0],
+    outputRange: [0.85, 0.5, 0],
   });
 
   return (
@@ -143,7 +165,6 @@ export default function OverworldMap({
       {/* Target Distance & Bearing HUD Bar */}
       <View style={styles.hudHeader}>
         <View style={styles.hudLeft}>
-          {/* 8-Bit Compass Rose Dial */}
           <View style={styles.compassDial}>
             <View
               style={[
@@ -161,10 +182,14 @@ export default function OverworldMap({
             <Text style={styles.hudTargetText} numberOfLines={1} ellipsizeMode="tail">
               {activeCheckpoint
                 ? `STATION #${currentOrder}: ${activeCheckpoint.title.toUpperCase()}`
-                : 'ALL QUESTS CLEARED'}
+                : 'OVERWORLD EXPLORATION RADAR'}
             </Text>
             <Text style={styles.hudTargetSub}>
-              {currentOrder <= 4 ? `Step ${currentOrder} of 4 Waypoints` : 'Campus Vault Unlocked'}
+              {hasCheckpoints
+                ? `Step ${currentOrder} of ${checkpoints.length} Waypoints`
+                : userLocation
+                  ? `${userLocation.latitude.toFixed(4)}° N, ${userLocation.longitude.toFixed(4)}° E`
+                  : 'Acquiring GPS Telemetry...'}
             </Text>
           </View>
         </View>
@@ -179,7 +204,7 @@ export default function OverworldMap({
 
           <View style={styles.distanceBadge}>
             <Text style={styles.distanceText}>
-              {targetDistance != null ? formatDistance(targetDistance) : 'RADAR LOCK'}
+              {targetDistance != null ? formatDistance(targetDistance) : 'RADAR ACTIVE'}
             </Text>
           </View>
         </View>
@@ -190,41 +215,20 @@ export default function OverworldMap({
         {/* Topographic Coordinate Grid Lines */}
         <View style={styles.gridOverlay} />
 
-        {/* Clean Sequential Quest Trail (1 -> 2 -> 3 -> 4) */}
-        {/* Segment 1 -> 2 */}
-        <View
-          style={[
-            styles.trailSegment,
-            currentOrder > 1 ? styles.trailCleared : styles.trailActive,
-            { top: 90, left: 54, width: 172, transform: [{ rotate: '25.8deg' }] },
-          ]}
-        />
-        {/* Segment 2 -> 3 */}
-        <View
-          style={[
-            styles.trailSegment,
-            currentOrder > 2
-              ? styles.trailCleared
-              : currentOrder === 2
-                ? styles.trailActive
-                : styles.trailLocked,
-            { top: 183, left: 45, width: 190, transform: [{ rotate: '-35.3deg' }] },
-          ]}
-        />
-        {/* Segment 3 -> 4 */}
-        <View
-          style={[
-            styles.trailSegment,
-            currentOrder > 3
-              ? styles.trailCleared
-              : currentOrder === 3
-                ? styles.trailActive
-                : styles.trailLocked,
-            { top: 275, left: 54, width: 172, transform: [{ rotate: '25.8deg' }] },
-          ]}
-        />
+        {/* Concentric Radar Rings in Free Exploration Mode */}
+        {!hasCheckpoints ? (
+          <View style={styles.radarRingWrapper} pointerEvents="none">
+            <View style={[styles.staticRadarRing, { width: 90, height: 90, borderRadius: 45 }]} />
+            <View style={[styles.staticRadarRing, { width: 180, height: 180, borderRadius: 90 }]} />
+            <View
+              style={[styles.staticRadarRing, { width: 270, height: 270, borderRadius: 135 }]}
+            />
+            <View style={styles.radarCrosshairH} />
+            <View style={styles.radarCrosshairV} />
+          </View>
+        ) : null}
 
-        {/* Station Nodes */}
+        {/* Real Station Nodes Rendered from GPS Data */}
         {nodesToRender.map((node) => {
           const isCleared = node.order < currentOrder;
           const isActive = node.order === currentOrder;
@@ -232,7 +236,6 @@ export default function OverworldMap({
 
           return (
             <View key={node._id} style={[styles.nodeContainer, { left: node.x, top: node.y }]}>
-              {/* Active Pulse Ring */}
               {isActive ? (
                 <Animated.View
                   style={[
@@ -244,7 +247,6 @@ export default function OverworldMap({
                 />
               ) : null}
 
-              {/* Pin Icon */}
               <TouchableOpacity
                 style={[
                   styles.pinCircle,
@@ -259,7 +261,7 @@ export default function OverworldMap({
                 activeOpacity={0.8}
               >
                 <MaterialCommunityIcons
-                  name={isCleared ? 'check-bold' : isActive ? node.icon : 'lock'}
+                  name={isCleared ? 'check-bold' : isActive ? 'map-marker-radius' : 'lock'}
                   size={16}
                   color={
                     isCleared ? colors.accent.green : isActive ? colors.accent.gold : '#5A527A'
@@ -267,19 +269,17 @@ export default function OverworldMap({
                 />
               </TouchableOpacity>
 
-              {/* Node Tag & Order */}
               <View style={[styles.nodeCard, isActive && styles.nodeCardActive]}>
                 <Text style={[styles.nodeOrderText, isActive && styles.nodeOrderTextActive]}>
-                  #{node.order} · {node.name}
+                  #{node.order} · {node.title}
                 </Text>
               </View>
             </View>
           );
         })}
 
-        {/* Player Adventurer Beacon with Live Sonar Sweep */}
-        <View style={[styles.playerNode, { left: playerX, top: playerY }]}>
-          {/* Animated Expanding Sonar Sweep */}
+        {/* Live Player Adventurer Beacon */}
+        <View style={[styles.playerNode, { left: playerCanvasX, top: playerCanvasY }]}>
           <Animated.View
             style={[
               styles.sonarWave,
@@ -310,7 +310,7 @@ export default function OverworldMap({
           activeOpacity={0.8}
         >
           <MaterialCommunityIcons name="crosshairs-gps" size={16} color={colors.accent.gold} />
-          <Text style={styles.controlText}>Recenter</Text>
+          <Text style={styles.controlText}>Recenter GPS</Text>
         </TouchableOpacity>
 
         <View style={styles.zoomGroup}>
@@ -448,198 +448,217 @@ const styles = StyleSheet.create({
   distanceBadge: {
     backgroundColor: '#2E274D',
     borderWidth: 1,
-    borderColor: '#4A4170',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    borderColor: '#4A4070',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
     borderRadius: 4,
   },
   distanceText: {
-    ...typography.displayPixelXs,
-    fontSize: 8,
+    ...typography.captionBold,
+    fontSize: 10,
     color: colors.text.onDark.primary,
+    letterSpacing: 0.5,
   },
   mapBoard: {
-    height: 350,
+    height: MAP_HEIGHT,
+    backgroundColor: '#110D20',
     position: 'relative',
-    backgroundColor: '#120E22',
+    overflow: 'hidden',
   },
   gridOverlay: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.15,
     borderWidth: 1,
-    borderColor: '#4A4170',
+    borderColor: 'rgba(90, 82, 122, 0.12)',
   },
-  trailSegment: {
+  radarRingWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  staticRadarRing: {
     position: 'absolute',
-    height: 2,
-    borderStyle: 'dashed',
     borderWidth: 1,
-    borderRadius: 1,
+    borderColor: 'rgba(242, 200, 75, 0.12)',
+    borderStyle: 'dashed',
   },
-  trailCleared: {
-    borderColor: colors.accent.green,
-    opacity: 0.9,
+  radarCrosshairH: {
+    position: 'absolute',
+    width: '100%',
+    height: 1,
+    backgroundColor: 'rgba(90, 82, 122, 0.15)',
   },
-  trailActive: {
-    borderColor: colors.accent.gold,
-    opacity: 1,
-  },
-  trailLocked: {
-    borderColor: '#3D3560',
-    opacity: 0.4,
+  radarCrosshairV: {
+    position: 'absolute',
+    height: '100%',
+    width: 1,
+    backgroundColor: 'rgba(90, 82, 122, 0.15)',
   },
   nodeContainer: {
     position: 'absolute',
     alignItems: 'center',
-    zIndex: 10,
-    width: 140,
-    marginLeft: -50,
-  },
-  beaconRing: {
-    position: 'absolute',
-    top: -8,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 2,
-    borderColor: colors.accent.gold,
-    backgroundColor: 'rgba(242, 200, 75, 0.15)',
-    zIndex: 1,
+    width: 80,
+    marginLeft: -40,
+    marginTop: -20,
   },
   pinCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#262040',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#2A2345',
     borderWidth: 2,
-    borderColor: '#4A4170',
+    borderColor: '#4E4473',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 2,
-  },
-  pinCleared: {
-    backgroundColor: 'rgba(62, 207, 142, 0.2)',
-    borderColor: colors.accent.green,
+    zIndex: 5,
   },
   pinActive: {
-    backgroundColor: '#2D2350',
+    backgroundColor: '#3D3014',
     borderColor: colors.accent.gold,
+    borderWidth: 2.5,
+  },
+  pinCleared: {
+    backgroundColor: '#163322',
+    borderColor: colors.accent.green,
   },
   pinLocked: {
     backgroundColor: '#1E1933',
     borderColor: '#3D3560',
+    opacity: 0.7,
+  },
+  beaconRing: {
+    position: 'absolute',
+    top: -6,
+    left: 15,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: 'rgba(242, 200, 75, 0.5)',
+    backgroundColor: 'rgba(242, 200, 75, 0.15)',
+    zIndex: 2,
   },
   nodeCard: {
-    backgroundColor: 'rgba(22, 19, 38, 0.85)',
+    backgroundColor: 'rgba(21, 17, 38, 0.92)',
+    borderWidth: 1,
+    borderColor: '#3D3560',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#3D3560',
     marginTop: 4,
-    zIndex: 2,
+    maxWidth: 90,
   },
   nodeCardActive: {
-    backgroundColor: 'rgba(242, 200, 75, 0.18)',
     borderColor: colors.accent.gold,
+    backgroundColor: '#251E0E',
   },
   nodeOrderText: {
     ...typography.caption,
     fontSize: 9,
-    fontWeight: '700',
     color: colors.text.onDark.secondary,
+    textAlign: 'center',
   },
   nodeOrderTextActive: {
     color: colors.accent.gold,
-    fontWeight: '900',
+    fontWeight: '700',
   },
   playerNode: {
     position: 'absolute',
     alignItems: 'center',
-    zIndex: 15,
-    marginLeft: -16,
-    marginTop: -16,
-  },
-  sonarWave: {
-    position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 1.5,
-    borderColor: colors.accent.gold,
-    backgroundColor: 'rgba(242, 200, 75, 0.12)',
-    top: -14,
+    marginLeft: -20,
+    marginTop: -20,
+    zIndex: 10,
   },
   playerRadar: {
     position: 'absolute',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(74, 144, 226, 0.2)',
+    top: -5,
+    left: -5,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: 'rgba(74, 144, 226, 0.18)',
     borderWidth: 1,
-    borderColor: 'rgba(74, 144, 226, 0.5)',
-    top: -6,
+    borderColor: 'rgba(74, 144, 226, 0.4)',
+  },
+  sonarWave: {
+    position: 'absolute',
+    top: -15,
+    left: -15,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: 'rgba(74, 144, 226, 0.25)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(74, 144, 226, 0.8)',
+    zIndex: 1,
   },
   playerAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#2E78D6',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#357ABD',
     borderWidth: 2,
     borderColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
   playerLabelPill: {
-    backgroundColor: '#161326',
-    paddingHorizontal: 4,
+    backgroundColor: colors.accent.gold,
+    paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 3,
-    marginTop: 2,
-    borderWidth: 1,
-    borderColor: '#2E78D6',
+    marginTop: 3,
+    zIndex: 11,
   },
   playerLabelText: {
-    ...typography.captionBold,
     fontSize: 8,
-    color: '#FFF',
+    fontWeight: '900',
+    color: colors.bg.dusk,
   },
   controlsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1B1630',
+    backgroundColor: '#1E1935',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: '#362E52',
   },
   controlBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
+    backgroundColor: '#2A2347',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#4A3E70',
   },
   controlText: {
     ...typography.captionBold,
+    fontSize: 11,
     color: colors.accent.gold,
   },
   zoomGroup: {
     flexDirection: 'row',
-    gap: 4,
+    gap: 6,
   },
   zoomBtn: {
     width: 28,
     height: 28,
     borderRadius: 4,
-    backgroundColor: '#262040',
+    backgroundColor: '#2A2347',
     borderWidth: 1,
-    borderColor: '#4A4170',
+    borderColor: '#4A3E70',
     justifyContent: 'center',
     alignItems: 'center',
   },
   zoomText: {
-    color: colors.text.onDark.primary,
+    fontSize: 15,
     fontWeight: '900',
-    fontSize: 14,
+    color: colors.accent.gold,
+    lineHeight: 18,
   },
 });

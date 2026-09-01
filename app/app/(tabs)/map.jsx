@@ -33,11 +33,9 @@ export default function MapScreen() {
     try {
       if (!isSilent) setError('');
 
-      // 1. Fast cache fetch for immediate position
       const cached = await getLastKnownLocation();
       if (cached) setLocation(cached);
 
-      // 2. Fetch quest data & accurate GPS in parallel
       const [questRes, locRes] = await Promise.all([
         api.get('/quests/active'),
         getCurrentLocation(),
@@ -46,7 +44,6 @@ export default function MapScreen() {
       setData(questRes);
       if (locRes) {
         setLocation(locRes);
-        // Reverse geocode active station if available
         const currentClue = questRes?.quest?.currentClue;
         if (currentClue) {
           const matchedCp = questRes?.quest?.checkpoints?.find(
@@ -56,6 +53,9 @@ export default function MapScreen() {
             const addr = await reverseGeocodeLocation(matchedCp.latitude, matchedCp.longitude);
             setAddress(addr);
           }
+        } else if (locRes.latitude && locRes.longitude) {
+          const addr = await reverseGeocodeLocation(locRes.latitude, locRes.longitude);
+          setAddress(addr);
         }
       }
     } catch (err) {
@@ -73,7 +73,6 @@ export default function MapScreen() {
   );
 
   useEffect(() => {
-    // Start live GPS stream subscription
     let watcherSub = null;
     startLocationWatcher((freshCoords) => {
       setLocation(freshCoords);
@@ -81,7 +80,6 @@ export default function MapScreen() {
       watcherSub = sub;
     });
 
-    // Cleanup watcher on screen unmount
     return () => {
       if (watcherSub && typeof watcherSub.remove === 'function') {
         watcherSub.remove();
@@ -123,13 +121,29 @@ export default function MapScreen() {
       <View style={styles.header}>
         <Text style={styles.pixelTitle}>OVERWORLD ATLAS</Text>
         <Text style={styles.subtitle}>
-          {quest ? quest.campus?.toUpperCase() : 'CAMPUS EXPLORATION'}
+          {quest
+            ? quest.campus?.toUpperCase()
+            : team
+              ? `PARTY ${team.name.toUpperCase()} · RADAR`
+              : 'CAMPUS EXPLORATION'}
         </Text>
       </View>
 
       <StatusBanner type="error" message={error} />
 
-      {/* No Team State */}
+      {/* Interactive Overworld GPS Map & Radar */}
+      <View style={styles.mapSection}>
+        <OverworldMap
+          checkpoints={quest?.checkpoints || []}
+          currentClue={currentClue}
+          userLocation={location}
+          currentOrder={quest?.currentOrder || 1}
+          onSelectPin={setSelectedPin}
+          onRecenter={handleRecenter}
+        />
+      </View>
+
+      {/* Contextual Action & Clue Cards below Map */}
       {!team ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>Party Required for Waypoints</Text>
@@ -138,77 +152,114 @@ export default function MapScreen() {
           </Text>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => router.push('/(tabs)/team')}
+            onPress={() => {
+              triggerHaptic('medium');
+              router.push('/(tabs)/team');
+            }}
             activeOpacity={0.8}
           >
+            <MaterialCommunityIcons name="account-group" size={18} color={colors.bg.dusk} />
             <Text style={styles.primaryButtonText}>Head to Party HQ</Text>
           </TouchableOpacity>
         </View>
       ) : !quest ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>No Active Quest Realm</Text>
-          <Text style={styles.emptySubtitle}>
-            Party {team.name} is ready! No quest is currently active. Once an admin starts a campaign, your radar will activate.
+        <PixelCard variant="gold" glow style={styles.explorationCard}>
+          <View style={styles.explorationHeaderRow}>
+            <View style={styles.radarStatusTag}>
+              <View style={styles.liveGreenDot} />
+              <Text style={styles.radarStatusText}>EXPLORATION RADAR ONLINE</Text>
+            </View>
+            <Text style={styles.teamBadgeText}>PARTY {team.name.toUpperCase()}</Text>
+          </View>
+
+          <Text style={styles.explorationTitle}>Perimeter Scanning Active</Text>
+          <Text style={styles.explorationSubtitle}>
+            Your party is standing by on the grid. No main quest event is active in this sector.
+            Hunt side bounties or explore the campus perimeter.
           </Text>
-        </View>
-      ) : (
-        /* Map Component */
-        <View style={styles.mapSection}>
-          <OverworldMap
-            checkpoints={quest?.checkpoints || []}
-            currentClue={currentClue}
-            userLocation={location}
-            currentOrder={quest?.currentOrder || 1}
-            onSelectPin={setSelectedPin}
-            onRecenter={handleRecenter}
-          />
 
-          {/* Active Station Card below Map */}
-          {currentClue ? (
-            <PixelCard variant="gold" glow style={styles.clueCard}>
-              <View style={styles.clueHeaderRow}>
-                <View style={styles.orderBadge}>
-                  <Text style={styles.orderBadgeText}>STATION #{quest.currentOrder}</Text>
-                </View>
-                <Text style={styles.cluePoints}>+{currentClue.points || 100} PTS</Text>
-              </View>
-
-              <Text style={styles.clueTitle}>{currentClue.title}</Text>
-              <Text style={styles.clueBody}>{currentClue.clue}</Text>
-
-              {address ? (
-                <View style={styles.addressRow}>
-                  <MaterialCommunityIcons
-                    name="map-marker-radius"
-                    size={14}
-                    color={colors.accent.gold}
-                  />
-                  <Text style={styles.addressText} numberOfLines={1}>
-                    {address}
-                  </Text>
-                </View>
-              ) : null}
-
-              <TouchableOpacity
-                style={styles.scanButton}
-                onPress={() => {
-                  triggerHaptic('medium');
-                  router.push('/camera/scanner');
-                }}
-                activeOpacity={0.8}
-              >
-                <MaterialCommunityIcons name="qrcode-scan" size={18} color={colors.bg.dusk} />
-                <Text style={styles.scanButtonText}>Scan Station QR</Text>
-              </TouchableOpacity>
-            </PixelCard>
-          ) : (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>All Stations Unlocked!</Text>
-              <Text style={styles.emptySubtitle}>
-                You have reached every mapped waypoint in this territory.
+          {address ? (
+            <View style={styles.addressRow}>
+              <MaterialCommunityIcons
+                name="map-marker-radius"
+                size={14}
+                color={colors.accent.gold}
+              />
+              <Text style={styles.addressText} numberOfLines={1}>
+                {address}
               </Text>
             </View>
-          )}
+          ) : null}
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.bountyButton}
+              onPress={() => {
+                triggerHaptic('medium');
+                router.push('/(tabs)/challenges');
+              }}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons name="sword-cross" size={16} color={colors.bg.dusk} />
+              <Text style={styles.bountyButtonText}>Hunt Side Bounties</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() => {
+                triggerHaptic('light');
+                router.push('/(tabs)/team');
+              }}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons name="shield-account" size={16} color={colors.accent.gold} />
+              <Text style={styles.secondaryButtonText}>Party HQ</Text>
+            </TouchableOpacity>
+          </View>
+        </PixelCard>
+      ) : currentClue ? (
+        <PixelCard variant="gold" glow style={styles.clueCard}>
+          <View style={styles.clueHeaderRow}>
+            <View style={styles.orderBadge}>
+              <Text style={styles.orderBadgeText}>STATION #{quest.currentOrder}</Text>
+            </View>
+            <Text style={styles.cluePoints}>+{currentClue.points || 100} PTS</Text>
+          </View>
+
+          <Text style={styles.clueTitle}>{currentClue.title}</Text>
+          <Text style={styles.clueBody}>{currentClue.clue}</Text>
+
+          {address ? (
+            <View style={styles.addressRow}>
+              <MaterialCommunityIcons
+                name="map-marker-radius"
+                size={14}
+                color={colors.accent.gold}
+              />
+              <Text style={styles.addressText} numberOfLines={1}>
+                {address}
+              </Text>
+            </View>
+          ) : null}
+
+          <TouchableOpacity
+            style={styles.scanButton}
+            onPress={() => {
+              triggerHaptic('medium');
+              router.push('/camera/scanner');
+            }}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="qrcode-scan" size={18} color={colors.bg.dusk} />
+            <Text style={styles.scanButtonText}>Scan Station QR</Text>
+          </TouchableOpacity>
+        </PixelCard>
+      ) : (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>All Stations Unlocked!</Text>
+          <Text style={styles.emptySubtitle}>
+            You have reached every mapped waypoint in this territory.
+          </Text>
         </View>
       )}
     </ScrollView>
@@ -228,63 +279,111 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing.xs,
-    alignItems: 'center',
   },
   pixelTitle: {
-    ...typography.displayPixelLg,
-    fontSize: 16,
-    color: colors.accent.gold,
-    letterSpacing: 2,
-    textAlign: 'center',
+    ...typography.h2,
+    color: colors.text.onDark.primary,
+    letterSpacing: 1,
   },
   subtitle: {
-    ...typography.captionBold,
-    color: colors.text.onDark.secondary,
-    letterSpacing: 1.5,
-    marginTop: 6,
-    textAlign: 'center',
-  },
-  emptyCard: {
-    backgroundColor: colors.bg.duskRaised,
-    borderRadius: 8,
-    padding: spacing.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#3D3560',
-    gap: spacing.sm,
-  },
-  emptyTitle: {
-    ...typography.headingLg,
-    color: colors.text.onDark.primary,
-    fontWeight: '800',
-  },
-  emptySubtitle: {
-    ...typography.bodyMd,
-    color: colors.text.onDark.secondary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  primaryButton: {
-    backgroundColor: colors.accent.gold,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: 12,
-    borderRadius: 6,
-    marginTop: spacing.xs,
-  },
-  primaryButtonText: {
-    ...typography.displayPixelSm,
-    color: colors.bg.dusk,
+    ...typography.caption,
+    color: colors.accent.gold,
+    marginTop: 2,
+    letterSpacing: 0.5,
   },
   mapSection: {
-    gap: spacing.md,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  explorationCard: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  explorationHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  radarStatusTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(95, 191, 122, 0.15)',
+    borderWidth: 1,
+    borderColor: colors.accent.green,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  liveGreenDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.accent.green,
+  },
+  radarStatusText: {
+    ...typography.captionBold,
+    fontSize: 9,
+    color: colors.accent.green,
+    letterSpacing: 0.5,
+  },
+  teamBadgeText: {
+    ...typography.captionBold,
+    fontSize: 10,
+    color: colors.accent.gold,
+  },
+  explorationTitle: {
+    ...typography.h3,
+    color: colors.text.onDark.primary,
+    marginTop: 2,
+  },
+  explorationSubtitle: {
+    ...typography.body,
+    fontSize: 13,
+    color: colors.text.onDark.secondary,
+    lineHeight: 18,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  bountyButton: {
+    flex: 1.4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: colors.accent.gold,
+    paddingVertical: 12,
+    borderRadius: 6,
+  },
+  bountyButtonText: {
+    ...typography.button,
+    color: colors.bg.dusk,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  secondaryButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#2A2347',
+    borderWidth: 1,
+    borderColor: '#4A3E70',
+    paddingVertical: 12,
+    borderRadius: 6,
+  },
+  secondaryButtonText: {
+    ...typography.button,
+    color: colors.accent.gold,
+    fontSize: 13,
   },
   clueCard: {
-    backgroundColor: '#272044',
-    borderRadius: 8,
-    padding: spacing.cardPadding,
-    borderWidth: 1.5,
-    borderColor: colors.accent.gold,
-    gap: spacing.xs,
+    padding: spacing.md,
+    gap: spacing.sm,
   },
   clueHeaderRow: {
     flexDirection: 'row',
@@ -292,62 +391,96 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   orderBadge: {
-    backgroundColor: 'rgba(242, 200, 75, 0.15)',
-    borderWidth: 1,
-    borderColor: colors.accent.gold,
-    paddingHorizontal: 8,
+    backgroundColor: colors.accent.gold,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: 4,
   },
   orderBadgeText: {
-    ...typography.displayPixelXs,
-    color: colors.accent.gold,
-    fontSize: 9,
+    ...typography.captionBold,
+    color: colors.bg.dusk,
+    fontSize: 11,
   },
   cluePoints: {
-    ...typography.displayPixelSm,
+    ...typography.captionBold,
     color: colors.accent.gold,
+    fontSize: 13,
   },
   clueTitle: {
-    ...typography.headingLg,
+    ...typography.h3,
     color: colors.text.onDark.primary,
-    fontWeight: '800',
   },
   clueBody: {
-    ...typography.bodyMd,
+    ...typography.body,
     color: colors.text.onDark.secondary,
     lineHeight: 20,
+    fontStyle: 'italic',
   },
   addressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#1E1A33',
-    paddingHorizontal: spacing.sm,
+    gap: 4,
+    backgroundColor: 'rgba(242, 200, 75, 0.08)',
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
-    marginTop: 2,
   },
   addressText: {
     ...typography.caption,
     color: colors.accent.gold,
     fontSize: 11,
-    fontWeight: '700',
+    flex: 1,
   },
   scanButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: spacing.sm,
     backgroundColor: colors.accent.gold,
     paddingVertical: 12,
     borderRadius: 6,
     marginTop: spacing.xs,
   },
   scanButtonText: {
-    ...typography.displayPixelSm,
-    fontSize: 11,
+    ...typography.button,
     color: colors.bg.dusk,
-    letterSpacing: 0.5,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  emptyCard: {
+    backgroundColor: '#1E1933',
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#3D3560',
+    padding: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  emptyTitle: {
+    ...typography.h3,
+    color: colors.text.onDark.primary,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    ...typography.body,
+    color: colors.text.onDark.secondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  primaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.accent.gold,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 12,
+    borderRadius: 6,
+    marginTop: spacing.xs,
+  },
+  primaryButtonText: {
+    ...typography.button,
+    color: colors.bg.dusk,
+    fontSize: 14,
   },
 });

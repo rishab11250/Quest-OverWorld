@@ -4,6 +4,42 @@ const ChallengeAttempt = require('../models/ChallengeAttempt');
 const Team = require('../models/Team');
 const { uploadImage } = require('../utils/cloudinary');
 
+// Helper to normalize strings: case-insensitive, trimmed, stripped of punctuation, collapsed whitespace
+const normalizeAnswer = (str) => {
+  if (!str) return '';
+  return String(str)
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s]/gi, '')
+    .replace(/\s+/g, ' ');
+};
+
+// Robust answer matcher: case-insensitive, punctuation-tolerant, synonym list support (comma/pipe separated)
+const checkAnswerMatch = (userAnswer, answerKey) => {
+  if (!userAnswer || !answerKey) return false;
+  const normUser = normalizeAnswer(userAnswer);
+  if (!normUser) return false;
+
+  // Split comma or pipe separated alternative valid answers
+  const possibleKeys = String(answerKey)
+    .split(/[,|]/)
+    .map((k) => normalizeAnswer(k))
+    .filter(Boolean);
+
+  if (possibleKeys.length === 0) {
+    possibleKeys.push(normalizeAnswer(answerKey));
+  }
+
+  return possibleKeys.some(
+    (key) =>
+      normUser === key ||
+      normUser === `the ${key}` ||
+      `the ${normUser}` === key ||
+      normUser === `a ${key}` ||
+      `a ${normUser}` === key
+  );
+};
+
 // @desc    Get all active challenges with current team submission status
 // @route   GET /api/challenges
 // @access  Private
@@ -137,14 +173,16 @@ const submitChallenge = async (req, res) => {
       }
     }
 
-    // Handle Auto Answer (Trivia)
-    if (challenge.verificationType === 'auto_answer') {
+    // Handle Auto Answer (Trivia / Auto-Verify Riddle)
+    if (
+      challenge.verificationType === 'auto_answer' ||
+      challenge.verificationType === 'auto_verify'
+    ) {
       if (!textResponse || !textResponse.trim()) {
         return res.status(400).json({ message: 'Please provide an answer.' });
       }
 
-      const isCorrect =
-        textResponse.trim().toLowerCase() === (challenge.answerKey || '').toLowerCase();
+      const isCorrect = checkAnswerMatch(textResponse, challenge.answerKey);
 
       if (!isCorrect) {
         return res.status(400).json({ message: 'Incorrect answer. Try again!' });
@@ -384,10 +422,8 @@ const solveChallenge = async (req, res) => {
       });
     }
 
-    // Evaluate answer string
-    const normalizedInput = answer.trim().toLowerCase();
-    const normalizedKey = (challenge.answerKey || '').trim().toLowerCase();
-    const isCorrect = normalizedInput === normalizedKey;
+    // Evaluate answer string with robust case/punctuation/synonym matching
+    const isCorrect = checkAnswerMatch(answer, challenge.answerKey);
 
     if (isCorrect) {
       // Correct! Calculate points based on current attempt number

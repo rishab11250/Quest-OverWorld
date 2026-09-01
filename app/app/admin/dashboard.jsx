@@ -467,7 +467,9 @@ export default function AdminDashboardScreen() {
         title: challengeForm.title.trim(),
         description: challengeForm.description.trim(),
         category: challengeForm.category,
-        points: parseInt(challengeForm.points, 10) || 150,
+        points: parseInt(challengeForm.maxPoints || challengeForm.points, 10) || 150,
+        minPoints: parseInt(challengeForm.minPoints, 10) || 50,
+        maxPoints: parseInt(challengeForm.maxPoints || challengeForm.points, 10) || 200,
         verificationType: challengeForm.verificationType,
         answerKey: challengeForm.answerKey.trim(),
       });
@@ -494,10 +496,12 @@ export default function AdminDashboardScreen() {
     }
   };
 
-  const handleApproveSubmission = async (subId) => {
+  const handleApproveSubmission = async (subId, pointsAwarded) => {
     try {
       setLoading(true);
-      const res = await api.post(`/admin/submissions/${subId}/approve`);
+      const res = await api.post(`/admin/submissions/${subId}/approve`, {
+        pointsAwarded: pointsAwarded ? Number(pointsAwarded) : undefined,
+      });
       setActionSuccess(res.message || 'Submission approved!');
       fetchAdminData();
     } catch (err) {

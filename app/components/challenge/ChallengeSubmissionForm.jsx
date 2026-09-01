@@ -163,12 +163,15 @@ export default function ChallengeSubmissionForm({
               isAutoTrivia
                 ? inCooldown
                   ? 'Cooldown in progress...'
-                  : 'Enter exact answer...'
+                  : 'Type solution (case-insensitive)...'
                 : 'Write your response here...'
             }
             placeholderTextColor="#7E75A0"
             value={textResponse}
             onChangeText={setTextResponse}
+            autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
             editable={!inCooldown && !submitting}
             multiline={challenge?.category === 'photo' || challenge?.category === 'creative'}
           />
