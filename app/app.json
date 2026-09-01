@@ -4,18 +4,22 @@
     "slug": "quest-overworld",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "questoverworld",
     "newArchEnabled": false,
     "splash": {
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#1E1A33"
     },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1E1A33"
+      },
       "usesCleartextTraffic": true,
       "permissions": [
-        "android.permission.READ_CONTACTS",
-        "android.permission.WRITE_CONTACTS",
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
       ],

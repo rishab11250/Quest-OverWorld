@@ -3,11 +3,11 @@ name: Build Android APK & GitHub Release
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
   workflow_dispatch:
     inputs:
-      release_name:
-        description: 'Release Name (optional)'
+      tag_name:
+        description: 'Release Tag (e.g. v0.9-beta)'
         required: false
         default: ''
 
@@ -67,31 +67,37 @@ jobs:
             exit 1
           fi
           
-          VERSION_TAG="${{ github.ref_name }}"
-          if [[ ! "$VERSION_TAG" =~ ^v ]]; then
-            VERSION_TAG="v1.0.0-${{ github.run_number }}"
+          TAG_INPUT="${{ inputs.tag_name }}"
+          REF_NAME="${{ github.ref_name }}"
+          
+          if [ -n "$TAG_INPUT" ]; then
+            VERSION_TAG="$TAG_INPUT"
+          elif [ -n "$REF_NAME" ] && [ "$REF_NAME" != "main" ] && [ "$REF_NAME" != "master" ]; then
+            VERSION_TAG="$REF_NAME"
+          else
+            VERSION_TAG="v1.0.0-build-${{ github.run_number }}"
           fi
           
-          OUTPUT_APK="Quest-Overworld-${VERSION_TAG}.apk"
+          OUTPUT_APK="Quest-Overworld.apk"
           cp "$APK_PATH" "./$OUTPUT_APK"
           echo "apk_path=./$OUTPUT_APK" >> $GITHUB_OUTPUT
-          echo "Built APK: $OUTPUT_APK"
+          echo "version_tag=$VERSION_TAG" >> $GITHUB_OUTPUT
+          echo "Built APK: $OUTPUT_APK for release $VERSION_TAG"
 
       - name: Upload APK as Workflow Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: quest-overworld-apk
+          name: Quest-Overworld
           path: ${{ steps.apk_file.outputs.apk_path }}
           retention-days: 14
 
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+      - name: Upload APK Asset to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.apk_file.outputs.version_tag }}
           files: ${{ steps.apk_file.outputs.apk_path }}
-          name: ${{ inputs.release_name || github.ref_name }}
           draft: false
           prerelease: false
-          generate_release_notes: true
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
