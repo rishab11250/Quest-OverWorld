@@ -45,12 +45,37 @@ const questSchema = new mongoose.Schema(
   }
 );
 
-// Model-level single-active-quest enforcement guard
+// Model-level single-active-quest enforcement guard (Document middleware: create/save)
 questSchema.pre('save', async function (next) {
   if (this.status === 'active') {
     const existingActive = await this.constructor.findOne({
       status: 'active',
       _id: { $ne: this._id },
+    });
+    if (existingActive) {
+      const err = new Error(
+        `Conflict: "${existingActive.name}" is already active. Only one quest can be active at a time.`
+      );
+      err.name = 'SingleActiveQuestConflictError';
+      err.conflictQuestId = existingActive._id;
+      return next(err);
+    }
+  }
+  next();
+});
+
+// Model-level single-active-quest enforcement guard (Query middleware: findByIdAndUpdate / findOneAndUpdate)
+questSchema.pre('findOneAndUpdate', async function (next) {
+  const update = this.getUpdate();
+  if (!update) return next();
+
+  const newStatus = update.status || (update.$set && update.$set.status);
+  if (newStatus === 'active') {
+    const query = this.getQuery() || {};
+    const docId = query._id;
+    const existingActive = await this.model.findOne({
+      status: 'active',
+      ...(docId ? { _id: { $ne: docId } } : {}),
     });
     if (existingActive) {
       const err = new Error(

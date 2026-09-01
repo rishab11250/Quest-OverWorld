@@ -122,6 +122,12 @@ const createQuest = async (req, res) => {
 
     return res.status(201).json({ success: true, quest });
   } catch (error) {
+    if (error.name === 'SingleActiveQuestConflictError') {
+      return res.status(409).json({
+        message: error.message,
+        conflictQuestId: error.conflictQuestId,
+      });
+    }
     return res.status(500).json({ message: error.message || 'Server error creating quest' });
   }
 };
@@ -142,10 +148,16 @@ const updateQuest = async (req, res) => {
       }
     }
 
-    const quest = await Quest.findByIdAndUpdate(id, updates, { new: true });
+    const quest = await Quest.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
     if (!quest) return res.status(404).json({ message: 'Quest not found' });
     return res.status(200).json({ success: true, quest });
   } catch (error) {
+    if (error.name === 'SingleActiveQuestConflictError') {
+      return res.status(409).json({
+        message: error.message,
+        conflictQuestId: error.conflictQuestId,
+      });
+    }
     return res.status(500).json({ message: error.message || 'Server error updating quest' });
   }
 };
