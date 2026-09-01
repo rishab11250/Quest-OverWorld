@@ -36,18 +36,18 @@ export default function LeaderboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Immediate fetch on tab focus
       fetchLeaderboard(true);
+
+      // Auto-refresh polling every 15s ONLY while leaderboard tab is focused
+      const pollTimer = setInterval(() => {
+        fetchLeaderboard(true);
+      }, 15000);
+
+      // Clean up timer immediately when switching to another tab or unmounting
+      return () => clearInterval(pollTimer);
     }, [fetchLeaderboard])
   );
-
-  useEffect(() => {
-    // Auto-refresh polling every 15s for live leaderboard changes
-    const pollTimer = setInterval(() => {
-      fetchLeaderboard(true);
-    }, 15000);
-
-    return () => clearInterval(pollTimer);
-  }, [fetchLeaderboard]);
 
   const onRefresh = () => {
     setRefreshing(true);

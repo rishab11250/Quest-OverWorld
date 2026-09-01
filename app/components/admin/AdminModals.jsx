@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
 import * as Clipboard from 'expo-clipboard';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
@@ -384,18 +385,45 @@ export function CheckpointQrPreviewModal({ visible, onClose, checkpoint, qrImage
       const fileUri = `${FileSystem.cacheDirectory}quest_beacon_station_${safeOrder}_${safeToken}.png`;
 
       await FileSystem.writeAsStringAsync(fileUri, base64Data, {
-        encoding: FileSystem.EncodingType.Base64,
+        encoding: 'base64',
       });
 
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (isAvailable) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'image/png',
-          dialogTitle: `Save / Print QR Beacon: ${checkpoint.title}`,
-          UTI: 'public.png',
-        });
+      // Request media library permission and save to gallery
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status === 'granted') {
+        await MediaLibrary.saveToLibraryAsync(fileUri);
+        Alert.alert(
+          '✅ Saved to Gallery',
+          'QR beacon image saved to your Photos. You can also share it below.',
+          [
+            {
+              text: 'Share',
+              onPress: async () => {
+                const isAvailable = await Sharing.isAvailableAsync();
+                if (isAvailable) {
+                  await Sharing.shareAsync(fileUri, {
+                    mimeType: 'image/png',
+                    dialogTitle: `Share QR Beacon: ${checkpoint.title}`,
+                    UTI: 'public.png',
+                  });
+                }
+              },
+            },
+            { text: 'Done', style: 'cancel' },
+          ]
+        );
       } else {
-        Alert.alert('Download Ready', `QR Beacon saved to: ${fileUri}`);
+        // Fallback to share sheet if permission denied
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'image/png',
+            dialogTitle: `Save / Print QR Beacon: ${checkpoint.title}`,
+            UTI: 'public.png',
+          });
+        } else {
+          Alert.alert('Permission Required', 'Allow storage access to save the QR image.');
+        }
       }
     } catch (err) {
       Alert.alert('Export Failed', err.message || 'Could not export QR beacon image.');
