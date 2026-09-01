@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../lib/api';
+import { getSetting } from '../../lib/secureStore';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
@@ -12,6 +14,7 @@ import LeaderboardRow from '../../components/leaderboard/LeaderboardRow';
 import PixelCard from '../../components/PixelCard';
 
 export default function LeaderboardScreen() {
+  const insets = useSafeAreaInsets();
   const [rankings, setRankings] = useState([]);
   const [myTeam, setMyTeam] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,16 +39,20 @@ export default function LeaderboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      // Immediate fetch on tab focus
       fetchLeaderboard(true);
 
-      // Auto-refresh polling every 15s ONLY while leaderboard tab is focused
-      const pollTimer = setInterval(() => {
-        fetchLeaderboard(true);
-      }, 15000);
+      let pollTimer = null;
+      getSetting('live_polling', true).then((enabled) => {
+        if (enabled) {
+          pollTimer = setInterval(() => {
+            fetchLeaderboard(true);
+          }, 15000);
+        }
+      });
 
-      // Clean up timer immediately when switching to another tab or unmounting
-      return () => clearInterval(pollTimer);
+      return () => {
+        if (pollTimer) clearInterval(pollTimer);
+      };
     }, [fetchLeaderboard])
   );
 
@@ -63,7 +70,7 @@ export default function LeaderboardScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 16 }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

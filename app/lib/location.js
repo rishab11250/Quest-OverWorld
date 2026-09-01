@@ -1,3 +1,4 @@
+import { getSetting } from './secureStore';
 import * as Location from 'expo-location';
 
 // Internal helper: request foreground GPS permissions
@@ -56,8 +57,9 @@ export const getCurrentLocation = async () => {
     }
 
     // Fallback: active GPS poll
+    const isHighAccuracy = await getSetting('high_accuracy_gps', true);
     const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
+      accuracy: isHighAccuracy ? Location.Accuracy.Highest : Location.Accuracy.Balanced,
     });
 
     return {

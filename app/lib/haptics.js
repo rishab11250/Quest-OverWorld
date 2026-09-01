@@ -1,8 +1,20 @@
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
+import { getSetting } from './secureStore';
+
+let hapticsEnabledCache = true;
+
+// Pre-load from store
+getSetting('haptic_feedback', true).then((val) => {
+  hapticsEnabledCache = val !== false;
+});
+
+export const setHapticGlobalState = (enabled) => {
+  hapticsEnabledCache = Boolean(enabled);
+};
 
 export const triggerHaptic = (type = 'light') => {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === 'web' || !hapticsEnabledCache) return;
 
   try {
     switch (type) {

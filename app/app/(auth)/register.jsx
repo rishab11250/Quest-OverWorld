@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../lib/api';
 import { setToken, setUserData } from '../../lib/secureStore';
@@ -19,6 +20,7 @@ import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
 
 export default function RegisterScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -103,7 +105,12 @@ export default function RegisterScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: Math.max(insets.top, 24) + 20 },
+        ]}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Join the Quest</Text>
           <Text style={styles.subtitle}>Create your profile to start campus exploration</Text>

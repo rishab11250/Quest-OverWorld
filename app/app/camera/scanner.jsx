@@ -19,6 +19,7 @@ import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../lib/api';
 import { getCurrentLocation } from '../../lib/location';
+import { getSetting } from '../../lib/secureStore';
 import { triggerHaptic } from '../../lib/haptics';
 import RewardModal from '../../components/RewardModal';
 import colors from '../../theme/colors';
@@ -35,6 +36,12 @@ export default function ScannerScreen() {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [torch, setTorch] = useState(false);
+
+  useEffect(() => {
+    getSetting('auto_torch', false).then((val) => {
+      if (val) setTorch(true);
+    });
+  }, []);
   const [facing, setFacing] = useState('back'); // 'back' | 'front'
   const [manualMode, setManualMode] = useState(false);
   const [manualCode, setManualCode] = useState('');

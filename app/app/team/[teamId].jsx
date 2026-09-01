@@ -9,6 +9,7 @@ import {
   Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import api from '../../lib/api';
@@ -25,6 +26,7 @@ import RenameTeamModal from '../../components/team/RenameTeamModal';
 import { GUILD_PERKS } from '../../components/team/TeamHubView';
 
 export default function TeamDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { teamId } = useLocalSearchParams();
   const router = useRouter();
   const [user, setUser] = useState(null);

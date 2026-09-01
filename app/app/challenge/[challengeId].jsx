@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Text } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../../lib/api';
 import colors from '../../theme/colors';
@@ -16,6 +17,7 @@ import ChallengeStatusCard from '../../components/challenge/ChallengeStatusCard'
 import ChallengeSubmissionForm from '../../components/challenge/ChallengeSubmissionForm';
 
 export default function ChallengeDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { challengeId } = useLocalSearchParams();
   const router = useRouter();
   const [challenge, setChallenge] = useState(null);
@@ -238,7 +240,7 @@ export default function ChallengeDetailScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 16 }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

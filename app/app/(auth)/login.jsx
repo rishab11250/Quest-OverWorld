@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../lib/api';
 import { setToken, setUserData } from '../../lib/secureStore';
@@ -19,6 +20,7 @@ import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
 
 export default function LoginScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -61,7 +63,12 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: Math.max(insets.top, 24) + 20 },
+        ]}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Quest Overworld</Text>
           <Text style={styles.subtitle}>Sign in to join your team's campaign</Text>

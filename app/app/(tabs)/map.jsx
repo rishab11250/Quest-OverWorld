@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import OverworldMap from '../../components/OverworldMap';
 import api from '../../lib/api';
@@ -20,6 +21,7 @@ import PixelCard from '../../components/PixelCard';
 import { triggerHaptic } from '../../lib/haptics';
 
 export default function MapScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [data, setData] = useState(null);
   const [location, setLocation] = useState(null);
@@ -108,7 +110,7 @@ export default function MapScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 16 }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

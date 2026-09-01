@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../lib/api';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
@@ -14,6 +15,7 @@ import { triggerHaptic } from '../../lib/haptics';
 const CATEGORIES = ['ALL', 'PHOTO', 'RIDDLE', 'TRIVIA', 'CREATIVE'];
 
 export default function ChallengesScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [challenges, setChallenges] = useState([]);
   const [team, setTeam] = useState(null);
@@ -59,7 +61,7 @@ export default function ChallengesScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 16 }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

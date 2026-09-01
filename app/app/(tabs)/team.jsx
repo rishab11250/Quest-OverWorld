@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { StyleSheet, ScrollView, RefreshControl, Share, Alert } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import api from '../../lib/api';
 import { getUserData } from '../../lib/secureStore';
@@ -21,6 +22,7 @@ import PendingRequestsModal from '../../components/team/PendingRequestsModal';
 import PendingAdmissionCard from '../../components/team/PendingAdmissionCard';
 
 export default function TeamScreen() {
+  const insets = useSafeAreaInsets();
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState(null);
   const [pendingTeam, setPendingTeam] = useState(null);
@@ -370,7 +372,7 @@ export default function TeamScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, 24) + 16 }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

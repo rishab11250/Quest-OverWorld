@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { clearAuth } from '../../lib/secureStore';
 import api from '../../lib/api';
 import colors from '../../theme/colors';
@@ -28,6 +29,7 @@ import {
 } from '../../components/admin/AdminModals';
 
 export default function AdminDashboardScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
@@ -575,7 +577,7 @@ export default function AdminDashboardScreen() {
     <View style={styles.rootContainer}>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 16 }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

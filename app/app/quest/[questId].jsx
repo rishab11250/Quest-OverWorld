@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../lib/api';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
@@ -12,6 +13,7 @@ import LoadingScreen from '../../components/LoadingScreen';
 import DialogueBox from '../../components/DialogueBox';
 
 export default function QuestDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { questId } = useLocalSearchParams();
   const router = useRouter();
   const [quest, setQuest] = useState(null);

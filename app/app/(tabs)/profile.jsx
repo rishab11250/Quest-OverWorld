@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../lib/api';
 import { getUserData, clearAuth, setUserData, getSetting, setSetting } from '../../lib/secureStore';
 import ConfirmModal from '../../components/ConfirmModal';
 import LoadingScreen from '../../components/LoadingScreen';
-import { triggerHaptic } from '../../lib/haptics';
+import { triggerHaptic, setHapticGlobalState } from '../../lib/haptics';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
@@ -16,6 +17,7 @@ import ProfileRealmCard from '../../components/profile/ProfileRealmCard';
 import EditHeroModal from '../../components/profile/EditHeroModal';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState(null);
@@ -120,6 +122,7 @@ export default function ProfileScreen() {
   };
 
   const handleToggleSetting = async (key, val, setter) => {
+    if (key === 'haptic_feedback') setHapticGlobalState(val);
     triggerHaptic('light');
     setter(val);
     await setSetting(key, val);
@@ -145,7 +148,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 16 }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
