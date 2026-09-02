@@ -1,3 +1,4 @@
+const { calculateAwardedXp } = require('../utils/guildPerks');
 const Challenge = require('../models/Challenge');
 const Submission = require('../models/Submission');
 const ChallengeAttempt = require('../models/ChallengeAttempt');

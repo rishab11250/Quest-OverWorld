@@ -1,3 +1,4 @@
+const { calculateAwardedXp, getGuildPerks } = require('../utils/guildPerks');
 const Checkpoint = require('../models/Checkpoint');
 const Quest = require('../models/Quest');
 const Team = require('../models/Team');
@@ -99,7 +100,9 @@ const verifyCheckpoint = async (req, res) => {
         checkpoint.longitude
       );
 
-      const maxAllowedRadius = checkpoint.radius || 50; // default 50 meters
+      const guildPerks = getGuildPerks(team.score || 0);
+      const baseRadius = checkpoint.radius || 50;
+      const maxAllowedRadius = baseRadius + (guildPerks.bonusRadiusMeters || 0);
       // Allow slight GPS inaccuracy buffer (+25m buffer)
       const allowedWithBuffer = maxAllowedRadius + 25;
 
@@ -118,7 +121,7 @@ const verifyCheckpoint = async (req, res) => {
       questId: team.questId,
       checkpointId: checkpoint._id,
       verifiedBy: req.user._id,
-      pointsAwarded: checkpoint.points,
+      pointsAwarded: calculateAwardedXp(checkpoint.points, team.score || 0).finalPoints,
     });
 
     // 7. Update Team Score
@@ -134,7 +137,10 @@ const verifyCheckpoint = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `🎉 Checkpoint #${checkpoint.order} (${checkpoint.title}) successfully cleared!`,
-      pointsAwarded: checkpoint.points,
+      pointsAwarded: xpResult.finalPoints,
+      bonusXp: xpResult.bonusXp,
+      appliedMultiplier: xpResult.appliedMultiplier,
+      guildLevel: xpResult.guildLevel,
       totalScore: team.score,
       clearedCheckpoint: {
         _id: checkpoint._id,

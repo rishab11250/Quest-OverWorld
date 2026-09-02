@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
@@ -15,6 +16,9 @@ const app = express();
 
 // Connect Database
 connectDB();
+
+// Security Headers
+app.use(helmet());
 
 // CORS — restrict origins in production via CORS_ORIGIN env var
 const corsOrigin = process.env.CORS_ORIGIN || '*';

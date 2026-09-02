@@ -1,3 +1,4 @@
+const { calculateAwardedXp } = require('../../utils/guildPerks');
 const Submission = require('../../models/Submission');
 const Team = require('../../models/Team');
 
@@ -45,6 +46,9 @@ const approveSubmission = async (req, res) => {
     if (submission.teamId) {
       const team = await Team.findById(submission.teamId._id);
       if (team) {
+        const xpResult = calculateAwardedXp(pointsToAward, team.score || 0);
+        pointsToAward = xpResult.finalPoints;
+        submission.pointsAwarded = pointsToAward;
         team.score = (team.score || 0) + pointsToAward;
         await team.save();
       }
