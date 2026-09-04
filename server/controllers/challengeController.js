@@ -3,6 +3,8 @@ const Challenge = require('../models/Challenge');
 const Submission = require('../models/Submission');
 const ChallengeAttempt = require('../models/ChallengeAttempt');
 const Team = require('../models/Team');
+const TeamActivity = require('../models/TeamActivity');
+const { evaluateAchievements } = require('../services/achievementService');
 const { uploadImage } = require('../utils/cloudinary');
 
 // Helper to normalize strings: case-insensitive, trimmed, stripped of punctuation, collapsed whitespace
@@ -396,6 +398,8 @@ const solveChallenge = async (req, res) => {
     const isCorrect = checkAnswerMatch(answer, challenge.answerKey);
 
     if (isCorrect) {
+      const isCleanSolve = attemptRecord.attempts === 0;
+
       // Correct! Calculate points based on current attempt number and apply guild multiplier
       const baseAttemptPoints = getPointsForAttempt(challenge.points, attemptRecord.attempts);
       const xpResult = calculateAwardedXp(baseAttemptPoints, team.score || 0);
@@ -433,6 +437,23 @@ const solveChallenge = async (req, res) => {
       // Add points to team score
       team.score = (team.score || 0) + awardedPoints;
       await team.save();
+
+      // Log team activity & evaluate achievements (fire-and-forget)
+      const actorName = req.user.name || 'A player';
+      TeamActivity.create({
+        teamId: team._id,
+        actorId: req.user._id,
+        type: 'challenge_solved',
+        message: `${actorName} solved bounty: ${challenge.title} (+${awardedPoints} XP)`,
+      }).catch((actErr) => console.error('[TeamActivity Error]', actErr.message));
+
+      evaluateAchievements(team, {
+        actorId: req.user._id,
+        challengeId: challenge._id,
+        isCleanSolve,
+        attempts: attemptRecord.attempts,
+        timestamp: new Date(),
+      }).catch((achErr) => console.error('[Achievement Error]', achErr.message));
 
       return res.status(200).json({
         success: true,

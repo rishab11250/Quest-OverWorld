@@ -11,6 +11,7 @@ const checkpointRoutes = require('./routes/checkpoints');
 const challengeRoutes = require('./routes/challenges');
 const leaderboardRoutes = require('./routes/leaderboard');
 const adminRoutes = require('./routes/admin');
+const announcementRoutes = require('./routes/announcements');
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use('/api/checkpoints', checkpointRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // Image Upload Endpoint (Protected with auth, rate-limit, and payload format validation)
 const { protect } = require('./middleware/auth');

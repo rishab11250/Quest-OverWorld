@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../lib/api';
+import { getSetting, setSetting } from '../../lib/secureStore';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
@@ -47,15 +48,54 @@ export default function HomeScreen() {
     }
   }, []);
 
+  const [announcement, setAnnouncement] = useState(null);
+
+  const fetchAnnouncement = useCallback(async () => {
+    try {
+      const res = await api.get('/announcements');
+      const list = res?.announcements || [];
+      if (list.length > 0) {
+        const latest = list[0];
+        const dismissedId = await getSetting('dismissed_announcement_id', null);
+        if (dismissedId !== latest._id) {
+          setAnnouncement(latest);
+        } else {
+          setAnnouncement(null);
+        }
+      } else {
+        setAnnouncement(null);
+      }
+    } catch (_err) {
+      // Non-blocking
+    }
+  }, []);
+
+  const dismissAnnouncement = async () => {
+    if (announcement?._id) {
+      await setSetting('dismissed_announcement_id', announcement._id);
+      setAnnouncement(null);
+      triggerHaptic('light');
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchActiveQuest(true);
-    }, [fetchActiveQuest])
+      fetchAnnouncement();
+    }, [fetchActiveQuest, fetchAnnouncement])
   );
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchAnnouncement();
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [fetchAnnouncement]);
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchActiveQuest(false);
+    fetchAnnouncement();
   };
 
   if (loading && !refreshing) {
@@ -85,6 +125,27 @@ export default function HomeScreen() {
           {team ? `${team.name.toUpperCase()} • LVL ${level}` : 'CAMPUS EXPLORATION'}
         </Text>
       </View>
+
+      {/* Broadcast Announcement Banner */}
+      {announcement ? (
+        <View style={styles.announcementBanner}>
+          <View style={styles.announcementLeft}>
+            <Text style={styles.announcementIcon}>📢</Text>
+            <View style={styles.announcementContent}>
+              <Text style={styles.announcementTag}>BROADCAST ANNOUNCEMENT</Text>
+              <Text style={styles.announcementText}>{announcement.message}</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.announcementDismiss}
+            onPress={dismissAnnouncement}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.announcementDismissText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {/* Party Score & Level Progression Banner */}
       <PixelCard variant="gold" glow style={styles.pointsCard}>
@@ -316,6 +377,52 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     marginTop: 6,
     textAlign: 'center',
+  },
+  announcementBanner: {
+    backgroundColor: '#272044',
+    borderWidth: 1.5,
+    borderColor: colors.accent.gold,
+    borderRadius: 8,
+    padding: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  announcementLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.xs,
+    paddingRight: spacing.xs,
+  },
+  announcementIcon: {
+    fontSize: 16,
+  },
+  announcementContent: {
+    flex: 1,
+  },
+  announcementTag: {
+    ...typography.displayPixelXs,
+    color: colors.accent.gold,
+    fontSize: 7,
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  announcementText: {
+    ...typography.bodyMd,
+    color: colors.text.onDark.primary,
+    fontSize: 12,
+  },
+  announcementDismiss: {
+    padding: 6,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  announcementDismissText: {
+    color: colors.text.onDark.secondary,
+    fontSize: 11,
+    fontWeight: 'bold',
   },
   pointsCard: {
     backgroundColor: colors.bg.duskRaised,

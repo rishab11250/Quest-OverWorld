@@ -32,6 +32,9 @@ const {
   deleteTeam,
   getConfig,
   updateConfig,
+  createAnnouncement,
+  getAnnouncements,
+  deleteAnnouncement,
 } = require('../controllers/adminController');
 
 // All admin routes require JWT auth and admin role
@@ -80,6 +83,10 @@ router.post('/submissions/:id/reject', rejectSubmission);
 
 // Game Configuration (Team size limits & rules)
 router.route('/config').get(getConfig).put(updateConfig);
+
+// Broadcast Announcements
+router.route('/announcements').get(getAnnouncements).post(createAnnouncement);
+router.delete('/announcements/:id', deleteAnnouncement);
 
 // System Operations
 router.post('/system/reseed', reseedDemoData);

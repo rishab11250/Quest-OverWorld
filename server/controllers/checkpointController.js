@@ -3,6 +3,8 @@ const Checkpoint = require('../models/Checkpoint');
 const Quest = require('../models/Quest');
 const Team = require('../models/Team');
 const Progress = require('../models/Progress');
+const TeamActivity = require('../models/TeamActivity');
+const { evaluateAchievements } = require('../services/achievementService');
 const { getDistanceInMeters } = require('../utils/geo');
 
 // @desc    Verify QR code and GPS proximity for a checkpoint
@@ -129,6 +131,22 @@ const verifyCheckpoint = async (req, res) => {
     // 7. Update Team Score
     team.score = (team.score || 0) + xpResult.finalPoints;
     await team.save();
+
+    // Log team activity & evaluate achievements (fire-and-forget)
+    const actorName = req.user.name || 'A player';
+    TeamActivity.create({
+      teamId: team._id,
+      actorId: req.user._id,
+      type: 'checkpoint_cleared',
+      message: `${actorName} cleared Checkpoint ${checkpoint.order}: ${checkpoint.title} (+${xpResult.finalPoints} XP)`,
+    }).catch((actErr) => console.error('[TeamActivity Error]', actErr.message));
+
+    evaluateAchievements(team, {
+      checkpointId: checkpoint._id,
+      order: checkpoint.order,
+      actorId: req.user._id,
+      timestamp: new Date(),
+    }).catch((achErr) => console.error('[Achievement Error]', achErr.message));
 
     // 8. Find next unlocked checkpoint in sequence
     const nextCheckpoint = await Checkpoint.findOne({

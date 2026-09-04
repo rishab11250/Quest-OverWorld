@@ -1,6 +1,8 @@
 const { calculateAwardedXp } = require('../../utils/guildPerks');
 const Submission = require('../../models/Submission');
 const Team = require('../../models/Team');
+const TeamActivity = require('../../models/TeamActivity');
+const { evaluateAchievements } = require('../../services/achievementService');
 
 const getPendingSubmissions = async (req, res) => {
   try {
@@ -22,7 +24,8 @@ const approveSubmission = async (req, res) => {
   try {
     const submission = await Submission.findById(req.params.id)
       .populate('challengeId')
-      .populate('teamId');
+      .populate('teamId')
+      .populate('submittedBy', 'name');
 
     if (!submission) {
       return res.status(404).json({ message: 'Submission not found.' });
@@ -51,6 +54,23 @@ const approveSubmission = async (req, res) => {
         submission.pointsAwarded = pointsToAward;
         team.score = (team.score || 0) + pointsToAward;
         await team.save();
+
+        // Log team activity & evaluate achievements (fire-and-forget)
+        const submitterName = submission.submittedBy?.name || 'A player';
+        const challengeTitle = submission.challengeId?.title || 'bounty';
+
+        TeamActivity.create({
+          teamId: team._id,
+          actorId: submission.submittedBy?._id || submission.submittedBy || team.leader,
+          type: 'challenge_solved',
+          message: `${submitterName}'s submission for "${challengeTitle}" was approved (+${pointsToAward} XP)`,
+        }).catch((actErr) => console.error('[TeamActivity Error]', actErr.message));
+
+        evaluateAchievements(team, {
+          actorId: submission.submittedBy?._id || submission.submittedBy || team.leader,
+          challengeId: submission.challengeId?._id || submission.challengeId,
+          timestamp: new Date(),
+        }).catch((achErr) => console.error('[Achievement Error]', achErr.message));
       }
     }
 

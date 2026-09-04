@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import api from '../../lib/api';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
@@ -64,6 +66,37 @@ export default function TeamHubView({
   const level = Math.floor((team.score || 0) / 250) + 1;
   const activeBuffsCount = GUILD_PERKS.filter((p) => level >= p.minLevel).length;
   const pendingCount = team.pendingRequests?.length || 0;
+
+  const [activities, setActivities] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+
+  useEffect(() => {
+    if (!team?._id) return;
+
+    let isMounted = true;
+    const fetchFeed = async () => {
+      try {
+        const [actRes, achRes] = await Promise.all([
+          api.get(`/teams/${team._id}/activity`),
+          api.get(`/teams/${team._id}/achievements`),
+        ]);
+        if (isMounted) {
+          if (actRes?.activities) setActivities(actRes.activities);
+          if (achRes?.achievements) setAchievements(achRes.achievements);
+        }
+      } catch (_err) {
+        // Non-blocking
+      }
+    };
+
+    fetchFeed();
+    const interval = setInterval(fetchFeed, 12000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [team?._id]);
 
   return (
     <View style={styles.container}>
@@ -297,6 +330,74 @@ export default function TeamHubView({
             );
           })}
         </View>
+      </PixelCard>
+
+      {/* Party Badges & Trophies */}
+      <PixelCard variant="gold" glow style={styles.activityCard}>
+        <View style={styles.feedHeaderRow}>
+          <Text style={styles.feedTitle}>PARTY TROPHIES & BADGES</Text>
+          <Text style={styles.feedBadgeCount}>{achievements.length} UNLOCKED</Text>
+        </View>
+
+        {achievements.length === 0 ? (
+          <Text style={styles.emptyFeedText}>
+            No badges unlocked yet. Clear checkpoints, solve bounties on first try, and recruit
+            adventurers!
+          </Text>
+        ) : (
+          <View style={styles.badgesList}>
+            {achievements.map((ach) => (
+              <View key={ach._id || ach.achievementId} style={styles.badgeRow}>
+                <Text style={styles.badgeRowIcon}>🏆</Text>
+                <View style={styles.badgeRowText}>
+                  <Text style={styles.badgeRowTitle}>{ach.title}</Text>
+                  <Text style={styles.badgeRowDesc}>{ach.description}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </PixelCard>
+
+      {/* In-Team Activity Feed */}
+      <PixelCard variant="dusk" style={styles.activityCard}>
+        <View style={styles.feedHeaderRow}>
+          <Text style={styles.feedTitle}>PARTY ACTIVITY FEED</Text>
+          <Text style={styles.feedLiveDot}>● LIVE</Text>
+        </View>
+
+        {activities.length === 0 ? (
+          <Text style={styles.emptyFeedText}>No party events recorded yet.</Text>
+        ) : (
+          <View style={styles.activityList}>
+            {activities.slice(0, 10).map((act) => (
+              <View key={act._id} style={styles.activityRow}>
+                <Text style={styles.activityRowIcon}>
+                  {act.type === 'checkpoint_cleared'
+                    ? '📍'
+                    : act.type === 'challenge_solved'
+                      ? '📜'
+                      : act.type === 'achievement_earned'
+                        ? '🏆'
+                        : act.type === 'member_joined'
+                          ? '⚔️'
+                          : act.type === 'member_left' || act.type === 'member_kicked'
+                            ? '🚪'
+                            : '⚡'}
+                </Text>
+                <View style={styles.activityRowText}>
+                  <Text style={styles.activityMessage}>{act.message}</Text>
+                  <Text style={styles.activityTime}>
+                    {new Date(act.createdAt).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
       </PixelCard>
 
       {/* Leave Team Button */}
@@ -657,5 +758,103 @@ const styles = StyleSheet.create({
     ...typography.captionBold,
     color: colors.bg.dusk,
     fontSize: 10,
+  },
+  activityCard: {
+    backgroundColor: colors.bg.duskRaised,
+    borderRadius: 8,
+    padding: spacing.cardPadding,
+    borderWidth: 1,
+    borderColor: '#3D3560',
+    gap: spacing.sm,
+  },
+  feedHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#362E52',
+    paddingBottom: spacing.xs,
+  },
+  feedTitle: {
+    ...typography.displayPixelXs,
+    color: colors.accent.gold,
+    letterSpacing: 1.2,
+  },
+  feedBadgeCount: {
+    ...typography.displayPixelXs,
+    color: colors.accent.gold,
+    fontSize: 8,
+  },
+  feedLiveDot: {
+    ...typography.displayPixelXs,
+    color: colors.accent.green,
+    fontSize: 8,
+  },
+  emptyFeedText: {
+    ...typography.bodySm,
+    color: colors.text.onDark.secondary,
+    fontStyle: 'italic',
+    paddingVertical: spacing.xs,
+  },
+  badgesList: {
+    gap: spacing.xs,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: '#1E1A33',
+    padding: spacing.sm,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(242, 200, 75, 0.25)',
+  },
+  badgeRowIcon: {
+    fontSize: 20,
+  },
+  badgeRowText: {
+    flex: 1,
+  },
+  badgeRowTitle: {
+    ...typography.headingSm,
+    color: colors.accent.gold,
+    fontSize: 12,
+  },
+  badgeRowDesc: {
+    ...typography.bodySm,
+    color: colors.text.onDark.secondary,
+    fontSize: 10.5,
+  },
+  activityList: {
+    gap: spacing.xs,
+  },
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(54, 46, 82, 0.4)',
+  },
+  activityRowIcon: {
+    fontSize: 15,
+  },
+  activityRowText: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  activityMessage: {
+    ...typography.bodySm,
+    color: colors.text.onDark.primary,
+    fontSize: 11,
+    flex: 1,
+    paddingRight: spacing.xs,
+  },
+  activityTime: {
+    ...typography.caption,
+    color: colors.text.onDark.secondary,
+    fontSize: 9,
   },
 });

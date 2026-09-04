@@ -1,6 +1,11 @@
 const Team = require('../models/Team');
+const User = require('../models/User');
 const GameConfig = require('../models/GameConfig');
 const QuestResult = require('../models/QuestResult');
+const TeamActivity = require('../models/TeamActivity');
+const TeamAchievement = require('../models/TeamAchievement');
+const { ACHIEVEMENTS } = require('../utils/achievements');
+const { evaluateAchievements } = require('../services/achievementService');
 
 const POPULATE_FIELDS = [
   { path: 'members', select: 'name email avatar' },
@@ -295,6 +300,25 @@ const approveJoinRequest = async (req, res) => {
     await team.save();
     await populateTeam(team);
 
+    // Log team activity & evaluate achievements (fire-and-forget)
+    const admittedMember =
+      Array.isArray(team.members) &&
+      team.members.find((m) => (m._id || m).toString() === userId.toString());
+    const memberName = admittedMember?.name || 'An adventurer';
+
+    TeamActivity.create({
+      teamId: team._id,
+      actorId: userId,
+      type: 'member_joined',
+      message: `${memberName} joined the party`,
+    }).catch((actErr) => console.error('[TeamActivity Error]', actErr.message));
+
+    evaluateAchievements(team, {
+      actorId: userId,
+      event: 'member_joined',
+      timestamp: new Date(),
+    }).catch((achErr) => console.error('[Achievement Error]', achErr.message));
+
     return res.status(200).json({
       success: true,
       message: 'Adventurer admitted into the party!',
@@ -433,6 +457,9 @@ const kickMember = async (req, res) => {
       return res.status(404).json({ message: 'Player is not a member of this party' });
     }
 
+    const kickedUser = await User.findById(memberId).select('name');
+    const kickedName = kickedUser?.name || 'An adventurer';
+
     team.members.splice(memberIndex, 1);
     if (team.viceCaptains) {
       team.viceCaptains = team.viceCaptains.filter((vc) => vc.toString() !== memberId);
@@ -440,6 +467,13 @@ const kickMember = async (req, res) => {
 
     await team.save();
     await populateTeam(team);
+
+    TeamActivity.create({
+      teamId: team._id,
+      actorId: req.user._id,
+      type: 'member_kicked',
+      message: `${kickedName} was removed from the party`,
+    }).catch((actErr) => console.error('[TeamActivity Error]', actErr.message));
 
     return res.status(200).json({
       success: true,
@@ -494,6 +528,21 @@ const setViceCaptain = async (req, res) => {
 
     await team.save();
     await populateTeam(team);
+
+    const targetMember =
+      Array.isArray(team.members) &&
+      team.members.find((m) => (m._id || m).toString() === memberId.toString());
+    const targetName = targetMember?.name || 'A player';
+
+    TeamActivity.create({
+      teamId: team._id,
+      actorId: req.user._id,
+      type: 'role_changed',
+      message:
+        action === 'promote'
+          ? `${targetName} was promoted to Vice-Captain`
+          : `${targetName} was demoted to Member`,
+    }).catch((actErr) => console.error('[TeamActivity Error]', actErr.message));
 
     return res.status(200).json({
       success: true,
@@ -550,6 +599,18 @@ const transferLeadership = async (req, res) => {
 
     await team.save();
     await populateTeam(team);
+
+    const newLeader =
+      Array.isArray(team.members) &&
+      team.members.find((m) => (m._id || m).toString() === newLeaderId.toString());
+    const newLeaderName = newLeader?.name || 'A player';
+
+    TeamActivity.create({
+      teamId: team._id,
+      actorId: req.user._id,
+      type: 'role_changed',
+      message: `${newLeaderName} is now the Party Captain`,
+    }).catch((actErr) => console.error('[TeamActivity Error]', actErr.message));
 
     return res.status(200).json({
       success: true,
@@ -625,6 +686,14 @@ const leaveTeam = async (req, res) => {
     await team.save();
     await populateTeam(team);
 
+    const leaverName = req.user.name || 'An adventurer';
+    TeamActivity.create({
+      teamId: team._id,
+      actorId: req.user._id,
+      type: 'member_left',
+      message: `${leaverName} left the party`,
+    }).catch((actErr) => console.error('[TeamActivity Error]', actErr.message));
+
     return res.status(200).json({ message: 'Left team successfully', team });
   } catch (error) {
     return res.status(500).json({ message: error.message || 'Server error leaving team' });
@@ -653,6 +722,108 @@ const getMyTeamQuestHistory = async (req, res) => {
   }
 };
 
+// @desc    Get in-team activity feed
+// @route   GET /api/teams/:id/activity
+// @access  Private (Team member/leader or admin)
+const getTeamActivity = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const team = await Team.findById(id);
+    if (!team) {
+      return res.status(404).json({ message: 'Party not found' });
+    }
+
+    const userIdStr = req.user._id.toString();
+    const isLeader = team.leader && (team.leader._id || team.leader).toString() === userIdStr;
+    const isMember =
+      Array.isArray(team.members) &&
+      team.members.some((m) => (m._id || m).toString() === userIdStr);
+    const isAdmin = Boolean(req.user.isAdmin || req.user.role === 'admin');
+
+    if (!isLeader && !isMember && !isAdmin) {
+      return res.status(403).json({
+        message: 'Access denied. You are not a member of this party.',
+      });
+    }
+
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 50);
+    const query = { teamId: team._id };
+
+    if (req.query.before) {
+      const beforeDate = new Date(req.query.before);
+      if (!isNaN(beforeDate.getTime())) {
+        query.createdAt = { $lt: beforeDate };
+      }
+    }
+
+    const activities = await TeamActivity.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .populate('actorId', 'name');
+
+    const nextCursor =
+      activities.length === limit
+        ? activities[activities.length - 1].createdAt.toISOString()
+        : null;
+
+    return res.status(200).json({
+      success: true,
+      activities,
+      nextCursor,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error fetching activity' });
+  }
+};
+
+// @desc    Get team achievement badges
+// @route   GET /api/teams/:id/achievements
+// @access  Private (Team member/leader or admin)
+const getTeamAchievements = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const team = await Team.findById(id);
+    if (!team) {
+      return res.status(404).json({ message: 'Party not found' });
+    }
+
+    const userIdStr = req.user._id.toString();
+    const isLeader = team.leader && (team.leader._id || team.leader).toString() === userIdStr;
+    const isMember =
+      Array.isArray(team.members) &&
+      team.members.some((m) => (m._id || m).toString() === userIdStr);
+    const isAdmin = Boolean(req.user.isAdmin || req.user.role === 'admin');
+
+    if (!isLeader && !isMember && !isAdmin) {
+      return res.status(403).json({
+        message: 'Access denied. You are not a member of this party.',
+      });
+    }
+
+    const earned = await TeamAchievement.find({ teamId: team._id }).sort({ earnedAt: -1 });
+
+    const catalogMap = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
+    const achievements = earned.map((item) => {
+      const badge = catalogMap.get(item.achievementId);
+      return {
+        _id: item._id,
+        achievementId: item.achievementId,
+        title: badge ? badge.title : item.achievementId,
+        description: badge ? badge.description : '',
+        earnedAt: item.earnedAt,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      achievements,
+      count: achievements.length,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error fetching achievements' });
+  }
+};
+
 module.exports = {
   createTeam,
   joinTeam,
@@ -667,4 +838,6 @@ module.exports = {
   transferLeadership,
   leaveTeam,
   getMyTeamQuestHistory,
+  getTeamActivity,
+  getTeamAchievements,
 };
