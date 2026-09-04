@@ -17,6 +17,12 @@ const app = express();
 // Connect Database
 connectDB();
 
+// Start Quest Scheduler (auto-start / auto-complete scheduled quests)
+const { startQuestScheduler } = require('./jobs/questScheduler');
+if (process.env.NODE_ENV !== 'test') {
+  startQuestScheduler();
+}
+
 // Security Headers
 app.use(helmet());
 

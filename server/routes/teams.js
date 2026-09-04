@@ -14,6 +14,7 @@ const {
   transferLeadership,
   approveJoinRequest,
   rejectJoinRequest,
+  getMyTeamQuestHistory,
 } = require('../controllers/teamController');
 
 // All team routes require authentication
@@ -23,6 +24,7 @@ router.post('/', createTeam);
 router.post('/join', joinTeam);
 router.post('/join/cancel', cancelJoinRequest);
 router.get('/me', getMyTeam);
+router.get('/me/history', getMyTeamQuestHistory);
 router.get('/:id', getTeamById);
 router.put('/:id', updateTeam);
 router.patch('/:id', updateTeam);

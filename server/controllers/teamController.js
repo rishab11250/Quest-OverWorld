@@ -1,4 +1,6 @@
 const Team = require('../models/Team');
+const GameConfig = require('../models/GameConfig');
+const QuestResult = require('../models/QuestResult');
 
 const POPULATE_FIELDS = [
   { path: 'members', select: 'name email avatar' },
@@ -44,13 +46,20 @@ const createTeam = async (req, res) => {
 
     await populateTeam(team);
 
-    return res.status(201).json({ team });
+    return res.status(201).json({
+      success: true,
+      message: 'Party successfully formed!',
+      team,
+    });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'A team with this name already exists' });
+    }
     return res.status(500).json({ message: error.message || 'Server error creating team' });
   }
 };
 
-// @desc    Submit Join Request by 6-character code
+// @desc    Request to join a team with join code (queued for Captain/Vice-Captain review)
 // @route   POST /api/teams/join
 // @access  Private
 const joinTeam = async (req, res) => {
@@ -77,6 +86,12 @@ const joinTeam = async (req, res) => {
     const targetTeam = await Team.findOne({ code: normalizedCode });
     if (!targetTeam) {
       return res.status(404).json({ message: 'No party found with this join code.' });
+    }
+
+    // Check party capacity limit from GameConfig
+    const gameConfig = await GameConfig.getSingleton();
+    if (targetTeam.members && targetTeam.members.length >= gameConfig.maxTeamSize) {
+      return res.status(400).json({ message: 'This party is full' });
     }
 
     // Check if user already has a pending request
@@ -256,6 +271,14 @@ const approveJoinRequest = async (req, res) => {
 
       return res.status(400).json({
         message: 'Player already belongs to another party',
+      });
+    }
+
+    // 3. Verify party capacity limit from GameConfig (leave pending request intact if full)
+    const gameConfig = await GameConfig.getSingleton();
+    if (team.members && team.members.length >= gameConfig.maxTeamSize) {
+      return res.status(400).json({
+        message: `This party has reached its maximum capacity of ${gameConfig.maxTeamSize} players.`,
       });
     }
 
@@ -608,6 +631,28 @@ const leaveTeam = async (req, res) => {
   }
 };
 
+// @desc    Get past quest history/results for caller's team
+// @route   GET /api/teams/me/history
+// @access  Private
+const getMyTeamQuestHistory = async (req, res) => {
+  try {
+    const team = await Team.findOne({ members: req.user._id });
+    if (!team) {
+      return res.status(200).json({ history: [], count: 0 });
+    }
+
+    const history = await QuestResult.find({ teamId: team._id })
+      .populate('questId', 'name description campus startAt endAt totalPoints')
+      .sort({ completedAt: -1 });
+
+    return res.status(200).json({ history, count: history.length });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: error.message || 'Server error fetching team quest history' });
+  }
+};
+
 module.exports = {
   createTeam,
   joinTeam,
@@ -621,4 +666,5 @@ module.exports = {
   setViceCaptain,
   transferLeadership,
   leaveTeam,
+  getMyTeamQuestHistory,
 };

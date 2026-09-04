@@ -9,7 +9,7 @@ const Progress = require('../models/Progress');
 const getAllQuests = async (req, res) => {
   try {
     const quests = await Quest.find({ status: 'active' }).select(
-      'name description campus totalPoints checkpoints status'
+      'name description campus totalPoints checkpoints status startAt endAt'
     );
     return res.status(200).json({ quests });
   } catch (error) {
@@ -111,6 +111,8 @@ const getActiveQuest = async (req, res) => {
         description: quest.description,
         campus: quest.campus,
         totalPoints: quest.totalPoints,
+        startAt: quest.startAt,
+        endAt: quest.endAt,
         totalCheckpoints: allCheckpoints.length,
         currentOrder,
         isCompleted: isQuestCompleted,
@@ -167,6 +169,8 @@ const getQuestById = async (req, res) => {
         description: quest.description,
         campus: quest.campus,
         totalPoints: quest.totalPoints,
+        startAt: quest.startAt,
+        endAt: quest.endAt,
         checkpoints,
       },
     });

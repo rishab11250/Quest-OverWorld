@@ -6,6 +6,7 @@ const reviewController = require('./reviewController');
 const playerController = require('./playerController');
 const teamController = require('./teamController');
 const systemController = require('./systemController');
+const configController = require('./configController');
 
 module.exports = {
   ...overviewController,
@@ -16,4 +17,5 @@ module.exports = {
   ...playerController,
   ...teamController,
   ...systemController,
+  ...configController,
 };

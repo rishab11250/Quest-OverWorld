@@ -16,6 +16,16 @@ import PixelBadge from '../../components/PixelBadge';
 import PixelCard from '../../components/PixelCard';
 import { triggerHaptic } from '../../lib/haptics';
 
+const getTimeRemaining = (endTime) => {
+  if (!endTime) return null;
+  const diff = new Date(endTime).getTime() - Date.now();
+  if (diff <= 0) return 'Ending soon';
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (hours > 0) return `${hours}h ${minutes}m left`;
+  return `${minutes}m left`;
+};
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -127,11 +137,18 @@ export default function HomeScreen() {
             <Text style={styles.questName}>{quest.name}</Text>
             <Text style={styles.questDesc}>{quest.description}</Text>
 
-            <View style={styles.stationCounterBox}>
-              <Text style={styles.stationCounterText}>
-                📍 Station {quest?.currentOrder || 1} of{' '}
-                {quest?.totalCheckpoints || quest?.checkpoints?.length || 4}
-              </Text>
+            <View style={styles.stationMetaRow}>
+              <View style={styles.stationCounterBox}>
+                <Text style={styles.stationCounterText}>
+                  📍 Station {quest?.currentOrder || 1} of{' '}
+                  {quest?.totalCheckpoints || quest?.checkpoints?.length || 4}
+                </Text>
+              </View>
+              {quest?.endAt ? (
+                <View style={styles.timerBadge}>
+                  <Text style={styles.timerBadgeText}>⏳ {getTimeRemaining(quest.endAt)}</Text>
+                </View>
+              ) : null}
             </View>
           </View>
 
@@ -398,15 +415,34 @@ const styles = StyleSheet.create({
     color: colors.text.onDark.secondary,
     lineHeight: 20,
   },
+  stationMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    gap: spacing.xs,
+  },
   stationCounterBox: {
     backgroundColor: '#1E1A33',
     paddingHorizontal: spacing.sm,
     paddingVertical: 5,
     borderRadius: 4,
     alignSelf: 'flex-start',
-    marginTop: 4,
   },
   stationCounterText: {
+    ...typography.displayPixelXs,
+    color: colors.accent.gold,
+    fontSize: 8,
+  },
+  timerBadge: {
+    backgroundColor: '#1E1A33',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(242, 200, 75, 0.4)',
+  },
+  timerBadgeText: {
     ...typography.displayPixelXs,
     color: colors.accent.gold,
     fontSize: 8,

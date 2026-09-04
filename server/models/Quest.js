@@ -39,6 +39,14 @@ const questSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    startAt: {
+      type: Date,
+      default: null,
+    },
+    endAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

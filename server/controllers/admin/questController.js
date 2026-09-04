@@ -1,5 +1,7 @@
 const Quest = require('../../models/Quest');
 const Checkpoint = require('../../models/Checkpoint');
+const QuestResult = require('../../models/QuestResult');
+const { finalizeQuestResults } = require('../../services/questCompletionService');
 
 /**
  * Enforces the single-active-quest rule.
@@ -22,7 +24,7 @@ const getAllAdminQuests = async (req, res) => {
 
 const createQuest = async (req, res) => {
   try {
-    const { name, description, campus, totalPoints, status } = req.body;
+    const { name, description, campus, totalPoints, status, startAt, endAt } = req.body;
     if (!name || !description) {
       return res.status(400).json({ message: 'Name and description are required.' });
     }
@@ -45,6 +47,8 @@ const createQuest = async (req, res) => {
       campus: campus || 'Main Campus',
       totalPoints: totalPoints || 700,
       status: requestedStatus,
+      startAt: startAt ? new Date(startAt) : null,
+      endAt: endAt ? new Date(endAt) : null,
       createdBy: req.user._id,
       checkpoints: [],
     });
@@ -57,7 +61,11 @@ const createQuest = async (req, res) => {
 
 const updateQuest = async (req, res) => {
   try {
-    const { name, description, campus, totalPoints, status } = req.body;
+    const { name, description, campus, totalPoints, status, startAt, endAt } = req.body;
+
+    const existingQuest = await Quest.findById(req.params.id);
+    if (!existingQuest) return res.status(404).json({ message: 'Quest not found' });
+    const previousStatus = existingQuest.status;
 
     if (status === 'active') {
       const otherActive = await findOtherActiveQuest(req.params.id);
@@ -69,16 +77,37 @@ const updateQuest = async (req, res) => {
       }
     }
 
-    const quest = await Quest.findByIdAndUpdate(
-      req.params.id,
-      { name, description, campus, totalPoints, status },
-      { new: true }
-    ).populate('checkpoints');
+    const updateData = { name, description, campus, totalPoints, status };
+    if (startAt !== undefined) updateData.startAt = startAt ? new Date(startAt) : null;
+    if (endAt !== undefined) updateData.endAt = endAt ? new Date(endAt) : null;
 
-    if (!quest) return res.status(404).json({ message: 'Quest not found' });
+    const quest = await Quest.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+    }).populate('checkpoints');
+
+    // Trigger historical snapshot if transitioning to completed
+    if (status === 'completed' && previousStatus !== 'completed') {
+      await finalizeQuestResults(quest._id);
+    }
+
     return res.status(200).json({ success: true, quest });
   } catch (error) {
     return res.status(500).json({ message: error.message || 'Server error updating quest' });
+  }
+};
+
+const getQuestResults = async (req, res) => {
+  try {
+    const results = await QuestResult.find({ questId: req.params.id }).sort({ finalRank: 1 });
+    return res.status(200).json({
+      success: true,
+      results,
+      count: results.length,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: error.message || 'Server error fetching quest results' });
   }
 };
 
@@ -103,5 +132,6 @@ module.exports = {
   getAllAdminQuests,
   createQuest,
   updateQuest,
+  getQuestResults,
   deleteQuest,
 };

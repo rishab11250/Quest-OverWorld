@@ -7,6 +7,7 @@ const {
   getAllAdminQuests,
   createQuest,
   updateQuest,
+  getQuestResults,
   deleteQuest,
   getAllAdminCheckpoints,
   createCheckpoint,
@@ -29,6 +30,8 @@ const {
   getAllTeams,
   updateTeamStatus,
   deleteTeam,
+  getConfig,
+  updateConfig,
 } = require('../controllers/adminController');
 
 // All admin routes require JWT auth and admin role
@@ -50,9 +53,10 @@ router.get('/teams', getAllTeams);
 router.patch('/teams/:id/status', updateTeamStatus);
 router.delete('/teams/:id', deleteTeam);
 
-// Quests CRUD
+// Quests CRUD & Historical Standings
 router.get('/quests', getAllAdminQuests);
 router.post('/quests', createQuest);
+router.get('/quests/:id/results', getQuestResults);
 router.put('/quests/:id', updateQuest);
 router.delete('/quests/:id', deleteQuest);
 
@@ -73,6 +77,9 @@ router.delete('/challenges/:id', deleteChallenge);
 router.get('/submissions/pending', getPendingSubmissions);
 router.post('/submissions/:id/approve', approveSubmission);
 router.post('/submissions/:id/reject', rejectSubmission);
+
+// Game Configuration (Team size limits & rules)
+router.route('/config').get(getConfig).put(updateConfig);
 
 // System Operations
 router.post('/system/reseed', reseedDemoData);
