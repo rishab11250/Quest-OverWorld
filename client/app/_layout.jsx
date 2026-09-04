@@ -1,10 +1,17 @@
+import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useFonts } from 'expo-font';
 import colors from '../theme/colors';
+import { initOfflineQueue } from '../lib/offlineQueue';
+import OfflineSyncBanner from '../components/OfflineSyncBanner';
 
 export default function RootLayout() {
+  useEffect(() => {
+    initOfflineQueue();
+  }, []);
+
   const [fontsLoaded, fontError] = useFonts({
     'PressStart2P-Regular': require('../assets/fonts/PressStart2P-Regular.ttf'),
     'Nunito-Regular': require('../assets/fonts/Nunito-Regular.ttf'),
@@ -24,6 +31,7 @@ export default function RootLayout() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
+      <OfflineSyncBanner />
       <Stack
         screenOptions={{
           headerShown: false,

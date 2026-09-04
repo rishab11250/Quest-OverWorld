@@ -44,6 +44,12 @@ const challengeSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    hints: [
+      {
+        text: { type: String, required: true },
+        cost: { type: Number, default: 20 },
+      },
+    ],
   },
   {
     timestamps: true,

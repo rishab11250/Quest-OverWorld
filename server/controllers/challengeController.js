@@ -1,9 +1,10 @@
-const { calculateAwardedXp } = require('../utils/guildPerks');
+const { calculateAwardedXp, getPerkLossWarning } = require('../utils/guildPerks');
 const Challenge = require('../models/Challenge');
 const Submission = require('../models/Submission');
 const ChallengeAttempt = require('../models/ChallengeAttempt');
 const Team = require('../models/Team');
 const TeamActivity = require('../models/TeamActivity');
+const HintReveal = require('../models/HintReveal');
 const { evaluateAchievements } = require('../services/achievementService');
 const { uploadImage } = require('../utils/cloudinary');
 
@@ -292,6 +293,20 @@ const getChallengeAttemptStatus = async (req, res) => {
 
     const currentPointsPreview = getPointsForAttempt(challenge.points, attemptRecord.attempts);
 
+    const reveals = await HintReveal.find({
+      teamId: team._id,
+      targetType: 'challenge',
+      targetId: challenge._id,
+    });
+    const revealedIndices = new Set(reveals.map((r) => r.hintIndex));
+
+    const hints = (challenge.hints || []).map((h, idx) => ({
+      index: idx,
+      cost: h.cost,
+      text: revealedIndices.has(idx) ? h.text : null,
+      isRevealed: revealedIndices.has(idx),
+    }));
+
     return res.status(200).json({
       isCapped: true,
       attempts: attemptRecord.attempts,
@@ -304,6 +319,8 @@ const getChallengeAttemptStatus = async (req, res) => {
       secondsRemaining,
       currentPointsPreview,
       nextPointsPreview: getPointsForAttempt(challenge.points, attemptRecord.attempts + 1),
+      hints,
+      teamScore: team.score || 0,
     });
   } catch (error) {
     return res
@@ -516,10 +533,87 @@ const solveChallenge = async (req, res) => {
   }
 };
 
+// @desc    Unlock a hint for a challenge
+// @route   POST /api/challenges/:id/hint
+// @access  Private
+const revealChallengeHint = async (req, res) => {
+  try {
+    const { hintIndex } = req.body;
+    if (hintIndex === undefined || isNaN(Number(hintIndex))) {
+      return res.status(400).json({ message: 'Valid hintIndex is required.' });
+    }
+    const idx = Number(hintIndex);
+
+    const team = await Team.findOne({ members: req.user._id });
+    if (!team) return res.status(400).json({ message: 'Must belong to an active party.' });
+
+    const challenge = await Challenge.findById(req.params.id);
+    if (!challenge || challenge.status !== 'active') {
+      return res.status(404).json({ message: 'Challenge not found or not active.' });
+    }
+
+    if (!challenge.hints || idx < 0 || idx >= challenge.hints.length) {
+      return res.status(400).json({ message: 'Hint index out of range.' });
+    }
+
+    const hint = challenge.hints[idx];
+
+    // Check if already revealed
+    const existingReveal = await HintReveal.findOne({
+      teamId: team._id,
+      targetType: 'challenge',
+      targetId: challenge._id,
+      hintIndex: idx,
+    });
+
+    if (existingReveal) {
+      return res.status(200).json({
+        success: true,
+        alreadyRevealed: true,
+        hint: hint.text,
+        cost: 0,
+        teamScore: team.score || 0,
+      });
+    }
+
+    const currentScore = team.score || 0;
+    if (currentScore < hint.cost) {
+      return res.status(400).json({
+        message: `Insufficient party score (${currentScore} PTS). Hint costs ${hint.cost} PTS.`,
+      });
+    }
+
+    const newScore = Math.max(0, currentScore - hint.cost);
+    const warning = getPerkLossWarning(currentScore, newScore);
+
+    team.score = newScore;
+    await team.save();
+
+    await HintReveal.create({
+      teamId: team._id,
+      targetType: 'challenge',
+      targetId: challenge._id,
+      hintIndex: idx,
+      revealedAt: new Date(),
+    });
+
+    return res.status(200).json({
+      success: true,
+      hint: hint.text,
+      cost: hint.cost,
+      newScore: team.score,
+      warning,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Server error revealing hint' });
+  }
+};
+
 module.exports = {
   getAllChallenges,
   getChallengeById,
   submitChallenge,
   getChallengeAttemptStatus,
   solveChallenge,
+  revealChallengeHint,
 };

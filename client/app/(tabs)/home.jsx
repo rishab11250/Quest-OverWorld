@@ -16,6 +16,7 @@ import ProgressBar from '../../components/ProgressBar';
 import PixelBadge from '../../components/PixelBadge';
 import PixelCard from '../../components/PixelCard';
 import { triggerHaptic } from '../../lib/haptics';
+import { subscribeUnlockedCheckpoints } from '../../lib/offlineQueue';
 
 const getTimeRemaining = (endTime) => {
   if (!endTime) return null;
@@ -91,6 +92,13 @@ export default function HomeScreen() {
     }, 30000);
     return () => clearInterval(timer);
   }, [fetchAnnouncement]);
+
+  useEffect(() => {
+    const unsub = subscribeUnlockedCheckpoints(() => {
+      fetchActiveQuest(true);
+    });
+    return unsub;
+  }, [fetchActiveQuest]);
 
   const onRefresh = () => {
     setRefreshing(true);

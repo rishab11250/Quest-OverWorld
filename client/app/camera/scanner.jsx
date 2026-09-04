@@ -13,13 +13,15 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../lib/api';
-import { getCurrentLocation } from '../../lib/location';
+import { getCurrentLocation, getLastKnownLocation } from '../../lib/location';
 import { getSetting } from '../../lib/secureStore';
+import { enqueueScan } from '../../lib/offlineQueue';
 import { triggerHaptic } from '../../lib/haptics';
 import RewardModal from '../../components/RewardModal';
 import colors from '../../theme/colors';
@@ -81,19 +83,53 @@ export default function ScannerScreen() {
     setError('');
 
     try {
-      // 1. Get real GPS coordinates
-      const loc = await getCurrentLocation();
+      // 1. Get real GPS coordinates (with stale fallback)
+      let loc = await getCurrentLocation();
+      let locationStale = false;
+      if (!loc) {
+        loc = await getLastKnownLocation();
+        locationStale = !!loc;
+      }
+
+      const scanTime = Date.now();
 
       // 2. Call backend verification endpoint
-      const res = await api.post('/checkpoints/verify', {
-        qrCode: qrString.trim(),
-        latitude: loc?.latitude,
-        longitude: loc?.longitude,
-      });
+      try {
+        const res = await api.post('/checkpoints/verify', {
+          qrCode: qrString.trim(),
+          latitude: loc?.latitude,
+          longitude: loc?.longitude,
+          scannedAt: scanTime,
+          locationStale,
+        });
 
-      // 3. Trigger Reward Celebration!
-      setRewardData(res);
-      setRewardVisible(true);
+        // 3. Trigger Reward Celebration!
+        setRewardData(res);
+        setRewardVisible(true);
+      } catch (reqErr) {
+        if (!reqErr.status) {
+          // Network failure - queue scan offline!
+          await enqueueScan({
+            qrData: qrString.trim(),
+            userLocation: loc,
+            scannedAt: scanTime,
+            locationStale,
+          });
+          triggerHaptic('notification');
+          Alert.alert(
+            '📡 Offline Mode',
+            'Network unreachable. Scan has been saved locally and queued for automatic sync upon reconnect.',
+            [
+              {
+                text: 'OK',
+                onPress: () => router.replace('/(tabs)/home'),
+              },
+            ]
+          );
+        } else {
+          throw reqErr;
+        }
+      }
     } catch (err) {
       setError(err.message || 'Verification failed. Please try again.');
       setScanned(false);

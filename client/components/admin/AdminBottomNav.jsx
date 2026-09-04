@@ -7,6 +7,7 @@ import spacing from '../../theme/spacing';
 export default function AdminBottomNav({ activeTab, onSelectTab, pendingCount }) {
   const tabs = [
     { key: 'overview', label: 'Metrics', icon: 'chart-box-outline' },
+    { key: 'analytics', label: 'Stats', icon: 'chart-timeline-variant' },
     { key: 'players', label: 'Guild', icon: 'account-group-outline' },
     { key: 'quests', label: 'Quests', icon: 'map-marker-path' },
     { key: 'bounties', label: 'Bounties', icon: 'trophy-outline' },

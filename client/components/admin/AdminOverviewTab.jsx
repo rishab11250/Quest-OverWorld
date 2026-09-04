@@ -3,7 +3,7 @@ import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
 
-export default function AdminOverviewTab({ stats, teams, onNavigateReviews }) {
+export default function AdminOverviewTab({ stats, teams, onNavigateReviews, onNavigateAnalytics }) {
   return (
     <View style={styles.container}>
       {/* 6 Key Metrics Tiles */}
@@ -49,6 +49,23 @@ export default function AdminOverviewTab({ stats, teams, onNavigateReviews }) {
           <Text style={styles.statLabel}>Needs Review ›</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Analytics Banner */}
+      {onNavigateAnalytics ? (
+        <TouchableOpacity
+          style={styles.analyticsBanner}
+          onPress={onNavigateAnalytics}
+          activeOpacity={0.8}
+        >
+          <View style={styles.analyticsBannerLeft}>
+            <Text style={styles.analyticsBannerTitle}>EVENT ANALYTICS & DROP-OFF</Text>
+            <Text style={styles.analyticsBannerSub}>
+              View funnel bottlenecks, time-to-clear, and hint telemetry
+            </Text>
+          </View>
+          <Text style={styles.analyticsBannerArrow}>›</Text>
+        </TouchableOpacity>
+      ) : null}
 
       {/* Leaderboard Snapshot */}
       <View style={styles.cardSection}>
@@ -178,5 +195,35 @@ const styles = StyleSheet.create({
   emptyCardSub: {
     ...typography.bodyMd,
     color: colors.text.onDark.secondary,
+  },
+  analyticsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#261F42',
+    borderRadius: 8,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
+  },
+  analyticsBannerLeft: {
+    flex: 1,
+  },
+  analyticsBannerTitle: {
+    ...typography.caption,
+    fontWeight: '900',
+    color: colors.accent.gold,
+    letterSpacing: 1,
+  },
+  analyticsBannerSub: {
+    ...typography.caption,
+    fontSize: 10,
+    color: colors.text.onDark.secondary,
+    marginTop: 2,
+  },
+  analyticsBannerArrow: {
+    ...typography.headingMd,
+    color: colors.accent.gold,
+    fontWeight: '900',
+    paddingLeft: spacing.sm,
   },
 });

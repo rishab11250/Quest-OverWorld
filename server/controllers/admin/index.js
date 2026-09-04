@@ -8,6 +8,7 @@ const teamController = require('./teamController');
 const systemController = require('./systemController');
 const configController = require('./configController');
 const announcementController = require('./announcementController');
+const analyticsController = require('./analyticsController');
 
 module.exports = {
   ...overviewController,
@@ -20,4 +21,5 @@ module.exports = {
   ...systemController,
   ...configController,
   ...announcementController,
+  ...analyticsController,
 };

@@ -49,9 +49,31 @@ const calculateAwardedXp = (basePoints, currentScore = 0) => {
   };
 };
 
+/**
+ * Surface guild-perk degradation warning when deducting score for hints
+ */
+const getPerkLossWarning = (currentScore = 0, newScore = 0) => {
+  const currentLevel = calculateGuildLevel(currentScore);
+  const newLevel = calculateGuildLevel(newScore);
+
+  if (newLevel < currentLevel) {
+    const perkNames = {
+      2: 'Guild XP Multiplier (+10%)',
+      3: 'High-Precision Radar',
+      4: 'Expedition Proximity Sonar',
+      5: 'Grandmaster Guild Crest',
+    };
+    const lostPerk = perkNames[currentLevel] || 'active perk';
+    return `Warning: Deducting this hint cost will drop your party from Guild Level ${currentLevel} to ${newLevel} and lose your ${lostPerk}.`;
+  }
+
+  return null;
+};
+
 module.exports = {
   XP_PER_LEVEL,
   calculateGuildLevel,
   getGuildPerks,
   calculateAwardedXp,
+  getPerkLossWarning,
 };

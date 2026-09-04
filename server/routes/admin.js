@@ -35,6 +35,8 @@ const {
   createAnnouncement,
   getAnnouncements,
   deleteAnnouncement,
+  getCheckpointAnalytics,
+  getChallengeAnalytics,
 } = require('../controllers/adminController');
 
 // All admin routes require JWT auth and admin role
@@ -87,6 +89,10 @@ router.route('/config').get(getConfig).put(updateConfig);
 // Broadcast Announcements
 router.route('/announcements').get(getAnnouncements).post(createAnnouncement);
 router.delete('/announcements/:id', deleteAnnouncement);
+
+// Post-Event Analytics
+router.get('/analytics/checkpoints', getCheckpointAnalytics);
+router.get('/analytics/challenges', getChallengeAnalytics);
 
 // System Operations
 router.post('/system/reseed', reseedDemoData);

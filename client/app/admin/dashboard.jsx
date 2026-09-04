@@ -12,6 +12,7 @@ import StatusBanner from '../../components/StatusBanner';
 import AdminHeader from '../../components/admin/AdminHeader';
 import AdminBottomNav from '../../components/admin/AdminBottomNav';
 import AdminOverviewTab from '../../components/admin/AdminOverviewTab';
+import AdminAnalyticsTab from '../../components/admin/AdminAnalyticsTab';
 import AdminPlayersTab from '../../components/admin/AdminPlayersTab';
 import AdminQuestsTab from '../../components/admin/AdminQuestsTab';
 import AdminBountiesTab from '../../components/admin/AdminBountiesTab';
@@ -600,7 +601,12 @@ export default function AdminDashboardScreen() {
             stats={stats}
             teams={overview?.teams}
             onNavigateReviews={() => setActiveTab('reviews')}
+            onNavigateAnalytics={() => setActiveTab('analytics')}
           />
+        )}
+
+        {activeTab === 'analytics' && (
+          <AdminAnalyticsTab questId={quests.find((q) => q.status === 'active')?._id} />
         )}
 
         {activeTab === 'players' && (

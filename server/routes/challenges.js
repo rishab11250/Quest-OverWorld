@@ -7,6 +7,7 @@ const {
   submitChallenge,
   getChallengeAttemptStatus,
   solveChallenge,
+  revealChallengeHint,
 } = require('../controllers/challengeController');
 
 // All challenge routes require authentication
@@ -17,5 +18,6 @@ router.get('/:id', getChallengeById);
 router.get('/:id/attempt-status', getChallengeAttemptStatus);
 router.post('/:id/submit', submitChallenge);
 router.post('/:id/solve', solveChallenge);
+router.post('/:id/hint', revealChallengeHint);
 
 module.exports = router;

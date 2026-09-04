@@ -43,13 +43,25 @@ const checkpointSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Checkpoint order is required'],
     },
+    prerequisites: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Checkpoint',
+      },
+    ],
+    hints: [
+      {
+        text: { type: String, required: true },
+        cost: { type: Number, default: 20 },
+      },
+    ],
   },
   {
     timestamps: true,
   }
 );
 
-// Compound index to guarantee unique checkpoint order within a quest
-checkpointSchema.index({ questId: 1, order: 1 }, { unique: true });
+// Plain non-unique index for sorting performance (multiple checkpoints can share an order tier)
+checkpointSchema.index({ questId: 1, order: 1 });
 
 module.exports = mongoose.model('Checkpoint', checkpointSchema);
