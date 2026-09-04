@@ -47,6 +47,15 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
+// Rate limiting — upload endpoint (DoS & storage abuse protection)
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // 30 uploads per 15 min per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Upload rate limit exceeded. Please wait 15 minutes.' },
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/teams', teamRoutes);
@@ -56,12 +65,21 @@ app.use('/api/challenges', challengeRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Image Upload Endpoint
-const { uploadImage } = require('./utils/cloudinary');
-app.post('/api/upload', async (req, res) => {
+// Image Upload Endpoint (Protected with auth, rate-limit, and payload format validation)
+const { protect } = require('./middleware/auth');
+const { uploadImage, detectImageFormat } = require('./utils/cloudinary');
+app.post('/api/upload', uploadLimiter, protect, async (req, res) => {
   try {
     const { image, folder } = req.body;
     if (!image) return res.status(400).json({ message: 'Image data is required' });
+
+    const detected = detectImageFormat(image);
+    if (!detected) {
+      return res.status(400).json({
+        message: 'Invalid or unsupported image format. Please upload JPEG, PNG, GIF, or WebP.',
+      });
+    }
+
     const url = await uploadImage(image, folder || 'quest_overworld_proofs');
     return res.status(200).json({ url });
   } catch (err) {

@@ -29,6 +29,14 @@ const register = async (req, res) => {
     }
 
     const emailNormalized = email.toLowerCase().trim();
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!EMAIL_REGEX.test(emailNormalized)) {
+      return res.status(400).json({ message: 'Please provide a valid email address' });
+    }
+
+    if (typeof password !== 'string' || password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long' });
+    }
     const existingUser = await User.findOne({ email: emailNormalized });
 
     if (existingUser) {

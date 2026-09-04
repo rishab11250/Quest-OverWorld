@@ -15,11 +15,19 @@ const normalizeAnswer = (str) => {
     .replace(/\s+/g, ' ');
 };
 
+// Helper to strip leading English articles (the, a, an)
+const stripLeadingArticle = (str) => {
+  if (!str) return '';
+  return str.replace(/^(the|a|an)\s+/i, '').trim();
+};
+
 // Robust answer matcher: case-insensitive, punctuation-tolerant, synonym list support (comma/pipe separated)
 const checkAnswerMatch = (userAnswer, answerKey) => {
   if (!userAnswer || !answerKey) return false;
   const normUser = normalizeAnswer(userAnswer);
   if (!normUser) return false;
+
+  const strippedUser = stripLeadingArticle(normUser);
 
   // Split comma or pipe separated alternative valid answers
   const possibleKeys = String(answerKey)
@@ -31,14 +39,10 @@ const checkAnswerMatch = (userAnswer, answerKey) => {
     possibleKeys.push(normalizeAnswer(answerKey));
   }
 
-  return possibleKeys.some(
-    (key) =>
-      normUser === key ||
-      normUser === `the ${key}` ||
-      `the ${normUser}` === key ||
-      normUser === `a ${key}` ||
-      `a ${normUser}` === key
-  );
+  return possibleKeys.some((key) => {
+    const strippedKey = stripLeadingArticle(key);
+    return strippedUser === strippedKey || normUser === key;
+  });
 };
 
 // @desc    Get all active challenges with current team submission status
@@ -174,50 +178,15 @@ const submitChallenge = async (req, res) => {
       }
     }
 
-    // Handle Auto Answer (Trivia / Auto-Verify Riddle)
+    // Reject auto-verified challenges — client must use the attempt-tracked /solve endpoint
     if (
       challenge.verificationType === 'auto_answer' ||
-      challenge.verificationType === 'auto_verify'
+      challenge.verificationType === 'auto_verify' ||
+      challenge.category === 'trivia' ||
+      challenge.category === 'riddle'
     ) {
-      if (!textResponse || !textResponse.trim()) {
-        return res.status(400).json({ message: 'Please provide an answer.' });
-      }
-
-      const isCorrect = checkAnswerMatch(textResponse, challenge.answerKey);
-
-      if (!isCorrect) {
-        return res.status(400).json({ message: 'Incorrect answer. Try again!' });
-      }
-
-      // Correct! Award points immediately
-      if (existingSub) {
-        existingSub.status = 'approved';
-        existingSub.textResponse = textResponse.trim();
-        existingSub.pointsAwarded = challenge.points;
-        existingSub.submittedBy = req.user._id;
-        existingSub.reviewedAt = new Date();
-        await existingSub.save();
-      } else {
-        await Submission.create({
-          challengeId: challenge._id,
-          teamId: team._id,
-          submittedBy: req.user._id,
-          textResponse: textResponse.trim(),
-          status: 'approved',
-          pointsAwarded: challenge.points,
-          reviewedAt: new Date(),
-        });
-      }
-
-      team.score = (team.score || 0) + challenge.points;
-      await team.save();
-
-      return res.status(200).json({
-        success: true,
-        approved: true,
-        pointsAwarded: challenge.points,
-        totalScore: team.score,
-        message: `🎉 Correct answer! +${challenge.points} Points awarded to ${team.name}!`,
+      return res.status(400).json({
+        message: 'Use the solve endpoint for auto-verified challenges.',
       });
     }
 
@@ -427,8 +396,10 @@ const solveChallenge = async (req, res) => {
     const isCorrect = checkAnswerMatch(answer, challenge.answerKey);
 
     if (isCorrect) {
-      // Correct! Calculate points based on current attempt number
-      const awardedPoints = getPointsForAttempt(challenge.points, attemptRecord.attempts);
+      // Correct! Calculate points based on current attempt number and apply guild multiplier
+      const baseAttemptPoints = getPointsForAttempt(challenge.points, attemptRecord.attempts);
+      const xpResult = calculateAwardedXp(baseAttemptPoints, team.score || 0);
+      const awardedPoints = xpResult.finalPoints;
 
       attemptRecord.status = 'solved';
       attemptRecord.lockedUntil = null;
@@ -467,6 +438,9 @@ const solveChallenge = async (req, res) => {
         success: true,
         correct: true,
         awardedPoints,
+        bonusXp: xpResult.bonusXp,
+        appliedMultiplier: xpResult.appliedMultiplier,
+        guildLevel: xpResult.guildLevel,
         totalScore: team.score,
         attemptsUsed: attemptRecord.attempts + 1,
         message: `🎉 Correct answer! +${awardedPoints} XP awarded to ${team.name}!`,

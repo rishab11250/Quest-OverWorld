@@ -7,6 +7,42 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Detects image format from URL, data URI, or magic bytes in base64
+const detectImageFormat = (input) => {
+  if (!input || typeof input !== 'string') return null;
+  const trimmed = input.trim();
+
+  // Already a remote URL
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return { mime: null, ext: null, isUrl: true };
+  }
+
+  // Data URI scheme with explicit image MIME type
+  const dataUriMatch = trimmed.match(/^data:image\/(png|jpeg|jpg|gif|webp);base64,/i);
+  if (dataUriMatch) {
+    const rawExt = dataUriMatch[1].toLowerCase();
+    const ext = rawExt === 'jpeg' ? 'jpg' : rawExt;
+    const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+    return { mime, ext: `.${ext}`, isUrl: false };
+  }
+
+  // Sniff magic bytes from raw base64
+  if (trimmed.startsWith('iVBORw0KGgo')) {
+    return { mime: 'image/png', ext: '.png', isUrl: false };
+  }
+  if (trimmed.startsWith('R0lGOD')) {
+    return { mime: 'image/gif', ext: '.gif', isUrl: false };
+  }
+  if (trimmed.startsWith('UklGR')) {
+    return { mime: 'image/webp', ext: '.webp', isUrl: false };
+  }
+  if (trimmed.startsWith('/9j/')) {
+    return { mime: 'image/jpeg', ext: '.jpg', isUrl: false };
+  }
+
+  return null;
+};
+
 // Turns raw base64 or raw strings into standard data URIs
 const normalizeImageData = (input) => {
   if (!input || typeof input !== 'string') return '';
@@ -23,14 +59,8 @@ const normalizeImageData = (input) => {
   }
 
   // Raw base64 string — detect format or default to jpeg
-  let mime = 'image/jpeg';
-  if (trimmed.startsWith('iVBORw0KGgo')) {
-    mime = 'image/png';
-  } else if (trimmed.startsWith('R0lGOD')) {
-    mime = 'image/gif';
-  } else if (trimmed.startsWith('UklGR')) {
-    mime = 'image/webp';
-  }
+  const detected = detectImageFormat(trimmed);
+  const mime = detected?.mime || 'image/jpeg';
 
   return `data:${mime};base64,${trimmed}`;
 };
@@ -94,7 +124,9 @@ const uploadImage = async (base64OrDataUrl, folder = 'quest_overworld_proofs') =
   try {
     const cleanBase64 = normalized.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(cleanBase64, 'base64');
-    const filename = `proof_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.jpg`;
+    const detected = detectImageFormat(base64OrDataUrl);
+    const ext = detected?.ext || '.jpg';
+    const filename = `proof_${Date.now()}_${crypto.randomBytes(4).toString('hex')}${ext}`;
     const filePath = path.join(uploadDir, filename);
 
     fs.writeFileSync(filePath, buffer);
@@ -108,4 +140,5 @@ const uploadImage = async (base64OrDataUrl, folder = 'quest_overworld_proofs') =
 module.exports = {
   uploadImage,
   normalizeImageData,
+  detectImageFormat,
 };

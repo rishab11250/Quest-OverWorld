@@ -150,6 +150,7 @@ export default function ChallengeDetailScreen() {
 
     const isAutoTrivia =
       challenge.verificationType === 'auto_answer' ||
+      challenge.verificationType === 'auto_verify' ||
       challenge.category === 'trivia' ||
       challenge.category === 'riddle';
 

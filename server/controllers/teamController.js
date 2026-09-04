@@ -191,6 +191,19 @@ const getTeamById = async (req, res) => {
       return res.status(404).json({ message: 'Team not found' });
     }
 
+    const userIdStr = req.user._id.toString();
+    const isLeader = team.leader && (team.leader._id || team.leader).toString() === userIdStr;
+    const isMember =
+      Array.isArray(team.members) &&
+      team.members.some((m) => (m._id || m).toString() === userIdStr);
+    const isAdmin = Boolean(req.user.isAdmin || req.user.role === 'admin');
+
+    if (!isLeader && !isMember && !isAdmin) {
+      return res.status(403).json({
+        message: 'Access denied. You are not a member of this party.',
+      });
+    }
+
     return res.status(200).json({ team });
   } catch (error) {
     return res.status(500).json({ message: error.message || 'Server error fetching team' });
@@ -220,12 +233,36 @@ const approveJoinRequest = async (req, res) => {
       });
     }
 
-    // Remove from pendingRequests
-    if (team.pendingRequests) {
+    // 1. Verify pending request exists
+    const matchingRequest =
+      team.pendingRequests &&
+      team.pendingRequests.find((pr) => pr.user.toString() === userId.toString());
+
+    if (!matchingRequest) {
+      return res.status(404).json({ message: 'No pending request from this player' });
+    }
+
+    // 2. Verify user does not already belong to a different team
+    const otherTeam = await Team.findOne({
+      _id: { $ne: team._id },
+      members: userId,
+    });
+
+    if (otherTeam) {
       team.pendingRequests = team.pendingRequests.filter(
         (pr) => pr.user.toString() !== userId.toString()
       );
+      await team.save();
+
+      return res.status(400).json({
+        message: 'Player already belongs to another party',
+      });
     }
+
+    // Remove from pendingRequests
+    team.pendingRequests = team.pendingRequests.filter(
+      (pr) => pr.user.toString() !== userId.toString()
+    );
 
     // Add to members if not present
     if (!team.members.some((m) => m.toString() === userId.toString())) {
@@ -363,11 +400,9 @@ const kickMember = async (req, res) => {
       team.viceCaptains && team.viceCaptains.some((vc) => vc.toString() === memberId);
 
     if (targetIsViceCaptain && !isCaptain) {
-      return res
-        .status(403)
-        .json({
-          message: 'Vice-Captains cannot remove other Vice-Captains. Only the Captain can.',
-        });
+      return res.status(403).json({
+        message: 'Vice-Captains cannot remove other Vice-Captains. Only the Captain can.',
+      });
     }
 
     const memberIndex = team.members.findIndex((m) => m.toString() === memberId);

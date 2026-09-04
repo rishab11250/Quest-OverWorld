@@ -115,17 +115,19 @@ const verifyCheckpoint = async (req, res) => {
       }
     }
 
-    // 6. Record Progress
+    // 6. Record Progress with Guild XP Multiplier
+    const xpResult = calculateAwardedXp(checkpoint.points, team.score || 0);
+
     const progress = await Progress.create({
       teamId: team._id,
       questId: team.questId,
       checkpointId: checkpoint._id,
       verifiedBy: req.user._id,
-      pointsAwarded: calculateAwardedXp(checkpoint.points, team.score || 0).finalPoints,
+      pointsAwarded: xpResult.finalPoints,
     });
 
     // 7. Update Team Score
-    team.score = (team.score || 0) + checkpoint.points;
+    team.score = (team.score || 0) + xpResult.finalPoints;
     await team.save();
 
     // 8. Find next unlocked checkpoint in sequence
