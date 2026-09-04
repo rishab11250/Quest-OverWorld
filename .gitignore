@@ -1,29 +1,29 @@
 # ── Dependencies ──
 node_modules/
 server/node_modules/
-app/node_modules/
+client/node_modules/
 
 # ── Environment variables ──
 .env
 .env.local
 .env.*.local
-app/.env
+client/.env
 server/.env
 server/.env.local
 
 # ── Expo ──
-app/.expo/
-app/dist/
-app/web-build/
-app/expo-env.d.ts
+client/.expo/
+client/dist/
+client/web-build/
+client/expo-env.d.ts
 
 # ── React Native / Metro ──
-app/.metro-health-check*
+client/.metro-health-check*
 *.jsbundle
 
 # ── Native build artifacts (in case of prebuild/eject) ──
-app/ios/
-app/android/
+client/ios/
+client/android/
 
 # ── Logs ──
 npm-debug.log*

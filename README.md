@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./app/assets/icon.png" alt="Quest OverWorld App Icon" width="128" height="128" style="border-radius: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);" />
+<img src="./client/assets/icon.png" alt="Quest OverWorld App Icon" width="128" height="128" style="border-radius: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);" />
 
 # 🗺️ Quest-OverWorld
 
@@ -14,7 +14,7 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-8.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 
 **An immersive, location-based campus exploration and live RPG scavenger quest platform.**  
-*Transforming physical environments into dynamic, multiplayer waypoint expeditions.*
+_Transforming physical environments into dynamic, multiplayer waypoint expeditions._
 
 [Features](#-key-features) • [Architecture](#-system-architecture) • [Database ERD](#-database-entity-relationship-diagram) • [RBAC Matrix](#-role-based-access-control-rbac-matrix) • [Tech Stack](#-technology-stack) • [Env Variables](#-environment-variables) • [Testing](#-development--testing-guide) • [Postman Docs](https://documenter.getpostman.com/view/50839472/2sBYAvuAEk) • [Getting Started](#-getting-started) • [API Reference](#-api-endpoints)
 
@@ -31,6 +31,7 @@
 ## ⚡ Key Features
 
 ### 📍 1. Interactive Overworld Atlas & GPS Radar
+
 - **Live Topographical Canvas**: Real-time projection of player position against campus checkpoint waypoints.
 - **Dynamic Sonar & Compass Bearing**: Calculates distance (in meters) and cardinal direction arrow using the **Haversine formula**.
 - **Sequential Waypoint Gating**: Stations unlock progressively as previous checkpoints are verified.
@@ -38,6 +39,7 @@
 - **Sub-meter High Precision GPS**: Configurable GPS accuracy modes (`Highest` vs `Balanced` battery saver).
 
 ### 🛡️ 2. Party & Guild Hierarchy System
+
 - **6-Character Unique Join Code**: Fast invite distribution.
 - **Gatekeeper Admission Queue**: Recruits submit entry petitions; Captains and Vice-Captains review, admit (✅), or decline (❌).
 - **Three-Tier Command Hierarchy**:
@@ -49,17 +51,20 @@
 - **Direct SMS Invite**: Pre-addressed native Messages application integration via `expo-linking`.
 
 ### ⚔️ 3. Bounty Board & Challenge Engine
+
 - **Multi-Category Quests**: `PHOTO`, `RIDDLE`, `TRIVIA`, and `CREATIVE` challenges.
 - **Cloud Proof Verification**: Photo bounty submissions with Cloudinary storage and Admin Review queue.
 - **Interactive QR Scanner**: Camera radar featuring laser animation, auto-flashlight activation, and manual passkey fallback.
 
 ### 👑 4. Guild Master Console (Admin Dashboard)
+
 - **Live Event Overview**: Real-time player counts, guild rankings, and server health.
 - **Player & Guild Governance**: Search, promote/demote admins, ban/unban users, and disqualify guilds.
 - **Quest & Checkpoint Studio**: Create quests, place stations with an interactive coordinate map picker, and generate exportable QR codes.
 - **Submission Review Queue**: Review player bounty photos, approve rewards, or reject with custom feedback.
 
 ### ⚙️ 5. Hero Codex & Preferences
+
 - **Hardware-Wired Preferences**:
   - High-Precision Radar toggle (`expo-location`).
   - Auto-Flashlight trigger (`expo-camera`).
@@ -229,52 +234,54 @@ erDiagram
 
 ## 🛡️ Role-Based Access Control (RBAC) Matrix
 
-| Capability / Action | 👑 Admin | 🎖️ Party Captain | 🛡️ Vice-Captain | ⚔️ Party Member | 👤 Guest / Solo |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **View Radar & Active Clues** | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **Scan Waypoint QR Codes** | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **Submit Bounty Challenges** | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **Share SMS Invite Code** | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **Admit / Decline Recruits** | ✅ | ✅ | ✅ | ❌ | ❌ |
-| **Remove Regular Member** | ✅ | ✅ | ✅ | ❌ | ❌ |
-| **Remove Vice-Captain** | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Promote/Demote Vice-Captain** | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Rename Guild Party** | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Appoint Successor Captain** | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Disqualify / Ban Guild** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Ban / Unban Player** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Create & Edit Quests** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Review Photo Proofs** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Capability / Action             | 👑 Admin | 🎖️ Party Captain | 🛡️ Vice-Captain | ⚔️ Party Member | 👤 Guest / Solo |
+| :------------------------------ | :------: | :--------------: | :-------------: | :-------------: | :-------------: |
+| **View Radar & Active Clues**   |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
+| **Scan Waypoint QR Codes**      |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
+| **Submit Bounty Challenges**    |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
+| **Share SMS Invite Code**       |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
+| **Admit / Decline Recruits**    |    ✅    |        ✅        |       ✅        |       ❌        |       ❌        |
+| **Remove Regular Member**       |    ✅    |        ✅        |       ✅        |       ❌        |       ❌        |
+| **Remove Vice-Captain**         |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
+| **Promote/Demote Vice-Captain** |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
+| **Rename Guild Party**          |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
+| **Appoint Successor Captain**   |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
+| **Disqualify / Ban Guild**      |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
+| **Ban / Unban Player**          |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
+| **Create & Edit Quests**        |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
+| **Review Photo Proofs**         |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
 
 ---
 
 ## 🔄 Data Flow & State Lifecycle
 
 ### 1. Party Gatekeeper & Hierarchy Flow
+
 ```mermaid
 sequenceDiagram
     autonumber
     actor Recruiter as Applicant
     actor Captain as Captain / Vice-Captain
     participant Server as Node.js / MongoDB
-    
+
     Recruiter->>Server: POST /api/teams/join (Code: "X9K2L1")
     Server-->>Recruiter: 200 OK (Status: "Pending Approval")
     Note over Recruiter: Displays PendingAdmissionCard
-    
+
     Captain->>Server: GET /api/teams/me
     Server-->>Captain: Returns Team (with pendingRequests array)
     Note over Captain: Gold Alert Banner Displays in Party Hub
-    
+
     Captain->>Server: POST /api/teams/:id/requests/:userId/approve
     Server->>Server: Move user from pendingRequests -> members
     Server-->>Captain: 200 OK (Updated Roster)
-    
+
     Recruiter->>Server: GET /api/teams/me
     Server-->>Recruiter: 200 OK (Active Member Roster & Radar Unlocked)
 ```
 
 ### 2. Waypoint Radar & Checkpoint Discovery Flow
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -300,25 +307,27 @@ sequenceDiagram
 ## 💻 Technology Stack
 
 ### Mobile Client (`/app`)
-| Technology | Description |
-| :--- | :--- |
-| **React Native (v0.81)** | Cross-platform native mobile foundation with React 19. |
-| **Expo SDK 54** | Managed native tooling, camera, location, secure storage. |
-| **Expo Router v4** | File-based routing with tab and nested stack navigators. |
-| **expo-camera** | Real-time QR code scanning with auto-torch flashlight. |
-| **expo-location** | Hardware GPS watcher and reverse geocoding. |
-| **expo-haptics** | Tactile vibration engine for button clicks and unlocks. |
-| **expo-secure-store** | Encrypted keychain/keystore JWT session storage. |
-| **react-native-safe-area-context** | Dynamic insets for punch-hole and camera notch devices. |
+
+| Technology                         | Description                                               |
+| :--------------------------------- | :-------------------------------------------------------- |
+| **React Native (v0.81)**           | Cross-platform native mobile foundation with React 19.    |
+| **Expo SDK 54**                    | Managed native tooling, camera, location, secure storage. |
+| **Expo Router v4**                 | File-based routing with tab and nested stack navigators.  |
+| **expo-camera**                    | Real-time QR code scanning with auto-torch flashlight.    |
+| **expo-location**                  | Hardware GPS watcher and reverse geocoding.               |
+| **expo-haptics**                   | Tactile vibration engine for button clicks and unlocks.   |
+| **expo-secure-store**              | Encrypted keychain/keystore JWT session storage.          |
+| **react-native-safe-area-context** | Dynamic insets for punch-hole and camera notch devices.   |
 
 ### Backend Engine (`/server`)
-| Technology | Description |
-| :--- | :--- |
-| **Node.js & Express.js** | Modular RESTful API engine. |
+
+| Technology               | Description                                         |
+| :----------------------- | :-------------------------------------------------- |
+| **Node.js & Express.js** | Modular RESTful API engine.                         |
 | **MongoDB & Mongoose 8** | NoSQL database with nested populate & schema hooks. |
-| **JWT & bcryptjs** | Stateless authentication and password hashing. |
-| **Cloudinary & Multer** | Media CDN storage for photo proof submissions. |
-| **Helmet & CORS** | HTTP security headers and cross-origin protection. |
+| **JWT & bcryptjs**       | Stateless authentication and password hashing.      |
+| **Cloudinary & Multer**  | Media CDN storage for photo proof submissions.      |
+| **Helmet & CORS**        | HTTP security headers and cross-origin protection.  |
 
 ---
 
@@ -329,7 +338,7 @@ Quest-OverWorld/
 ├── .github/
 │   └── workflows/
 │       └── build-apk.yml               # Automated Android APK CI/CD release workflow
-├── app/                                # React Native / Expo Frontend
+├── client/                             # React Native / Expo Frontend
 │   ├── app/                            # Expo Router Screen Directory
 │   │   ├── (auth)/                     # Login & Registration Screens
 │   │   │   ├── login.jsx
@@ -378,6 +387,7 @@ Quest-OverWorld/
 ## 🚀 Getting Started
 
 ### 📋 Prerequisites
+
 - **Node.js**: `v20.x` or `v24.x`
 - **Package Manager**: `pnpm` (recommended) or `npm`
 - **Expo Go App** or **Android Studio / Device** (with USB Debugging / ADB)
@@ -399,6 +409,7 @@ cp .env.example .env
 ```
 
 Configure your `server/.env` file:
+
 ```env
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/quest_overworld
@@ -409,6 +420,7 @@ CLOUDINARY_API_SECRET=your_api_secret
 ```
 
 Start the backend server:
+
 ```bash
 # Development mode with hot-reload
 pnpm run dev
@@ -419,19 +431,21 @@ pnpm run dev
 ### 2. Mobile App Setup
 
 ```bash
-# Navigate to app directory
-cd ../app
+# Navigate to client directory
+cd ../client
 
 # Install dependencies
 pnpm install
 ```
 
-Configure `app/lib/api.js` with your backend server URL:
+Configure `client/lib/api.js` with your backend server URL:
+
 ```javascript
 const BASE_URL = 'http://YOUR_LOCAL_IP:5000/api';
 ```
 
 Start the Expo Development Server:
+
 ```bash
 # Start Expo bundler
 pnpm start
@@ -445,22 +459,24 @@ pnpm android
 ### 3. Environment Variables Reference
 
 #### Backend Server (`server/.env`)
-| Variable | Required | Default | Description |
-| :--- | :---: | :---: | :--- |
-| `PORT` | ❌ | `5000` | Port for the Express.js HTTP API server. |
-| `MONGO_URI` | ✅ | — | MongoDB connection URI (Local or MongoDB Atlas cluster). |
-| `JWT_SECRET` | ✅ | — | Secret key used for signing and verifying JSON Web Tokens. |
-| `JWT_EXPIRE` | ❌ | `30d` | Expiration duration for user session tokens. |
-| `CLOUDINARY_CLOUD_NAME` | ❌ | — | Cloudinary cloud identifier for photo bounty uploads. |
-| `CLOUDINARY_API_KEY` | ❌ | — | Cloudinary API access key. |
-| `CLOUDINARY_API_SECRET` | ❌ | — | Cloudinary API secret key. |
-| `BYPASS_GEOFENCE` | ❌ | `false` | When set to `true`, bypasses GPS proximity checks during QR scans for local dev testing. |
-| `CORS_ORIGIN` | ❌ | `*` | Allowed CORS origins (comma-separated for production). |
 
-#### Mobile Client (`app/lib/api.js`)
-| Setting | Required | Example | Description |
-| :--- | :---: | :---: | :--- |
-| `BASE_URL` | ✅ | `http://192.168.1.15:5000/api` | Target backend REST API endpoint reachable from your physical mobile device. |
+| Variable                | Required | Default | Description                                                                              |
+| :---------------------- | :------: | :-----: | :--------------------------------------------------------------------------------------- |
+| `PORT`                  |    ❌    | `5000`  | Port for the Express.js HTTP API server.                                                 |
+| `MONGO_URI`             |    ✅    |    —    | MongoDB connection URI (Local or MongoDB Atlas cluster).                                 |
+| `JWT_SECRET`            |    ✅    |    —    | Secret key used for signing and verifying JSON Web Tokens.                               |
+| `JWT_EXPIRE`            |    ❌    |  `30d`  | Expiration duration for user session tokens.                                             |
+| `CLOUDINARY_CLOUD_NAME` |    ❌    |    —    | Cloudinary cloud identifier for photo bounty uploads.                                    |
+| `CLOUDINARY_API_KEY`    |    ❌    |    —    | Cloudinary API access key.                                                               |
+| `CLOUDINARY_API_SECRET` |    ❌    |    —    | Cloudinary API secret key.                                                               |
+| `BYPASS_GEOFENCE`       |    ❌    | `false` | When set to `true`, bypasses GPS proximity checks during QR scans for local dev testing. |
+| `CORS_ORIGIN`           |    ❌    |   `*`   | Allowed CORS origins (comma-separated for production).                                   |
+
+#### Mobile Client (`client/lib/api.js`)
+
+| Setting    | Required |            Example             | Description                                                                  |
+| :--------- | :------: | :----------------------------: | :--------------------------------------------------------------------------- |
+| `BASE_URL` |    ✅    | `http://192.168.1.15:5000/api` | Target backend REST API endpoint reachable from your physical mobile device. |
 
 ---
 
@@ -472,7 +488,9 @@ pnpm android
 <summary><b>🔐 1. Authentication Endpoints (Click to expand)</b></summary>
 
 #### `POST /api/auth/register`
+
 - **Request Body:**
+
 ```json
 {
   "name": "Alex Hunter",
@@ -481,7 +499,9 @@ pnpm android
   "avatar": "shield-crown"
 }
 ```
+
 - **Response (201 Created):**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -496,14 +516,18 @@ pnpm android
 ```
 
 #### `POST /api/auth/login`
+
 - **Request Body:**
+
 ```json
 {
   "email": "alex@overworld.realm",
   "password": "SecurePassword123"
 }
 ```
+
 - **Response (200 OK):**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -516,19 +540,24 @@ pnpm android
   }
 }
 ```
+
 </details>
 
 <details>
 <summary><b>🛡️ 2. Party & Gatekeeper Hierarchy Endpoints (Click to expand)</b></summary>
 
 #### `POST /api/teams/join`
+
 - **Request Body:**
+
 ```json
 {
   "code": "X9K2L1"
 }
 ```
+
 - **Response (200 OK - Queued for Approval):**
+
 ```json
 {
   "success": true,
@@ -543,7 +572,9 @@ pnpm android
 ```
 
 #### `POST /api/teams/:id/requests/:userId/approve`
+
 - **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -553,22 +584,24 @@ pnpm android
     "name": "Shadow Vanguard",
     "code": "X9K2L1",
     "score": 450,
-    "members": [
-      { "_id": "66d3a8e2b1...", "name": "Alex Hunter", "email": "alex@overworld.realm" }
-    ],
+    "members": [{ "_id": "66d3a8e2b1...", "name": "Alex Hunter", "email": "alex@overworld.realm" }],
     "viceCaptains": []
   }
 }
 ```
 
 #### `POST /api/teams/:id/transfer-leadership`
+
 - **Request Body:**
+
 ```json
 {
   "newLeaderId": "66d3a8e2b1..."
 }
 ```
+
 - **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -576,13 +609,16 @@ pnpm android
   "team": { ... }
 }
 ```
+
 </details>
 
 <details>
 <summary><b>🗺️ 3. Quests & Checkpoint Verification Endpoints (Click to expand)</b></summary>
 
 #### `GET /api/quests/active`
+
 - **Response (200 OK):**
+
 ```json
 {
   "quest": {
@@ -614,7 +650,9 @@ pnpm android
 ```
 
 #### `POST /api/checkpoints/verify`
+
 - **Request Body:**
+
 ```json
 {
   "qrCode": "CHECKPOINT_GENESIS_2_CLK",
@@ -622,7 +660,9 @@ pnpm android
   "longitude": 77.5946
 }
 ```
+
 - **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -648,26 +688,32 @@ pnpm android
   "isQuestCompleted": false
 }
 ```
+
 </details>
 
 <details>
 <summary><b>⚔️ 4. Bounties & Submission Endpoints (Click to expand)</b></summary>
 
 #### `POST /api/challenges/:id/submit`
+
 - **Request Body (Multipart Form-Data or JSON):**
+
 ```json
 {
   "textAnswer": "The bronze sundial near the library.",
   "photoUrl": "https://res.cloudinary.com/quest/image/upload/v12345/proof.jpg"
 }
 ```
+
 - **Response (200 OK):**
+
 ```json
 {
   "success": true,
   "message": "Bounty proof submitted for Guild Master review!"
 }
 ```
+
 </details>
 
 ---
@@ -677,6 +723,7 @@ pnpm android
 Quest-OverWorld includes an automated GitHub Actions pipeline.
 
 To build a new production APK:
+
 ```bash
 # Tag a release commit
 git tag -a 1.0.0 -m "Release v1.0.0"
@@ -684,7 +731,8 @@ git tag -a 1.0.0 -m "Release v1.0.0"
 # Push tag to GitHub
 git push origin 1.0.0
 ```
-*The `.github/workflows/build-apk.yml` workflow automatically compiles the standalone Android APK and attaches the asset directly to your [GitHub Releases](https://github.com/rishab11250/Quest-OverWorld/releases) page.*
+
+_The `.github/workflows/build-apk.yml` workflow automatically compiles the standalone Android APK and attaches the asset directly to your [GitHub Releases](https://github.com/rishab11250/Quest-OverWorld/releases) page._
 
 ---
 
@@ -704,7 +752,7 @@ Crafted with passion, precision, and ⚔️ by **[Rishab](https://github.com/ris
 
 ### ✨ Thank You! ✨
 
-*Thank you for exploring and supporting **Quest-OverWorld**! If you enjoyed this project or found it helpful, consider leaving a ⭐ on [GitHub](https://github.com/rishab11250/Quest-OverWorld).*
+_Thank you for exploring and supporting **Quest-OverWorld**! If you enjoyed this project or found it helpful, consider leaving a ⭐ on [GitHub](https://github.com/rishab11250/Quest-OverWorld)._
 
 <sub>Happy Adventuring & Scavenger Questing across the Overworld! 🗺️⚔️🛡️</sub>
 

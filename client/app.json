@@ -19,10 +19,7 @@
         "backgroundColor": "#1E1A33"
       },
       "usesCleartextTraffic": true,
-      "permissions": [
-        "android.permission.READ_CONTACTS",
-        "android.permission.WRITE_CONTACTS"
-      ],
+      "permissions": ["android.permission.READ_CONTACTS", "android.permission.WRITE_CONTACTS"],
       "package": "com.rishab1125.questoverworld"
     },
     "web": {

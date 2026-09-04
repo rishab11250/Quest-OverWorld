@@ -12,8 +12,8 @@ const getLeaderboard = async (req, res) => {
 
     // Fetch all teams sorted by score descending, then updatedAt ascending
     const teams = await Team.find({})
-      .populate('members', 'name email')
-      .populate('leader', 'name email')
+      .populate('members', 'name')
+      .populate('leader', 'name')
       .sort({ score: -1, updatedAt: 1 });
 
     const rankings = await Promise.all(

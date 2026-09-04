@@ -115,4 +115,7 @@ teamSchema.pre('validate', async function (next) {
   next();
 });
 
+teamSchema.index({ members: 1 });
+teamSchema.index({ score: -1 });
+
 module.exports = mongoose.model('Team', teamSchema);
