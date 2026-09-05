@@ -242,7 +242,6 @@ const getCheckpointAnalytics = async (req, res) => {
     let completedCount = 0;
     const completedResultsCount = await QuestResult.countDocuments({
       questId: questObjectId,
-      status: 'completed',
     });
 
     if (completedResultsCount > 0) {

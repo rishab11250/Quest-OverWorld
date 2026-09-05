@@ -1,7 +1,10 @@
 const mongoose = require('mongoose');
 
+const SINGLETON_ID = 'game_config_singleton';
+
 const gameConfigSchema = new mongoose.Schema(
   {
+    _id: { type: String, default: SINGLETON_ID },
     maxTeamSize: {
       type: Number,
       default: 6,
@@ -14,13 +17,12 @@ const gameConfigSchema = new mongoose.Schema(
   }
 );
 
-// Lazy-init singleton helper
 gameConfigSchema.statics.getSingleton = async function () {
-  let config = await this.findOne();
-  if (!config) {
-    config = await this.create({ maxTeamSize: 6 });
-  }
-  return config;
+  return this.findOneAndUpdate(
+    { _id: SINGLETON_ID },
+    { $setOnInsert: { maxTeamSize: 6 } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 };
 
 module.exports = mongoose.model('GameConfig', gameConfigSchema);
