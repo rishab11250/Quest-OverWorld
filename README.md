@@ -4,7 +4,7 @@
 
 # 🗺️ Quest-OverWorld
 
-[![Download APK](https://img.shields.io/badge/⚡_Download_APK-v1.0.0_Release-F2C84B?style=for-the-badge&logo=android&logoColor=0F0C1C)](https://github.com/rishab11250/Quest-OverWorld/releases/tag/1.0.0)
+[![Download APK](https://img.shields.io/badge/⚡_Download_APK-v1.0.0_Release-F2C84B?style=for-the-badge&logo=android&logoColor=0F0C1C)](https://github.com/rishab11250/Quest-OverWorld/releases/tag/v1.0.0)
 [![Postman API Docs](https://img.shields.io/badge/Postman_API_Docs-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://documenter.getpostman.com/view/50839472/2sBYAvwWXz)
 [![GitHub Release](https://img.shields.io/github/v/release/rishab11250/Quest-OverWorld?style=for-the-badge&color=3ECF8E&label=Release)](https://github.com/rishab11250/Quest-OverWorld/releases)
 <br />
@@ -1215,10 +1215,10 @@ To build a new production APK:
 
 ```bash
 # Tag a release commit
-git tag -a 1.0.0 -m "Release v1.0.0"
+git tag -a v1.0.0 -m "Release v1.0.0"
 
 # Push tag to GitHub
-git push origin 1.0.0
+git push origin v1.0.0
 ```
 
 _The `.github/workflows/build-apk.yml` workflow automatically compiles the standalone Android APK and attaches the asset directly to your [GitHub Releases](https://github.com/rishab11250/Quest-OverWorld/releases) page._
