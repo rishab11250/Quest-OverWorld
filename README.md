@@ -5,7 +5,7 @@
 # 🗺️ Quest-OverWorld
 
 [![Download APK](https://img.shields.io/badge/⚡_Download_APK-v1.0.0_Release-F2C84B?style=for-the-badge&logo=android&logoColor=0F0C1C)](https://github.com/rishab11250/Quest-OverWorld/releases/tag/1.0.0)
-[![Postman API Docs](https://img.shields.io/badge/Postman_API_Docs-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://documenter.getpostman.com/view/50839472/2sBYAvuAEk)
+[![Postman API Docs](https://img.shields.io/badge/Postman_API_Docs-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://documenter.getpostman.com/view/50839472/2sBYAvwWXz)
 [![GitHub Release](https://img.shields.io/github/v/release/rishab11250/Quest-OverWorld?style=for-the-badge&color=3ECF8E&label=Release)](https://github.com/rishab11250/Quest-OverWorld/releases)
 <br />
 ![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?style=for-the-badge&logo=react&logoColor=black)
@@ -16,7 +16,7 @@
 **An immersive, location-based campus exploration and live RPG scavenger quest platform.**  
 _Transforming physical environments into dynamic, multiplayer waypoint expeditions._
 
-[Features](#-key-features) • [Architecture](#-system-architecture) • [Database ERD](#-database-entity-relationship-diagram) • [RBAC Matrix](#-role-based-access-control-rbac-matrix) • [Tech Stack](#-technology-stack) • [Env Variables](#-environment-variables) • [Testing](#-development--testing-guide) • [Postman Docs](https://documenter.getpostman.com/view/50839472/2sBYAvuAEk) • [Getting Started](#-getting-started) • [API Reference](#-api-endpoints)
+[Features](#-key-features) • [Architecture](#-system-architecture) • [Database ERD](#-database-entity-relationship-diagram) • [RBAC Matrix](#-role-based-access-control-rbac-matrix) • [Tech Stack](#-technology-stack) • [Env Variables](#-environment-variables) • [Testing](#-development--testing-guide) • [Postman Docs](https://documenter.getpostman.com/view/50839472/2sBYAvwWXz) • [Getting Started](#-getting-started) • [API Reference](#-api-endpoints)
 
 ---
 
@@ -34,7 +34,9 @@ _Transforming physical environments into dynamic, multiplayer waypoint expeditio
 
 - **Live Topographical Canvas**: Real-time projection of player position against campus checkpoint waypoints.
 - **Dynamic Sonar & Compass Bearing**: Calculates distance (in meters) and cardinal direction arrow using the **Haversine formula**.
-- **Sequential Waypoint Gating**: Stations unlock progressively as previous checkpoints are verified.
+- **Prerequisite Graph & Branching Paths**: Stations declare explicit prerequisite checkpoints; a waypoint unlocks once all its prerequisites are cleared, enabling multi-path branching or auto-chained sequential progression.
+- **Offline-Tolerant Checkpoint Scanning**: Checkpoint scans made while offline are queued on-device and synced automatically once connectivity returns, replayed in order so team-progression rules are respected; stale/cached GPS is supported with a wider verification radius (+50m buffer) when a fresh fix isn't available.
+- **Bounty & Waypoint Hints**: Optional hints available per checkpoint and challenge at a configurable point cost, deducted from team score (never below zero); revealing a hint is a one-time charge per team, and the app warns if spending drops the team below a guild perk threshold.
 - **Atmospheric Day/Night Engine**: Tint shifts based on real-time solar hours (Dawn, Day, Dusk, Midnight).
 - **Sub-meter High Precision GPS**: Configurable GPS accuracy modes (`Highest` vs `Balanced` battery saver).
 
@@ -42,10 +44,14 @@ _Transforming physical environments into dynamic, multiplayer waypoint expeditio
 
 - **6-Character Unique Join Code**: Fast invite distribution.
 - **Gatekeeper Admission Queue**: Recruits submit entry petitions; Captains and Vice-Captains review, admit (✅), or decline (❌).
+- **Configurable Party Size Limits**: Admins set a maximum party size (default 6) via game configuration; enforced at both the join-request and approval stages.
 - **Three-Tier Command Hierarchy**:
   - 👑 **Captain**: Rename guild, appoint Vice-Captains, transfer leadership, remove members, and gatekeep admissions.
   - 🛡️ **Vice-Captain**: Gatekeeper recruitment approvals and regular member moderation.
   - ⚔️ **Adventurer**: Standard squad member with shared radar telemetry and chat access.
+- **Party Activity Feed**: An in-app, auto-generated log of team events — checkpoints cleared, bounties solved, members joining/leaving, leadership changes — visible only to that team's members and admins.
+- **Achievement Badges**: A small set of auto-awarded badges (e.g. first team to clear a checkpoint, a no-fail bounty solve, clearing something in the dead of night, filling out a full roster) recognizing accomplishments beyond just leaderboard score.
+- **Historical Quest Standings**: When a quest completes (scheduled or manual), final team standings — score, rank, checkpoints cleared — are snapshotted permanently, so teams can review past quest results after their live score has moved on to a new quest.
 - **Leadership Succession on Leave**: Captains must transfer leadership before stepping down if active teammates remain.
 - **Level-Gated Guild Perks (1-5)**: Unlocks telemetry sync, +10% XP multipliers, proximity sonars, and golden crests.
 - **Direct SMS Invite**: Pre-addressed native Messages application integration via `expo-linking`.
@@ -55,10 +61,15 @@ _Transforming physical environments into dynamic, multiplayer waypoint expeditio
 - **Multi-Category Quests**: `PHOTO`, `RIDDLE`, `TRIVIA`, and `CREATIVE` challenges.
 - **Cloud Proof Verification**: Photo bounty submissions with Cloudinary storage and Admin Review queue.
 - **Interactive QR Scanner**: Camera radar featuring laser animation, auto-flashlight activation, and manual passkey fallback.
+- **Timed Attempt Scoring & Penalty Decay**: Trivia/riddle score decays across subsequent incorrect attempts, with temporary cooldown locks on repeated failures.
 
 ### 👑 4. Guild Master Console (Admin Dashboard)
 
 - **Live Event Overview**: Real-time player counts, guild rankings, and server health.
+- **Scheduled Quest Windows**: Admins can set a quest's start/end time in advance; a background scheduler auto-activates and auto-completes quests at the configured times without manual intervention, while still respecting the single-active-quest rule.
+- **Admin Broadcast Announcements**: Admins can push time-scoped announcements (global or quest-specific, with optional expiry) that surface to players in-app.
+- **Post-Event Analytics (Admin)**: Aggregate reporting on checkpoint clear rates/times and bounty difficulty (attempts-to-solve, drop-off rate) for organizers reviewing how an event actually played out.
+- **Game Configuration Controls**: Runtime admin controls for maximum party sizes and global gameplay parameters.
 - **Player & Guild Governance**: Search, promote/demote admins, ban/unban users, and disqualify guilds.
 - **Quest & Checkpoint Studio**: Create quests, place stations with an interactive coordinate map picker, and generate exportable QR codes.
 - **Submission Review Queue**: Review player bounty photos, approve rewards, or reject with custom feedback.
@@ -136,11 +147,20 @@ erDiagram
     USER ||--o{ TEAM : "member_of"
     USER ||--o{ PROGRESS : "completes"
     USER ||--o{ SUBMISSION : "submits"
+    USER ||--o{ ANNOUNCEMENT : "creates"
+    USER ||--o{ TEAM_ACTIVITY : "triggers"
     TEAM ||--o{ USER : "has_leader"
     TEAM ||--o{ USER : "has_vice_captains"
     TEAM ||--o{ USER : "pending_requests"
     TEAM }o--|| QUEST : "assigned_to"
+    TEAM ||--o{ TEAM_ACTIVITY : "records"
+    TEAM ||--o{ TEAM_ACHIEVEMENT : "earns"
+    TEAM ||--o{ QUEST_RESULT : "awarded"
+    TEAM ||--o{ HINT_REVEAL : "unlocks"
     QUEST ||--|{ CHECKPOINT : "contains"
+    QUEST ||--o{ ANNOUNCEMENT : "scopes"
+    QUEST ||--o{ QUEST_RESULT : "snapshots"
+    CHECKPOINT ||--o{ CHECKPOINT : "prerequisite_of"
     PROGRESS }o--|| TEAM : "tracks_team"
     PROGRESS }o--|| CHECKPOINT : "unlocked_checkpoint"
     CHALLENGE ||--o{ SUBMISSION : "receives"
@@ -181,6 +201,8 @@ erDiagram
         number totalPoints
         ObjectId[] checkpoints
         string status
+        date startAt
+        date endAt
         date createdAt
     }
 
@@ -195,6 +217,8 @@ erDiagram
         number longitude
         number radius
         string qrCode
+        ObjectId[] prerequisites
+        Object[] hints
     }
 
     PROGRESS {
@@ -214,6 +238,7 @@ erDiagram
         number points
         string answer
         string hint
+        Object[] hints
         string status
     }
 
@@ -228,28 +253,86 @@ erDiagram
         string reviewFeedback
         date submittedAt
     }
+
+    ANNOUNCEMENT {
+        ObjectId _id PK
+        string message
+        ObjectId questId FK
+        ObjectId createdBy FK
+        date expiresAt
+        date createdAt
+    }
+
+    TEAM_ACTIVITY {
+        ObjectId _id PK
+        ObjectId teamId FK
+        ObjectId actorId FK
+        string type
+        string message
+        date createdAt
+    }
+
+    TEAM_ACHIEVEMENT {
+        ObjectId _id PK
+        ObjectId teamId FK
+        string achievementId
+        date earnedAt
+    }
+
+    QUEST_RESULT {
+        ObjectId _id PK
+        ObjectId questId FK
+        ObjectId teamId FK
+        string teamName
+        number finalScore
+        number finalRank
+        number checkpointsCleared
+        number challengesCleared
+        date completedAt
+    }
+
+    HINT_REVEAL {
+        ObjectId _id PK
+        ObjectId teamId FK
+        string targetType
+        ObjectId targetId FK
+        number hintIndex
+        date revealedAt
+    }
+
+    GAME_CONFIG {
+        string _id PK
+        number maxTeamSize
+        date updatedAt
+    }
 ```
 
 ---
 
 ## 🛡️ Role-Based Access Control (RBAC) Matrix
 
-| Capability / Action             | 👑 Admin | 🎖️ Party Captain | 🛡️ Vice-Captain | ⚔️ Party Member | 👤 Guest / Solo |
-| :------------------------------ | :------: | :--------------: | :-------------: | :-------------: | :-------------: |
-| **View Radar & Active Clues**   |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
-| **Scan Waypoint QR Codes**      |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
-| **Submit Bounty Challenges**    |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
-| **Share SMS Invite Code**       |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
-| **Admit / Decline Recruits**    |    ✅    |        ✅        |       ✅        |       ❌        |       ❌        |
-| **Remove Regular Member**       |    ✅    |        ✅        |       ✅        |       ❌        |       ❌        |
-| **Remove Vice-Captain**         |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
-| **Promote/Demote Vice-Captain** |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
-| **Rename Guild Party**          |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
-| **Appoint Successor Captain**   |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
-| **Disqualify / Ban Guild**      |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
-| **Ban / Unban Player**          |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
-| **Create & Edit Quests**        |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
-| **Review Photo Proofs**         |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
+| Capability / Action              | 👑 Admin | 🎖️ Party Captain | 🛡️ Vice-Captain | ⚔️ Party Member | 👤 Guest / Solo |
+| :------------------------------- | :------: | :--------------: | :-------------: | :-------------: | :-------------: |
+| **View Radar & Active Clues**    |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
+| **Scan Waypoint QR Codes**       |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
+| **Submit Bounty Challenges**     |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
+| **Reveal Waypoint/Bounty Hints** |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
+| **Share SMS Invite Code**        |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
+| **View Party Activity Feed**     |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
+| **View Past Quest Standings**    |    ✅    |        ✅        |       ✅        |       ✅        |       ❌        |
+| **Admit / Decline Recruits**     |    ✅    |        ✅        |       ✅        |       ❌        |       ❌        |
+| **Remove Regular Member**        |    ✅    |        ✅        |       ✅        |       ❌        |       ❌        |
+| **Remove Vice-Captain**          |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
+| **Promote/Demote Vice-Captain**  |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
+| **Rename Guild Party**           |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
+| **Appoint Successor Captain**    |    ✅    |        ✅        |       ❌        |       ❌        |       ❌        |
+| **Broadcast Announcements**      |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
+| **Adjust Game Configuration**    |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
+| **View Post-Event Analytics**    |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
+| **Disqualify / Ban Guild**       |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
+| **Ban / Unban Player**           |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
+| **Create & Edit Quests**         |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
+| **Review Photo Proofs**          |    ✅    |        ❌        |       ❌        |       ❌        |       ❌        |
 
 ---
 
@@ -295,10 +378,10 @@ sequenceDiagram
     Client->>Client: Calculate Distance & Compass Bearing (Haversine)
     Client->>Client: Project Beacon Ring & Radar Grid
     Hero->>Client: Scan Checkpoint QR Code
-    Client->>Server: POST /api/quests/verify-scan (QR Data + User GPS)
-    Server->>Server: Verify Proximity Radius (<= 50m) & Sequence Order
+    Client->>Server: POST /api/checkpoints/verify (QR Data + User GPS + Timestamp)
+    Server->>Server: Verify Proximity Radius (<= 50m) & Prerequisite Graph Unlocks
     Server->>Server: Award Points & Log Progress
-    Server-->>Client: 200 OK (Waypoint Cleared + Clue for Next Station)
+    Server-->>Client: 200 OK (Waypoint Cleared + Newly Unlocked Branches)
     Client->>Hero: Trigger Haptic Pulse & Level Up Dialog
 ```
 
@@ -306,7 +389,7 @@ sequenceDiagram
 
 ## 💻 Technology Stack
 
-### Mobile Client (`/app`)
+### Mobile Client (`/client`)
 
 | Technology                         | Description                                               |
 | :--------------------------------- | :-------------------------------------------------------- |
@@ -347,7 +430,7 @@ Quest-OverWorld/
 │   │   │   ├── _layout.jsx             # RPG Tab Bar Configuration
 │   │   │   ├── home.jsx                # Quest Overview & Active Clues
 │   │   │   ├── map.jsx                 # Overworld Atlas & Waypoint Radar
-│   │   │   ├── team.jsx                # Party Hub, Roster & Gatekeeper
+│   │   │   ├── team.jsx                # Party Hub, Roster, Activity & Badges
 │   │   │   ├── challenges.jsx          # Bounty Board (Photo, Riddle, Trivia)
 │   │   │   ├── leaderboard.jsx         # Realm Hall of Fame Rankings
 │   │   │   └── profile.jsx             # Hero Codex & Functional Preferences
@@ -366,19 +449,22 @@ Quest-OverWorld/
 │   │   ├── OverworldMap.jsx            # Dynamic Coordinate Canvas & Compass
 │   │   ├── RpgTabBar.jsx               # Pixel Gold Trimmed Hotbar
 │   │   └── PixelCard.jsx               # Retro Styled Containers
-│   ├── lib/                            # Helpers (api, haptics, location, secureStore)
+│   ├── lib/                            # Helpers (api, haptics, location, offlineQueue, secureStore)
 │   └── theme/                          # Colors, Atmosphere, Spacing, Typography
 └── server/                             # Node.js / Express Backend
     ├── config/                         # MongoDB & Cloudinary Connection Setup
     ├── controllers/                    # Business Logic Controllers
-    │   ├── admin/                      # Player, Guild, Quest & Review Governance
+    │   ├── admin/                      # Player, Guild, Quest, Review & Analytics Governance
     │   ├── authController.js           # JWT Authentication
-    │   ├── teamController.js           # Party Hierarchy & Gatekeeper Queue
+    │   ├── teamController.js           # Party Hierarchy, Gatekeeper, History & Activity
     │   ├── questController.js          # Checkpoint Verification & Clue Engine
-    │   └── challengeController.js      # Bounty Submissions & Verification
+    │   └── challengeController.js      # Bounty Submissions, Attempts & Hint Engine
+    ├── jobs/                           # Background Tasks & Schedulers
+    │   └── questScheduler.js           # Automated Quest Start/End Cron Engine
     ├── middleware/                     # JWT Auth & Role Authorization
-    ├── models/                         # Mongoose Models (User, Team, Quest, Checkpoint, Progress, Challenge)
+    ├── models/                         # Mongoose Models (User, Team, Quest, Checkpoint, Progress, Challenge, etc.)
     ├── routes/                         # Express Route Definitions
+    ├── services/                       # Domain Services (Achievement & Completion Engines)
     └── server.js                       # Server Entry Point
 ```
 
@@ -456,7 +542,23 @@ pnpm android
 
 ---
 
-### 3. Environment Variables Reference
+<a id="-development--testing-guide"></a><a id="development--testing-guide"></a>
+
+### 3. Syntax & Style Checks
+
+```bash
+# Check backend server syntax
+node --check server.js
+
+# Verify codebase Prettier formatting
+pnpm prettier --check .
+```
+
+---
+
+<a id="-environment-variables"></a><a id="environment-variables"></a>
+
+### 4. Environment Variables Reference
 
 #### Backend Server (`server/.env`)
 
@@ -480,9 +582,11 @@ pnpm android
 
 ---
 
+<a id="-api-endpoints"></a><a id="api-endpoints"></a>
+
 ## 📡 API Endpoints & Payload Specifications
 
-> 🚀 **Interactive Live Documentation:** View, fork, and test all runnable endpoints directly on the [Quest-OverWorld Postman Documenter](https://documenter.getpostman.com/view/50839472/2sBYAvuAEk).
+> 🚀 **Interactive Live Documentation:** View, fork, and test all runnable endpoints directly on the [Quest-OverWorld Postman Documenter](https://documenter.getpostman.com/view/50839472/2sBYAvwWXz).
 
 <details>
 <summary><b>🔐 1. Authentication Endpoints (Click to expand)</b></summary>
@@ -610,6 +714,77 @@ pnpm android
 }
 ```
 
+#### `GET /api/teams/me/history`
+
+- **Response (200 OK):**
+
+```json
+{
+  "history": [
+    {
+      "_id": "66d4a100b1...",
+      "questId": {
+        "_id": "66d3c004e5...",
+        "name": "Campus Genesis Odyssey",
+        "description": "Initial campus exploration expedition",
+        "campus": "North Quad Grounds",
+        "totalPoints": 700
+      },
+      "teamId": "66d3b1f0c2...",
+      "teamName": "Shadow Vanguard",
+      "finalScore": 620,
+      "finalRank": 1,
+      "checkpointsCleared": 4,
+      "challengesCleared": 2,
+      "completedAt": "2026-09-04T12:00:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+#### `GET /api/teams/:id/activity`
+
+- **Query Parameters:** `limit` (default 20, max 50), `before` (ISO date cursor)
+- **Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "activities": [
+    {
+      "_id": "66d4b200c3...",
+      "teamId": "66d3b1f0c2...",
+      "actorId": { "_id": "66d3a8e2b1...", "name": "Alex Hunter" },
+      "type": "checkpoint_cleared",
+      "message": "Alex Hunter verified Checkpoint #2 (Clocktower Plaza)",
+      "createdAt": "2026-09-04T11:45:00.000Z"
+    }
+  ],
+  "nextCursor": "2026-09-04T11:45:00.000Z"
+}
+```
+
+#### `GET /api/teams/:id/achievements`
+
+- **Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "achievements": [
+    {
+      "_id": "66d4c300d4...",
+      "achievementId": "first_blood",
+      "title": "Trailblazer (First Blood)",
+      "description": "First guild in the realm to verify a checkpoint.",
+      "earnedAt": "2026-09-04T10:30:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
 </details>
 
 <details>
@@ -657,7 +832,9 @@ pnpm android
 {
   "qrCode": "CHECKPOINT_GENESIS_2_CLK",
   "latitude": 12.9716,
-  "longitude": 77.5946
+  "longitude": 77.5946,
+  "scannedAt": "2026-09-05T10:00:00.000Z",
+  "locationStale": false
 }
 ```
 
@@ -689,6 +866,53 @@ pnpm android
 }
 ```
 
+#### `GET /api/checkpoints/:id/hints`
+
+- **Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "hints": [
+    {
+      "index": 0,
+      "cost": 25,
+      "text": "Look beneath the archway facing north.",
+      "isRevealed": true
+    },
+    {
+      "index": 1,
+      "cost": 50,
+      "text": null,
+      "isRevealed": false
+    }
+  ],
+  "teamScore": 450
+}
+```
+
+#### `POST /api/checkpoints/:id/hint`
+
+- **Request Body:**
+
+```json
+{
+  "hintIndex": 1
+}
+```
+
+- **Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "hint": "Check behind the stone ivy planter.",
+  "cost": 50,
+  "newScore": 400,
+  "warning": null
+}
+```
+
 </details>
 
 <details>
@@ -711,6 +935,271 @@ pnpm android
 {
   "success": true,
   "message": "Bounty proof submitted for Guild Master review!"
+}
+```
+
+#### `POST /api/challenges/:id/solve`
+
+- **Request Body:**
+
+```json
+{
+  "answer": "Observatory"
+}
+```
+
+- **Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Correct! Bounty solved on attempt #1.",
+  "awardedPoints": 150,
+  "teamScore": 550
+}
+```
+
+#### `GET /api/challenges/:id/attempt-status`
+
+- **Response (200 OK):**
+
+```json
+{
+  "isCapped": true,
+  "attempts": 1,
+  "maxStandardAttempts": 3,
+  "hasBonusRetry": true,
+  "usedBonusRetry": false,
+  "status": "in_progress",
+  "isLocked": false,
+  "secondsRemaining": 0,
+  "currentPointsPreview": 120,
+  "nextPointsPreview": 75,
+  "hints": [
+    { "index": 0, "cost": 20, "text": "Think about astronomical instruments.", "isRevealed": true }
+  ],
+  "teamScore": 400
+}
+```
+
+#### `POST /api/challenges/:id/hint`
+
+- **Request Body:**
+
+```json
+{
+  "hintIndex": 0
+}
+```
+
+- **Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "hint": "Think about astronomical instruments.",
+  "cost": 20,
+  "newScore": 380,
+  "warning": null
+}
+```
+
+</details>
+
+<details>
+<summary><b>🏆 5. Realm Leaderboard Endpoints (Click to expand)</b></summary>
+
+#### `GET /api/leaderboard`
+
+- **Response (200 OK):**
+
+```json
+{
+  "rankings": [
+    {
+      "rank": 1,
+      "_id": "66d3b1f0c2...",
+      "name": "Shadow Vanguard",
+      "code": "X9K2L1",
+      "score": 620,
+      "level": 3,
+      "membersCount": 4,
+      "leaderName": "Alex Hunter",
+      "checkpointsCount": 4,
+      "challengesCount": 2,
+      "isCurrentTeam": true
+    }
+  ],
+  "myTeam": {
+    "rank": 1,
+    "_id": "66d3b1f0c2...",
+    "name": "Shadow Vanguard",
+    "score": 620
+  },
+  "totalTeams": 8
+}
+```
+
+</details>
+
+<details>
+<summary><b>📢 6. Announcements Endpoints (Click to expand)</b></summary>
+
+#### `GET /api/announcements`
+
+- **Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "announcements": [
+    {
+      "_id": "66d4e100f5...",
+      "message": "⚠️ High storm alert near the Science Quad. Waypoint beacon moved indoors.",
+      "questId": null,
+      "createdBy": {
+        "_id": "66d3a8e2b1...",
+        "name": "Admin Master"
+      },
+      "expiresAt": "2026-09-05T18:00:00.000Z",
+      "createdAt": "2026-09-05T09:00:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+</details>
+
+<details>
+<summary><b>👑 7. Guild Master & System Admin Endpoints (Click to expand)</b></summary>
+
+#### `GET /api/admin/config` & `PUT /api/admin/config`
+
+- **Update Request Body (`PUT`):**
+
+```json
+{
+  "maxTeamSize": 8
+}
+```
+
+- **Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Party size limit updated to 8 players.",
+  "config": {
+    "_id": "game_config_singleton",
+    "maxTeamSize": 8
+  }
+}
+```
+
+#### `POST /api/admin/announcements`
+
+- **Request Body:**
+
+```json
+{
+  "message": "Expedition ends in 30 minutes! Return proofs to the beacon.",
+  "questId": "66d3c004e5...",
+  "expiresAt": "2026-09-05T18:00:00.000Z"
+}
+```
+
+- **Response (201 Created):**
+
+```json
+{
+  "success": true,
+  "message": "Announcement broadcast created successfully.",
+  "announcement": {
+    "_id": "66d4e100f5...",
+    "message": "Expedition ends in 30 minutes! Return proofs to the beacon.",
+    "questId": { "_id": "66d3c004e5...", "name": "Campus Genesis Odyssey" },
+    "createdBy": { "_id": "66d3a8e2b1...", "name": "Admin Master" },
+    "expiresAt": "2026-09-05T18:00:00.000Z"
+  }
+}
+```
+
+#### `GET /api/admin/quests/:id/results`
+
+- **Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "results": [
+    {
+      "_id": "66d4a100b1...",
+      "questId": "66d3c004e5...",
+      "teamId": "66d3b1f0c2...",
+      "teamName": "Shadow Vanguard",
+      "finalScore": 620,
+      "finalRank": 1,
+      "checkpointsCleared": 4,
+      "challengesCleared": 2,
+      "completedAt": "2026-09-04T12:00:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+#### `GET /api/admin/analytics/checkpoints`
+
+- **Query Parameters:** `questId` (optional, defaults to active or latest quest)
+- **Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "quest": {
+    "_id": "66d3c004e5...",
+    "name": "Campus Genesis Odyssey",
+    "status": "completed"
+  },
+  "checkpoints": [
+    {
+      "_id": "66d3c050a1...",
+      "title": "Clocktower Plaza",
+      "order": 1,
+      "clearedCount": 12,
+      "dropoffRate": 0,
+      "avgClearTimeMinutes": 8.4
+    }
+  ],
+  "summary": {
+    "totalTeams": 12,
+    "completedTeams": 9,
+    "completionRate": 75,
+    "longestBottleneckCheckpoint": "Clocktower Plaza"
+  }
+}
+```
+
+#### `GET /api/admin/analytics/challenges`
+
+- **Query Parameters:** `questId` (optional)
+- **Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "challenges": [
+    {
+      "_id": "66d3d001a1...",
+      "title": "Ancient Sundial Cipher",
+      "category": "riddle",
+      "totalSubmissions": 14,
+      "approvedCount": 10,
+      "solveRate": 71.4,
+      "avgAttemptsToSolve": 1.6
+    }
+  ]
 }
 ```
 
