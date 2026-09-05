@@ -269,6 +269,22 @@ export default function CreateCheckpointModal({
                   </View>
                 </View>
 
+                {/* Auto Progression / Prerequisites Chain Info */}
+                <View style={styles.autoQrPill}>
+                  <MaterialCommunityIcons
+                    name="source-branch"
+                    size={20}
+                    color={colors.accent.gold}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.autoQrTitle}>SEQUENTIAL UNLOCK CHAIN</Text>
+                    <Text style={styles.autoQrSub}>
+                      Auto: chains after the last checkpoint in this quest (entry point if first
+                      station).
+                    </Text>
+                  </View>
+                </View>
+
                 <View style={styles.inlineInputs}>
                   <View style={[styles.fieldGroup, { flex: 1 }]}>
                     <Text style={styles.inputLabel}>STATION # ORDER</Text>

@@ -66,18 +66,8 @@ const checkPrerequisitesValidity = async (questId, targetCheckpointId, prerequis
 
 const createCheckpoint = async (req, res) => {
   try {
-    const {
-      questId,
-      title,
-      clue,
-      latitude,
-      longitude,
-      radius,
-      points,
-      order,
-      prerequisites,
-      hints,
-    } = req.body;
+    let { questId, title, clue, latitude, longitude, radius, points, order, prerequisites, hints } =
+      req.body;
 
     if (!questId || !title || !clue || latitude === undefined || longitude === undefined) {
       return res.status(400).json({
@@ -87,6 +77,15 @@ const createCheckpoint = async (req, res) => {
 
     const quest = await Quest.findById(questId);
     if (!quest) return res.status(404).json({ message: 'Target Quest not found.' });
+
+    if (prerequisites === undefined) {
+      const highestOrderCheckpoint = await Checkpoint.findOne({ questId }).sort({ order: -1 });
+      if (highestOrderCheckpoint) {
+        prerequisites = [highestOrderCheckpoint._id];
+      } else {
+        prerequisites = [];
+      }
+    }
 
     const prereqCheck = await checkPrerequisitesValidity(questId, null, prerequisites);
     if (!prereqCheck.valid) {
