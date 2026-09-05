@@ -6,7 +6,7 @@ const getAllTeams = async (req, res) => {
     const teams = await Team.find()
       .populate('leader', 'name email')
       .populate('members', 'name email status isBanned')
-      .populate('currentQuest', 'name campus status')
+      .populate('questId', 'name campus status')
       .sort({ score: -1 });
 
     return res.status(200).json({

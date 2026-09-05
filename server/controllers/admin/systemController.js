@@ -12,10 +12,7 @@ const reseedDemoData = async (req, res) => {
     await Promise.all([Submission.deleteMany({}), ChallengeAttempt.deleteMany({})]);
 
     // Reset team scores
-    await Team.updateMany(
-      {},
-      { $set: { score: 0, progress: [], currentQuest: null, currentCheckpointOrder: 1 } }
-    );
+    await Team.updateMany({}, { $set: { score: 0, questId: null } });
 
     return res.status(200).json({
       success: true,
