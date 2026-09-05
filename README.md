@@ -16,7 +16,7 @@
 **An immersive, location-based campus exploration and live RPG scavenger quest platform.**  
 _Transforming physical environments into dynamic, multiplayer waypoint expeditions._
 
-[Features](#-key-features) • [Architecture](#-system-architecture) • [Database ERD](#-database-entity-relationship-diagram) • [RBAC Matrix](#-role-based-access-control-rbac-matrix) • [Tech Stack](#-technology-stack) • [Env Variables](#-environment-variables) • [Testing](#-development--testing-guide) • [Postman Docs](https://documenter.getpostman.com/view/50839472/2sBYAvwWXz) • [Getting Started](#-getting-started) • [API Reference](#-api-endpoints)
+[Features](#key-features) • [Architecture](#system-architecture) • [Database ERD](#database-erd) • [RBAC Matrix](#rbac-matrix) • [Tech Stack](#tech-stack) • [Env Variables](#env-variables) • [Testing](#testing) • [Postman Docs](https://documenter.getpostman.com/view/50839472/2sBYAvwWXz) • [Getting Started](#getting-started) • [API Reference](#api-endpoints)
 
 ---
 
@@ -27,6 +27,8 @@ _Transforming physical environments into dynamic, multiplayer waypoint expeditio
 **Quest-OverWorld** blends real-world GPS navigation, camera-based QR radar scanning, team collaboration, and RPG progression. Adventurers form Guild Parties, track compass bearings to hidden checkpoints, solve multi-disciplinary bounty challenges, and level up their guild perks in real time.
 
 ---
+
+<a id="key-features"></a><a id="-key-features"></a>
 
 ## ⚡ Key Features
 
@@ -86,6 +88,8 @@ _Transforming physical environments into dynamic, multiplayer waypoint expeditio
 
 ---
 
+<a id="system-architecture"></a><a id="-system-architecture"></a>
+
 ## 🏗 System Architecture
 
 ```mermaid
@@ -139,6 +143,8 @@ graph TB
 ```
 
 ---
+
+<a id="database-erd"></a><a id="database-entity-relationship-diagram"></a><a id="-database-entity-relationship-diagram"></a>
 
 ## 🗄️ Database Entity-Relationship Diagram
 
@@ -309,6 +315,8 @@ erDiagram
 
 ---
 
+<a id="rbac-matrix"></a><a id="role-based-access-control-rbac-matrix"></a><a id="-role-based-access-control-rbac-matrix"></a>
+
 ## 🛡️ Role-Based Access Control (RBAC) Matrix
 
 | Capability / Action              | 👑 Admin | 🎖️ Party Captain | 🛡️ Vice-Captain | ⚔️ Party Member | 👤 Guest / Solo |
@@ -386,6 +394,8 @@ sequenceDiagram
 ```
 
 ---
+
+<a id="tech-stack"></a><a id="technology-stack"></a><a id="-technology-stack"></a>
 
 ## 💻 Technology Stack
 
@@ -470,6 +480,8 @@ Quest-OverWorld/
 
 ---
 
+<a id="getting-started"></a><a id="-getting-started"></a>
+
 ## 🚀 Getting Started
 
 ### 📋 Prerequisites
@@ -542,7 +554,7 @@ pnpm android
 
 ---
 
-<a id="-development--testing-guide"></a><a id="development--testing-guide"></a>
+<a id="testing"></a><a id="development--testing-guide"></a><a id="-development--testing-guide"></a>
 
 ### 3. Syntax & Style Checks
 
@@ -556,7 +568,7 @@ pnpm prettier --check .
 
 ---
 
-<a id="-environment-variables"></a><a id="environment-variables"></a>
+<a id="env-variables"></a><a id="environment-variables"></a><a id="-environment-variables"></a>
 
 ### 4. Environment Variables Reference
 
@@ -582,7 +594,7 @@ pnpm prettier --check .
 
 ---
 
-<a id="-api-endpoints"></a><a id="api-endpoints"></a>
+<a id="api-reference"></a><a id="api-endpoints"></a><a id="-api-endpoints"></a><a id="api-endpoints--payload-specifications"></a>
 
 ## 📡 API Endpoints & Payload Specifications
 
