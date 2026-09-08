@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,18 +11,32 @@ import LoadingScreen from '../../components/LoadingScreen';
 import StatusBanner from '../../components/StatusBanner';
 import ChallengeCard from '../../components/challenge/ChallengeCard';
 import { triggerHaptic } from '../../lib/haptics';
+import { useTour } from '../../context/TourContext';
 
 const CATEGORIES = ['ALL', 'PHOTO', 'RIDDLE', 'TRIVIA', 'CREATIVE'];
 
 export default function ChallengesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { isTourActive, activeTourTarget } = useTour() || {};
   const [challenges, setChallenges] = useState([]);
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [error, setError] = useState('');
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (!activeTourTarget || !scrollRef.current) return;
+    if (activeTourTarget === 'bounty_tabs') {
+      scrollRef.current.scrollTo({ y: 0, animated: true });
+    } else if (activeTourTarget === 'bounty_cards') {
+      scrollRef.current.scrollTo({ y: 40, animated: true });
+    } else if (activeTourTarget === 'bounty_claim') {
+      scrollRef.current.scrollToEnd({ animated: true });
+    }
+  }, [activeTourTarget]);
 
   const fetchChallenges = useCallback(async (isSilent = false) => {
     try {
@@ -60,8 +74,15 @@ export default function ChallengesScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 16 }]}
+      contentContainerStyle={[
+        styles.content,
+        {
+          paddingTop: Math.max(insets.top, 24) + 16,
+          paddingBottom: isTourActive ? 380 : spacing.xxxl,
+        },
+      ]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -100,6 +121,7 @@ export default function ChallengesScreen() {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoryScroll}
+            style={[activeTourTarget === 'bounty_tabs' && styles.tourTargetGlow]}
           >
             {CATEGORIES.map((cat) => (
               <TouchableOpacity
@@ -124,7 +146,12 @@ export default function ChallengesScreen() {
           </ScrollView>
 
           {/* Challenges List */}
-          <View style={styles.listSection}>
+          <View
+            style={[
+              styles.listSection,
+              activeTourTarget === 'bounty_cards' && styles.tourTargetGlow,
+            ]}
+          >
             {filteredChallenges.length === 0 ? (
               <View style={styles.emptyCard}>
                 <Text style={styles.emptyTitle}>No Bounties in Category</Text>
@@ -234,5 +261,15 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     ...typography.displayPixelSm,
     color: colors.bg.dusk,
+  },
+  tourTargetGlow: {
+    borderColor: colors.accent.gold,
+    borderWidth: 2,
+    borderRadius: 8,
+    shadowColor: colors.accent.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 12,
   },
 });

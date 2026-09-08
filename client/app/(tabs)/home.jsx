@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ import PixelBadge from '../../components/PixelBadge';
 import PixelCard from '../../components/PixelCard';
 import { triggerHaptic } from '../../lib/haptics';
 import { subscribeUnlockedCheckpoints } from '../../lib/offlineQueue';
+import { useTour } from '../../context/TourContext';
 
 const getTimeRemaining = (endTime) => {
   if (!endTime) return null;
@@ -31,10 +32,41 @@ const getTimeRemaining = (endTime) => {
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { isTourActive, openTourSelector, activeTourTarget, currentStepData } = useTour();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const scrollRef = useRef(null);
+  const sectionLayouts = useRef({});
+
+  const handleSectionLayout = useCallback(
+    (key) => (event) => {
+      sectionLayouts.current[key] = event.nativeEvent.layout.y;
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!activeTourTarget || !scrollRef.current) return;
+    const targetY = sectionLayouts.current[activeTourTarget];
+    if (targetY !== undefined) {
+      const isTopHud = currentStepData?.hudPosition === 'top';
+      const visibleTargetScreenY = isTopHud ? insets.top + 280 : insets.top + 16;
+      const scrollY = Math.max(0, targetY - visibleTargetScreenY);
+      scrollRef.current.scrollTo({ y: scrollY, animated: true });
+    } else {
+      if (activeTourTarget === 'home_xp_box') {
+        scrollRef.current.scrollTo({ y: 0, animated: true });
+      } else if (activeTourTarget === 'home_quest_box') {
+        scrollRef.current.scrollTo({ y: 60, animated: true });
+      } else if (activeTourTarget === 'home_station_clue') {
+        scrollRef.current.scrollTo({ y: 160, animated: true });
+      } else if (activeTourTarget === 'home_waypoints_card') {
+        scrollRef.current.scrollToEnd({ animated: true });
+      }
+    }
+  }, [activeTourTarget, currentStepData?.hudPosition, insets.top]);
 
   const fetchActiveQuest = useCallback(async (isSilent = false) => {
     try {
@@ -115,245 +147,300 @@ export default function HomeScreen() {
   const level = Math.floor((team?.score || 0) / 250) + 1;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 16 }]}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={colors.accent.gold}
-        />
-      }
-    >
-      {/* Brand & Party XP Header */}
-      <View style={styles.header}>
-        <Text style={styles.pixelTitle}>QUEST OVERWORLD</Text>
-        <Text style={styles.pixelSubtitle}>
-          {team ? `${team.name.toUpperCase()} • LVL ${level}` : 'CAMPUS EXPLORATION'}
-        </Text>
-      </View>
-
-      {/* Broadcast Announcement Banner */}
-      {announcement ? (
-        <View style={styles.announcementBanner}>
-          <View style={styles.announcementLeft}>
-            <Text style={styles.announcementIcon}>📢</Text>
-            <View style={styles.announcementContent}>
-              <Text style={styles.announcementTag}>BROADCAST ANNOUNCEMENT</Text>
-              <Text style={styles.announcementText}>{announcement.message}</Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={styles.announcementDismiss}
-            onPress={dismissAnnouncement}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.announcementDismissText}>✕</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-
-      {/* Party Score & Level Progression Banner */}
-      <PixelCard variant="gold" glow style={styles.pointsCard}>
-        <Text style={styles.pointsLabel}>PARTY XP</Text>
-        <Text style={styles.pointsValue}>+{team?.score || 0} PTS</Text>
-        <View style={styles.badgeCentered}>
-          <PixelBadge label={`LVL ${level}`} variant="gold" />
-        </View>
-
-        {team ? (
-          <ProgressBar
-            current={team?.score || 0}
-            max={250}
-            label={`NEXT LEVEL PROGRESS (LVL ${level + 1})`}
+    <>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.container}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: Math.max(insets.top, 24) + 16,
+            paddingBottom: isTourActive ? 420 : 32,
+          },
+        ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent.gold}
           />
-        ) : null}
-      </PixelCard>
-
-      <StatusBanner type="error" message={error} />
-
-      {/* No Team State */}
-      {!team ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>No Active Party</Text>
-          <Text style={styles.emptySubtitle}>
-            Join or form an adventuring party to receive quest clues and compete on the leaderboard.
+        }
+      >
+        {/* Brand & Party XP Header */}
+        <View style={styles.header}>
+          <View style={styles.headerTopRow}>
+            <Text style={styles.pixelTitle}>QUEST OVERWORLD</Text>
+            <TouchableOpacity
+              style={styles.guideBadgeBtn}
+              onPress={openTourSelector}
+              activeOpacity={0.8}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <MaterialCommunityIcons name="compass-outline" size={13} color={colors.accent.gold} />
+              <Text style={styles.guideBadgeBtnText}>TOUR</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.pixelSubtitle}>
+            {team ? `${team.name.toUpperCase()} • LVL ${level}` : 'CAMPUS EXPLORATION'}
           </Text>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => {
-              triggerHaptic('light');
-              router.push('/(tabs)/team');
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.primaryButtonText}>Head to Party HQ</Text>
-          </TouchableOpacity>
         </View>
-      ) : quest ? (
-        /* Active Quest Content */
-        <View style={styles.questContainer}>
-          <View style={styles.questCard}>
-            <View style={styles.questHeaderRow}>
-              <View style={styles.questTag}>
-                <Text style={styles.questTagText}>ACTIVE QUEST</Text>
+
+        {/* Broadcast Announcement Banner */}
+        {announcement ? (
+          <View
+            style={[
+              styles.announcementBanner,
+              activeTourTarget === 'home_alerts_btn' && styles.tourTargetGlow,
+            ]}
+          >
+            <View style={styles.announcementLeft}>
+              <Text style={styles.announcementIcon}>📢</Text>
+              <View style={styles.announcementContent}>
+                <Text style={styles.announcementTag}>BROADCAST ANNOUNCEMENT</Text>
+                <Text style={styles.announcementText}>{announcement.message}</Text>
               </View>
-              <Text style={styles.questPoints}>+{quest.totalPoints || 700} PTS TOTAL</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.announcementDismiss}
+              onPress={dismissAnnouncement}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.announcementDismissText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {/* Party Score & Level Progression Banner */}
+        <PixelCard
+          variant="gold"
+          glow
+          style={[styles.pointsCard, activeTourTarget === 'home_xp_box' && styles.tourTargetGlow]}
+          onLayout={handleSectionLayout('home_xp_box')}
+        >
+          <Text style={styles.pointsLabel}>PARTY XP</Text>
+          <Text style={styles.pointsValue}>+{team?.score || 0} PTS</Text>
+          <View style={styles.badgeCentered}>
+            <PixelBadge label={`LVL ${level}`} variant="gold" />
+          </View>
+
+          {team ? (
+            <ProgressBar
+              current={team?.score || 0}
+              max={250}
+              label={`NEXT LEVEL PROGRESS (LVL ${level + 1})`}
+            />
+          ) : null}
+        </PixelCard>
+
+        <StatusBanner type="error" message={error} />
+
+        {/* No Team State */}
+        {!team ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>No Active Party</Text>
+            <Text style={styles.emptySubtitle}>
+              Join or form an adventuring party to receive quest clues and compete on the
+              leaderboard.
+            </Text>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => {
+                triggerHaptic('light');
+                router.push('/(tabs)/team');
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.primaryButtonText}>Head to Party HQ</Text>
+            </TouchableOpacity>
+          </View>
+        ) : quest ? (
+          /* Active Quest Content */
+          <View style={styles.questContainer}>
+            <View
+              style={[
+                styles.questCard,
+                activeTourTarget === 'home_quest_box' && styles.tourTargetGlow,
+              ]}
+              onLayout={handleSectionLayout('home_quest_box')}
+            >
+              <View style={styles.questHeaderRow}>
+                <View style={styles.questTag}>
+                  <Text style={styles.questTagText}>ACTIVE QUEST</Text>
+                </View>
+                <Text style={styles.questPoints}>+{quest.totalPoints || 700} PTS TOTAL</Text>
+              </View>
+
+              <Text style={styles.questName}>{quest.name}</Text>
+              <Text style={styles.questDesc}>{quest.description}</Text>
+
+              <View style={styles.stationMetaRow}>
+                <View style={styles.stationCounterBox}>
+                  <Text style={styles.stationCounterText}>
+                    📍 Station {quest?.currentOrder || 1} of{' '}
+                    {quest?.totalCheckpoints || quest?.checkpoints?.length || 4}
+                  </Text>
+                </View>
+                {quest?.endAt ? (
+                  <View style={styles.timerBadge}>
+                    <Text style={styles.timerBadgeText}>⏳ {getTimeRemaining(quest.endAt)}</Text>
+                  </View>
+                ) : null}
+              </View>
             </View>
 
-            <Text style={styles.questName}>{quest.name}</Text>
-            <Text style={styles.questDesc}>{quest.description}</Text>
+            {/* Current Clue / Objective */}
+            {quest?.currentClue ? (
+              <PixelCard
+                variant="gold"
+                glow
+                style={[
+                  styles.clueCard,
+                  activeTourTarget === 'home_station_clue' && styles.tourTargetGlow,
+                ]}
+                onLayout={handleSectionLayout('home_station_clue')}
+              >
+                <View style={styles.clueHeaderRow}>
+                  <View style={styles.questTag}>
+                    <Text style={styles.questTagText}>STATION #{quest.currentClue.order}</Text>
+                  </View>
+                  <Text style={styles.questPoints}>+{quest.currentClue.points || 100} PTS</Text>
+                </View>
+                <Text style={styles.clueTitle}>{quest.currentClue.title}</Text>
+                <Text style={styles.clueBody}>{quest.currentClue.clue}</Text>
 
-            <View style={styles.stationMetaRow}>
-              <View style={styles.stationCounterBox}>
-                <Text style={styles.stationCounterText}>
-                  📍 Station {quest?.currentOrder || 1} of{' '}
-                  {quest?.totalCheckpoints || quest?.checkpoints?.length || 4}
+                <TouchableOpacity
+                  style={[
+                    styles.scanButton,
+                    activeTourTarget === 'home_station_clue' && styles.tourTargetGlow,
+                  ]}
+                  onPress={() => {
+                    triggerHaptic('medium');
+                    router.push('/camera/scanner');
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <MaterialCommunityIcons name="qrcode-scan" size={18} color={colors.bg.dusk} />
+                  <Text style={styles.scanButtonText}>Scan Station QR Code</Text>
+                </TouchableOpacity>
+              </PixelCard>
+            ) : (
+              <DialogueBox
+                speaker="ARCH-MAGE"
+                text="You have conquered all stations in this realm quest! Check the Bounty Board for special missions or view the Hall of Fame."
+              />
+            )}
+
+            {/* Expedition Waypoint Roadmap */}
+            <PixelCard
+              variant="dusk"
+              style={[
+                styles.roadmapCard,
+                activeTourTarget === 'home_waypoints_card' && styles.tourTargetGlow,
+              ]}
+              onLayout={handleSectionLayout('home_waypoints_card')}
+            >
+              <View style={styles.roadmapHeader}>
+                <Text style={styles.roadmapTitle}>EXPEDITION WAYPOINTS</Text>
+                <Text style={styles.roadmapSub}>
+                  {Math.max(
+                    0,
+                    Math.min((quest?.currentOrder || 1) - 1, quest?.totalCheckpoints || 0)
+                  )}{' '}
+                  / {quest?.totalCheckpoints || 0} CLEARED
                 </Text>
               </View>
-              {quest?.endAt ? (
-                <View style={styles.timerBadge}>
-                  <Text style={styles.timerBadgeText}>⏳ {getTimeRemaining(quest.endAt)}</Text>
-                </View>
-              ) : null}
-            </View>
-          </View>
 
-          {/* Current Clue / Objective */}
-          {quest?.currentClue ? (
-            <PixelCard variant="gold" glow style={styles.clueCard}>
-              <View style={styles.clueHeaderRow}>
-                <View style={styles.questTag}>
-                  <Text style={styles.questTagText}>STATION #{quest.currentClue.order}</Text>
-                </View>
-                <Text style={styles.questPoints}>+{quest.currentClue.points || 100} PTS</Text>
-              </View>
-              <Text style={styles.clueTitle}>{quest.currentClue.title}</Text>
-              <Text style={styles.clueBody}>{quest.currentClue.clue}</Text>
+              <View style={styles.waypointList}>
+                {(quest?.checkpoints && quest.checkpoints.length > 0
+                  ? quest.checkpoints
+                  : quest?.currentClue
+                    ? [quest.currentClue]
+                    : []
+                ).map((wp) => {
+                  const isCleared = wp.order < (quest?.currentOrder || 1);
+                  const isActive = wp.order === (quest?.currentOrder || 1);
+                  const isLocked = wp.order > (quest?.currentOrder || 1);
+                  const waypointTitle = wp.title || wp.name || `Station #${wp.order}`;
 
-              <TouchableOpacity
-                style={styles.scanButton}
-                onPress={() => {
-                  triggerHaptic('medium');
-                  router.push('/camera/scanner');
-                }}
-                activeOpacity={0.8}
-              >
-                <MaterialCommunityIcons name="qrcode-scan" size={18} color={colors.bg.dusk} />
-                <Text style={styles.scanButtonText}>Scan Station QR Code</Text>
-              </TouchableOpacity>
-            </PixelCard>
-          ) : (
-            <DialogueBox
-              speaker="ARCH-MAGE"
-              text="You have conquered all stations in this realm quest! Check the Bounty Board for special missions or view the Hall of Fame."
-            />
-          )}
-
-          {/* Expedition Waypoint Roadmap */}
-          <PixelCard variant="dusk" style={styles.roadmapCard}>
-            <View style={styles.roadmapHeader}>
-              <Text style={styles.roadmapTitle}>EXPEDITION WAYPOINTS</Text>
-              <Text style={styles.roadmapSub}>
-                {Math.max(
-                  0,
-                  Math.min((quest?.currentOrder || 1) - 1, quest?.totalCheckpoints || 0)
-                )}{' '}
-                / {quest?.totalCheckpoints || 0} CLEARED
-              </Text>
-            </View>
-
-            <View style={styles.waypointList}>
-              {(quest?.checkpoints && quest.checkpoints.length > 0
-                ? quest.checkpoints
-                : quest?.currentClue
-                  ? [quest.currentClue]
-                  : []
-              ).map((wp) => {
-                const isCleared = wp.order < (quest?.currentOrder || 1);
-                const isActive = wp.order === (quest?.currentOrder || 1);
-                const isLocked = wp.order > (quest?.currentOrder || 1);
-                const waypointTitle = wp.title || wp.name || `Station #${wp.order}`;
-
-                return (
-                  <View
-                    key={wp._id || wp.order}
-                    style={[
-                      styles.waypointRow,
-                      isActive && styles.waypointRowActive,
-                      isCleared && styles.waypointRowCleared,
-                    ]}
-                  >
-                    <View style={styles.waypointLeft}>
-                      <View
-                        style={[
-                          styles.waypointIconCircle,
-                          isCleared && styles.iconCircleCleared,
-                          isActive && styles.iconCircleActive,
-                        ]}
-                      >
-                        <MaterialCommunityIcons
-                          name={isCleared ? 'check-bold' : isActive ? 'crosshairs-gps' : 'lock'}
-                          size={13}
-                          color={
-                            isCleared
-                              ? colors.accent.green
-                              : isActive
-                                ? colors.accent.gold
-                                : '#5A527A'
-                          }
-                        />
-                      </View>
-
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={[
-                            styles.waypointName,
-                            isActive && styles.waypointNameActive,
-                            isCleared && styles.waypointNameCleared,
-                          ]}
-                          numberOfLines={1}
-                        >
-                          #{wp.order} · {waypointTitle}
-                        </Text>
-                        <Text style={styles.waypointPoints}>+{wp.points || 0} PTS</Text>
-                      </View>
-                    </View>
-
+                  return (
                     <View
+                      key={wp._id || wp.order}
                       style={[
-                        styles.waypointStatusBadge,
-                        isCleared && styles.statusBadgeCleared,
-                        isActive && styles.statusBadgeActive,
+                        styles.waypointRow,
+                        isActive && styles.waypointRowActive,
+                        isCleared && styles.waypointRowCleared,
                       ]}
                     >
-                      <Text
+                      <View style={styles.waypointLeft}>
+                        <View
+                          style={[
+                            styles.waypointIconCircle,
+                            isCleared && styles.iconCircleCleared,
+                            isActive && styles.iconCircleActive,
+                          ]}
+                        >
+                          <MaterialCommunityIcons
+                            name={isCleared ? 'check-bold' : isActive ? 'crosshairs-gps' : 'lock'}
+                            size={13}
+                            color={
+                              isCleared
+                                ? colors.accent.green
+                                : isActive
+                                  ? colors.accent.gold
+                                  : '#5A527A'
+                            }
+                          />
+                        </View>
+
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={[
+                              styles.waypointName,
+                              isActive && styles.waypointNameActive,
+                              isCleared && styles.waypointNameCleared,
+                            ]}
+                            numberOfLines={1}
+                          >
+                            #{wp.order} · {waypointTitle}
+                          </Text>
+                          <Text style={styles.waypointPoints}>+{wp.points || 0} PTS</Text>
+                        </View>
+                      </View>
+
+                      <View
                         style={[
-                          styles.waypointStatusText,
-                          isCleared && styles.statusTextCleared,
-                          isActive && styles.statusTextActive,
+                          styles.waypointStatusBadge,
+                          isCleared && styles.statusBadgeCleared,
+                          isActive && styles.statusBadgeActive,
                         ]}
                       >
-                        {isCleared ? 'CLEARED' : isActive ? 'TARGET' : 'LOCKED'}
-                      </Text>
+                        <Text
+                          style={[
+                            styles.waypointStatusText,
+                            isCleared && styles.statusTextCleared,
+                            isActive && styles.statusTextActive,
+                          ]}
+                        >
+                          {isCleared ? 'CLEARED' : isActive ? 'TARGET' : 'LOCKED'}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                );
-              })}
-            </View>
-          </PixelCard>
-        </View>
-      ) : (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>No Active Quest</Text>
-          <Text style={styles.emptySubtitle}>
-            The realm is currently peaceful. Check back soon for new campus events!
-          </Text>
-        </View>
-      )}
-    </ScrollView>
+                  );
+                })}
+              </View>
+            </PixelCard>
+          </View>
+        ) : (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>No Active Quest</Text>
+            <Text style={styles.emptySubtitle}>
+              The realm is currently peaceful. Check back soon for new campus events!
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    </>
   );
 }
 
@@ -371,6 +458,29 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing.xs,
     alignItems: 'center',
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  guideBadgeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#272044',
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    borderRadius: 4,
+  },
+  guideBadgeBtnText: {
+    ...typography.captionBold,
+    fontSize: 9,
+    color: colors.accent.gold,
+    letterSpacing: 0.5,
   },
   pixelTitle: {
     ...typography.displayPixelLg,
@@ -726,5 +836,14 @@ const styles = StyleSheet.create({
   },
   statusTextCleared: {
     color: colors.accent.green,
+  },
+  tourTargetGlow: {
+    borderColor: colors.accent.gold,
+    borderWidth: 2,
+    shadowColor: colors.accent.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 12,
   },
 });

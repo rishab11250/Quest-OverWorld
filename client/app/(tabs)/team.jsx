@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { StyleSheet, ScrollView, RefreshControl, Share, Alert } from 'react-native';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { StyleSheet, ScrollView, RefreshControl, Share, Alert, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -20,9 +20,21 @@ import ManageMemberModal from '../../components/team/ManageMemberModal';
 import TransferCaptainModal from '../../components/team/TransferCaptainModal';
 import PendingRequestsModal from '../../components/team/PendingRequestsModal';
 import PendingAdmissionCard from '../../components/team/PendingAdmissionCard';
+import { useTour } from '../../context/TourContext';
 
 export default function TeamScreen() {
   const insets = useSafeAreaInsets();
+  const { isTourActive, activeTourTarget } = useTour() || {};
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (!activeTourTarget || !scrollRef.current) return;
+    if (activeTourTarget === 'team_banner' || activeTourTarget === 'team_actions') {
+      scrollRef.current.scrollTo({ y: 0, animated: true });
+    } else if (activeTourTarget === 'team_roster') {
+      scrollRef.current.scrollToEnd({ animated: true });
+    }
+  }, [activeTourTarget]);
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState(null);
   const [pendingTeam, setPendingTeam] = useState(null);
@@ -371,8 +383,15 @@ export default function TeamScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.container}
-      contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, 24) + 16 }]}
+      contentContainerStyle={[
+        styles.scrollContent,
+        {
+          paddingTop: Math.max(insets.top, 24) + 16,
+          paddingBottom: isTourActive ? 380 : spacing.xxxl,
+        },
+      ]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -391,35 +410,44 @@ export default function TeamScreen() {
           cancelling={cancellingRequest}
         />
       ) : !team ? (
-        <TeamAuthCard
-          activeTab={activeTab}
-          setActiveTab={(tab) => {
-            setActiveTab(tab);
-            setError('');
-          }}
-          joinCode={joinCode}
-          setJoinCode={setJoinCode}
-          teamName={teamName}
-          setTeamName={setTeamName}
-          onJoin={handleJoinTeam}
-          onCreate={handleCreateTeam}
-          submitting={submitting}
-        />
+        <View style={[activeTourTarget === 'team_actions' && styles.tourTargetGlow]}>
+          <TeamAuthCard
+            activeTab={activeTab}
+            setActiveTab={(tab) => {
+              setActiveTab(tab);
+              setError('');
+            }}
+            joinCode={joinCode}
+            setJoinCode={setJoinCode}
+            teamName={teamName}
+            setTeamName={setTeamName}
+            onJoin={handleJoinTeam}
+            onCreate={handleCreateTeam}
+            submitting={submitting}
+          />
+        </View>
       ) : (
-        <TeamHubView
-          team={team}
-          copied={copied}
-          onCopyCode={handleCopyCode}
-          onShareCode={handleShareCode}
-          onInviteContacts={() => setContactsModalVisible(true)}
-          onRequestLeave={handleRequestLeave}
-          isCaptain={isCaptain}
-          isViceCaptain={isViceCaptain}
-          currentUserId={currentUserId}
-          onOpenRenameModal={() => setRenameModalVisible(true)}
-          onManageMember={(member) => setSelectedMemberToManage(member)}
-          onOpenRequestsModal={() => setRequestsModalVisible(true)}
-        />
+        <View
+          style={[
+            (activeTourTarget === 'team_banner' || activeTourTarget === 'team_roster') &&
+              styles.tourTargetGlow,
+          ]}
+        >
+          <TeamHubView
+            team={team}
+            copied={copied}
+            onCopyCode={handleCopyCode}
+            onShareCode={handleShareCode}
+            onInviteContacts={() => setContactsModalVisible(true)}
+            onRequestLeave={handleRequestLeave}
+            isCaptain={isCaptain}
+            isViceCaptain={isViceCaptain}
+            currentUserId={currentUserId}
+            onOpenRenameModal={() => setRenameModalVisible(true)}
+            onManageMember={(member) => setSelectedMemberToManage(member)}
+            onOpenRequestsModal={() => setRequestsModalVisible(true)}
+          />
+        </View>
       )}
 
       {team ? (
@@ -494,5 +522,15 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxxl,
     gap: spacing.md,
+  },
+  tourTargetGlow: {
+    borderColor: colors.accent.gold,
+    borderWidth: 2,
+    borderRadius: 8,
+    shadowColor: colors.accent.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 12,
   },
 });

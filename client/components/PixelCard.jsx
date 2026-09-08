@@ -8,6 +8,7 @@ export default function PixelCard({
   style,
   variant = 'gold', // 'gold' | 'dusk' | 'parchment'
   glow = false,
+  ...props
 }) {
   const isGold = variant === 'gold';
   const isParchment = variant === 'parchment';
@@ -21,6 +22,7 @@ export default function PixelCard({
         glow && styles.cardGlow,
         style,
       ]}
+      {...props}
     >
       {/* 8-Bit Pixel Notched Corners */}
       <View style={[styles.corner, styles.cornerTL, isParchment && styles.cornerDark]} />

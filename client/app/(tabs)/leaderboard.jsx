@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,14 +12,26 @@ import LoadingScreen from '../../components/LoadingScreen';
 import StatusBanner from '../../components/StatusBanner';
 import LeaderboardRow from '../../components/leaderboard/LeaderboardRow';
 import PixelCard from '../../components/PixelCard';
+import { useTour } from '../../context/TourContext';
 
 export default function LeaderboardScreen() {
   const insets = useSafeAreaInsets();
+  const { isTourActive, activeTourTarget } = useTour() || {};
   const [rankings, setRankings] = useState([]);
   const [myTeam, setMyTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (!activeTourTarget || !scrollRef.current) return;
+    if (activeTourTarget === 'leaderboard_tabs' || activeTourTarget === 'leaderboard_podium') {
+      scrollRef.current.scrollTo({ y: 0, animated: true });
+    } else if (activeTourTarget === 'leaderboard_list') {
+      scrollRef.current.scrollTo({ y: 120, animated: true });
+    }
+  }, [activeTourTarget]);
 
   const fetchLeaderboard = useCallback(async (isSilent = false) => {
     try {
@@ -69,8 +81,15 @@ export default function LeaderboardScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 16 }]}
+      contentContainerStyle={[
+        styles.content,
+        {
+          paddingTop: Math.max(insets.top, 24) + 16,
+          paddingBottom: isTourActive ? 380 : spacing.xxxl,
+        },
+      ]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -89,7 +108,14 @@ export default function LeaderboardScreen() {
 
       {/* Sticky My Team Standing Banner */}
       {myTeam && myTeamRank > 0 ? (
-        <PixelCard variant="gold" glow style={styles.standingBanner}>
+        <PixelCard
+          variant="gold"
+          glow
+          style={[
+            styles.standingBanner,
+            activeTourTarget === 'leaderboard_podium' && styles.tourTargetGlow,
+          ]}
+        >
           <View style={styles.standingLeft}>
             <Text style={styles.standingLabel}>YOUR PARTY STANDING</Text>
             <Text style={styles.standingName}>{myTeam.name}</Text>
@@ -102,7 +128,12 @@ export default function LeaderboardScreen() {
       ) : null}
 
       {/* Rankings Table */}
-      <View style={styles.listSection}>
+      <View
+        style={[
+          styles.listSection,
+          activeTourTarget === 'leaderboard_list' && styles.tourTargetGlow,
+        ]}
+      >
         {rankings.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>The Hall is Quiet</Text>
@@ -310,5 +341,15 @@ const styles = StyleSheet.create({
     color: colors.text.onDark.secondary,
     fontSize: 11,
     lineHeight: 16,
+  },
+  tourTargetGlow: {
+    borderColor: colors.accent.gold,
+    borderWidth: 2,
+    borderRadius: 8,
+    shadowColor: colors.accent.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 12,
   },
 });

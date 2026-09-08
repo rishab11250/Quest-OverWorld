@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,10 +19,12 @@ import LoadingScreen from '../../components/LoadingScreen';
 import StatusBanner from '../../components/StatusBanner';
 import PixelCard from '../../components/PixelCard';
 import { triggerHaptic } from '../../lib/haptics';
+import { useTour } from '../../context/TourContext';
 
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { isTourActive, activeTourTarget } = useTour() || {};
   const [data, setData] = useState(null);
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState('');
@@ -30,6 +32,16 @@ export default function MapScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [selectedPin, setSelectedPin] = useState(null);
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (!activeTourTarget || !scrollRef.current) return;
+    if (activeTourTarget === 'map_view' || activeTourTarget === 'map_pins') {
+      scrollRef.current.scrollTo({ y: 0, animated: true });
+    } else if (activeTourTarget === 'map_controls') {
+      scrollRef.current.scrollToEnd({ animated: true });
+    }
+  }, [activeTourTarget]);
 
   const fetchMapData = useCallback(async (isSilent = false) => {
     try {
@@ -109,8 +121,15 @@ export default function MapScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 16 }]}
+      contentContainerStyle={[
+        styles.content,
+        {
+          paddingTop: Math.max(insets.top, 24) + 16,
+          paddingBottom: isTourActive ? 380 : spacing.xxxl,
+        },
+      ]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -134,7 +153,7 @@ export default function MapScreen() {
       <StatusBanner type="error" message={error} />
 
       {/* Interactive Overworld GPS Map & Radar */}
-      <View style={styles.mapSection}>
+      <View style={[styles.mapSection, activeTourTarget === 'map_view' && styles.tourTargetGlow]}>
         <OverworldMap
           checkpoints={quest?.checkpoints || []}
           currentClue={currentClue}
@@ -261,7 +280,10 @@ export default function MapScreen() {
           ) : null}
 
           <TouchableOpacity
-            style={styles.scanButton}
+            style={[
+              styles.scanButton,
+              activeTourTarget === 'map_controls' && styles.tourTargetGlow,
+            ]}
             onPress={() => {
               triggerHaptic('medium');
               router.push('/camera/scanner');
@@ -493,5 +515,14 @@ const styles = StyleSheet.create({
     ...typography.button,
     color: colors.bg.dusk,
     fontSize: 14,
+  },
+  tourTargetGlow: {
+    borderColor: colors.accent.gold,
+    borderWidth: 2,
+    shadowColor: colors.accent.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 12,
   },
 });

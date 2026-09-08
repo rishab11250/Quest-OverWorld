@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,15 +15,29 @@ import ProfileHeroCard from '../../components/profile/ProfileHeroCard';
 import ProfileSettingsCard from '../../components/profile/ProfileSettingsCard';
 import ProfileRealmCard from '../../components/profile/ProfileRealmCard';
 import EditHeroModal from '../../components/profile/EditHeroModal';
+import { useTour } from '../../context/TourContext';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { isTourActive, openTourSelector, activeTourTarget } = useTour() || {};
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (!activeTourTarget || !scrollRef.current) return;
+    if (activeTourTarget === 'profile_hero') {
+      scrollRef.current.scrollTo({ y: 0, animated: true });
+    } else if (activeTourTarget === 'profile_settings') {
+      scrollRef.current.scrollTo({ y: 140, animated: true });
+    } else if (activeTourTarget === 'profile_realm') {
+      scrollRef.current.scrollToEnd({ animated: true });
+    }
+  }, [activeTourTarget]);
 
   // Edit Profile state
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -147,8 +161,15 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 16 }]}
+      contentContainerStyle={[
+        styles.content,
+        {
+          paddingTop: Math.max(insets.top, 24) + 16,
+          paddingBottom: isTourActive ? 380 : spacing.xxxl,
+        },
+      ]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -162,22 +183,29 @@ export default function ProfileScreen() {
         <Text style={styles.subtitle}>PLAYER ACCOUNT & PREFERENCES</Text>
       </View>
 
-      <ProfileHeroCard user={user} team={team} onOpenEdit={handleOpenEdit} />
+      <View style={[activeTourTarget === 'profile_hero' && styles.tourTargetGlow]}>
+        <ProfileHeroCard user={user} team={team} onOpenEdit={handleOpenEdit} />
+      </View>
 
-      <ProfileSettingsCard
-        highAccuracyGps={highAccuracyGps}
-        onToggleGps={(val) => handleToggleSetting('high_accuracy_gps', val, setHighAccuracyGps)}
-        autoTorch={autoTorch}
-        onToggleTorch={(val) => handleToggleSetting('auto_torch', val, setAutoTorch)}
-        livePolling={livePolling}
-        onTogglePolling={(val) => handleToggleSetting('live_polling', val, setLivePolling)}
-        hapticFeedback={hapticFeedback}
-        onToggleHaptic={(val) => handleToggleSetting('haptic_feedback', val, setHapticFeedback)}
-        cacheCleared={cacheCleared}
-        onClearCache={handleClearCache}
-      />
+      <View style={[activeTourTarget === 'profile_settings' && styles.tourTargetGlow]}>
+        <ProfileSettingsCard
+          highAccuracyGps={highAccuracyGps}
+          onToggleGps={(val) => handleToggleSetting('high_accuracy_gps', val, setHighAccuracyGps)}
+          autoTorch={autoTorch}
+          onToggleTorch={(val) => handleToggleSetting('auto_torch', val, setAutoTorch)}
+          livePolling={livePolling}
+          onTogglePolling={(val) => handleToggleSetting('live_polling', val, setLivePolling)}
+          hapticFeedback={hapticFeedback}
+          onToggleHaptic={(val) => handleToggleSetting('haptic_feedback', val, setHapticFeedback)}
+          cacheCleared={cacheCleared}
+          onClearCache={handleClearCache}
+          onOpenGuide={openTourSelector}
+        />
+      </View>
 
-      <ProfileRealmCard onOpenLogoutModal={() => setLogoutModalVisible(true)} />
+      <View style={[activeTourTarget === 'profile_realm' && styles.tourTargetGlow]}>
+        <ProfileRealmCard onOpenLogoutModal={() => setLogoutModalVisible(true)} />
+      </View>
 
       <EditHeroModal
         visible={editModalVisible}
@@ -233,5 +261,15 @@ const styles = StyleSheet.create({
     color: colors.text.onDark.secondary,
     fontSize: 10,
     letterSpacing: 0.8,
+  },
+  tourTargetGlow: {
+    borderColor: colors.accent.gold,
+    borderWidth: 2,
+    borderRadius: 8,
+    shadowColor: colors.accent.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 12,
   },
 });

@@ -7,6 +7,7 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  PanResponder,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
@@ -109,41 +110,70 @@ export default function AdminLocationPickerMap({
     }
   };
 
-  const handleTouchStart = (e) => {
-    const touches = e.nativeEvent.touches;
-    if (touches && touches.length >= 1) {
-      panStartPosRef.current = { x: touches[0].pageX, y: touches[0].pageY };
-      centerStartRef.current = { ...centerRef.current };
-      setIsDragging(true);
-    }
-  };
-
-  const handleTouchMove = (e) => {
-    const touches = e.nativeEvent.touches;
-    if (touches && touches.length >= 1 && panStartPosRef.current) {
-      const dx = touches[0].pageX - panStartPosRef.current.x;
-      const dy = touches[0].pageY - panStartPosRef.current.y;
-
-      const { worldX, worldY } = latLonToWorldPixels(
-        centerStartRef.current.latitude,
-        centerStartRef.current.longitude,
-        zoomRef.current
-      );
-      const newWorldX = worldX - dx;
-      const newWorldY = worldY - dy;
-      const newLatLon = worldPixelsToLatLon(newWorldX, newWorldY, zoomRef.current);
-      setCenter(newLatLon);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    panStartPosRef.current = null;
-    setIsDragging(false);
-
-    if (!readOnly && onLocationChange) {
-      onLocationChange(centerRef.current);
-    }
-  };
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: (evt) => {
+        setIsDragging(true);
+        panStartPosRef.current = {
+          x: evt.nativeEvent.pageX,
+          y: evt.nativeEvent.pageY,
+        };
+        centerStartRef.current = { ...centerRef.current };
+      },
+      onPanResponderMove: (evt) => {
+        if (panStartPosRef.current) {
+          const dx = evt.nativeEvent.pageX - panStartPosRef.current.x;
+          const dy = evt.nativeEvent.pageY - panStartPosRef.current.y;
+          const { worldX, worldY } = latLonToWorldPixels(
+            centerStartRef.current.latitude,
+            centerStartRef.current.longitude,
+            zoomRef.current
+          );
+          const newWorldX = worldX - dx;
+          const newWorldY = worldY - dy;
+          const newLatLon = worldPixelsToLatLon(newWorldX, newWorldY, zoomRef.current);
+          setCenter(newLatLon);
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        // Tap to place checkpoint directly at finger tap coordinates
+        if (Math.abs(gestureState.dx) < 6 && Math.abs(gestureState.dy) < 6) {
+          const tapX = evt.nativeEvent.locationX;
+          const tapY = evt.nativeEvent.locationY;
+          if (tapX != null && tapY != null) {
+            const { worldX, worldY } = latLonToWorldPixels(
+              centerRef.current.latitude,
+              centerRef.current.longitude,
+              zoomRef.current
+            );
+            const tappedWorldX = worldX + (tapX - mapWidth / 2);
+            const tappedWorldY = worldY + (tapY - mapHeight / 2);
+            const newLatLon = worldPixelsToLatLon(tappedWorldX, tappedWorldY, zoomRef.current);
+            setCenter(newLatLon);
+            triggerHaptic('light');
+            if (!readOnly && onLocationChange) {
+              onLocationChange(newLatLon);
+            }
+          }
+        } else {
+          if (!readOnly && onLocationChange) {
+            onLocationChange(centerRef.current);
+          }
+        }
+        panStartPosRef.current = null;
+        setIsDragging(false);
+      },
+      onPanResponderTerminate: () => {
+        panStartPosRef.current = null;
+        setIsDragging(false);
+      },
+    })
+  ).current;
 
   const { worldX: centerWorldX, worldY: centerWorldY } = latLonToWorldPixels(
     center.latitude,
@@ -255,10 +285,7 @@ export default function AdminLocationPickerMap({
       {/* Slippy Map Viewport */}
       <View
         style={[styles.mapViewport, { width: mapWidth, height: mapHeight }]}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
+        {...panResponder.panHandlers}
       >
         {tiles.map((tile) => (
           <Image

@@ -1,5 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Easing,
+  Dimensions,
+  PanResponder,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
@@ -7,9 +16,11 @@ import spacing from '../theme/spacing';
 import { formatDistance, getDistanceInMeters, getBearingAndDirection } from '../lib/location';
 import { triggerHaptic } from '../lib/haptics';
 import { getTimeOfDayAtmosphere } from '../theme/atmosphere';
+import { useTour } from '../context/TourContext';
 
-const MAP_WIDTH = 320;
-const MAP_HEIGHT = 340;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const MAP_WIDTH = Math.min(380, SCREEN_WIDTH - 32);
+const MAP_HEIGHT = 330;
 const MAP_CENTER_X = MAP_WIDTH / 2;
 const MAP_CENTER_Y = MAP_HEIGHT / 2;
 
@@ -22,10 +33,55 @@ export default function OverworldMap({
   onSelectPin,
   onRecenter,
 }) {
+  const { activeTourTarget } = useTour() || {};
   const [zoomLevel, setZoomLevel] = useState(1);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const sonarAnim = useRef(new Animated.Value(0)).current;
   const atmosphere = getTimeOfDayAtmosphere();
+
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const currentPan = useRef({ x: 0, y: 0 });
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3,
+      onMoveShouldSetPanResponderCapture: (_, gestureState) =>
+        Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: currentPan.current.x,
+          y: currentPan.current.y,
+        });
+        pan.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: (_, gestureState) => {
+        currentPan.current.x += gestureState.dx;
+        currentPan.current.y += gestureState.dy;
+        pan.flattenOffset();
+      },
+      onPanResponderTerminate: () => {
+        pan.flattenOffset();
+      },
+    })
+  ).current;
+
+  const handleRecenterGps = () => {
+    triggerHaptic('medium');
+    Animated.spring(pan, {
+      toValue: { x: 0, y: 0 },
+      useNativeDriver: false,
+    }).start(() => {
+      currentPan.current = { x: 0, y: 0 };
+    });
+    if (onRecenter) onRecenter();
+  };
 
   // Active Station Beacon Pulse Animation
   useEffect(() => {
@@ -219,110 +275,148 @@ export default function OverworldMap({
         </View>
       </View>
 
-      {/* Map Board */}
-      <View style={[styles.mapBoard, { transform: [{ scale: zoomLevel }] }]}>
-        {/* Topographic Coordinate Grid Lines */}
-        <View style={styles.gridOverlay} />
+      {/* Map Board Viewport */}
+      <View style={styles.mapBoard} {...panResponder.panHandlers}>
+        <Animated.View
+          style={[
+            styles.mapCanvas,
+            {
+              transform: [{ translateX: pan.x }, { translateY: pan.y }, { scale: zoomLevel }],
+            },
+          ]}
+        >
+          {/* Topographic Coordinate Grid Lines */}
+          <View style={styles.gridOverlay} />
 
-        {/* Concentric Radar Rings in Free Exploration Mode */}
-        {!hasCheckpoints ? (
-          <View style={styles.radarRingWrapper} pointerEvents="none">
-            <View style={[styles.staticRadarRing, { width: 90, height: 90, borderRadius: 45 }]} />
-            <View style={[styles.staticRadarRing, { width: 180, height: 180, borderRadius: 90 }]} />
-            <View
-              style={[styles.staticRadarRing, { width: 270, height: 270, borderRadius: 135 }]}
-            />
-            <View style={styles.radarCrosshairH} />
-            <View style={styles.radarCrosshairV} />
-          </View>
-        ) : null}
-
-        {/* Real Station Nodes Rendered from GPS Data */}
-        {nodesToRender.map((node) => {
-          const isCleared = node.order < currentOrder;
-          const isActive = node.order === currentOrder;
-          const isLocked = node.order > currentOrder;
-
-          return (
-            <View key={node._id} style={[styles.nodeContainer, { left: node.x, top: node.y }]}>
-              {isActive ? (
-                <Animated.View
-                  style={[
-                    styles.beaconRing,
-                    {
-                      transform: [{ scale: pulseAnim }],
-                    },
-                  ]}
-                />
-              ) : null}
-
-              <TouchableOpacity
-                style={[
-                  styles.pinCircle,
-                  isCleared && styles.pinCleared,
-                  isActive && styles.pinActive,
-                  isLocked && styles.pinLocked,
-                ]}
-                onPress={() => {
-                  triggerHaptic('light');
-                  if (onSelectPin) onSelectPin(node);
-                }}
-                activeOpacity={0.8}
-              >
-                <MaterialCommunityIcons
-                  name={isCleared ? 'check-bold' : isActive ? 'map-marker-radius' : 'lock'}
-                  size={16}
-                  color={
-                    isCleared ? colors.accent.green : isActive ? colors.accent.gold : '#5A527A'
-                  }
-                />
-              </TouchableOpacity>
-
-              <View style={[styles.nodeCard, isActive && styles.nodeCardActive]}>
-                <Text style={[styles.nodeOrderText, isActive && styles.nodeOrderTextActive]}>
-                  #{node.order} · {node.title}
-                </Text>
-              </View>
+          {/* Concentric Radar Rings in Free Exploration Mode */}
+          {!hasCheckpoints ? (
+            <View style={styles.radarRingWrapper} pointerEvents="none">
+              <View style={[styles.staticRadarRing, { width: 90, height: 90, borderRadius: 45 }]} />
+              <View
+                style={[styles.staticRadarRing, { width: 180, height: 180, borderRadius: 90 }]}
+              />
+              <View
+                style={[styles.staticRadarRing, { width: 270, height: 270, borderRadius: 135 }]}
+              />
+              <View style={styles.radarCrosshairH} />
+              <View style={styles.radarCrosshairV} />
             </View>
-          );
-        })}
+          ) : null}
 
-        {/* Live Player Adventurer Beacon */}
-        <View style={[styles.playerNode, { left: playerCanvasX, top: playerCanvasY }]}>
-          <Animated.View
+          {/* Real Station Nodes Rendered from GPS Data */}
+          {nodesToRender.map((node) => {
+            const isCleared = node.order < currentOrder;
+            const isActive = node.order === currentOrder;
+            const isLocked = node.order > currentOrder;
+
+            return (
+              <View key={node._id} style={[styles.nodeContainer, { left: node.x, top: node.y }]}>
+                {isActive ? (
+                  <Animated.View
+                    style={[
+                      styles.beaconRing,
+                      {
+                        transform: [{ scale: pulseAnim }],
+                      },
+                    ]}
+                  />
+                ) : null}
+
+                <TouchableOpacity
+                  style={[
+                    styles.pinCircle,
+                    isCleared && styles.pinCleared,
+                    isActive && styles.pinActive,
+                    isLocked && styles.pinLocked,
+                    activeTourTarget === 'map_pins' && styles.tourTargetGlow,
+                  ]}
+                  onPress={() => {
+                    triggerHaptic('light');
+                    if (onSelectPin) onSelectPin(node);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <MaterialCommunityIcons
+                    name={isCleared ? 'check-bold' : isActive ? 'map-marker-radius' : 'lock'}
+                    size={16}
+                    color={
+                      isCleared ? colors.accent.green : isActive ? colors.accent.gold : '#5A527A'
+                    }
+                  />
+                </TouchableOpacity>
+
+                <View style={[styles.nodeCard, isActive && styles.nodeCardActive]}>
+                  <Text style={[styles.nodeOrderText, isActive && styles.nodeOrderTextActive]}>
+                    #{node.order} · {node.title}
+                  </Text>
+                  <Text style={styles.nodePointsText}>+{node.points} PTS</Text>
+                </View>
+              </View>
+            );
+          })}
+
+          {/* Real User GPS Position Marker */}
+          <View
             style={[
-              styles.sonarWave,
+              styles.playerMarker,
               {
-                transform: [{ scale: sonarScale }],
-                opacity: sonarOpacity,
+                left: playerCanvasX - 16,
+                top: playerCanvasY - 16,
               },
             ]}
-          />
-          <View style={styles.playerRadar} />
-          <View style={styles.playerAvatar}>
-            <MaterialCommunityIcons name="account" size={14} color="#FFF" />
+          >
+            <Animated.View
+              style={[
+                styles.sonarRing,
+                {
+                  transform: [
+                    {
+                      scale: sonarAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [1, 2.6],
+                      }),
+                    },
+                  ],
+                  opacity: sonarAnim.interpolate({
+                    inputRange: [0, 0.4, 1],
+                    outputRange: [0.85, 0.4, 0],
+                  }),
+                },
+              ]}
+            />
+            <View style={styles.playerRadar} />
+            <View style={styles.playerAvatar}>
+              <MaterialCommunityIcons name="account" size={14} color="#FFF" />
+            </View>
+            <View style={styles.playerLabelPill}>
+              <Text style={styles.playerLabelText}>YOU</Text>
+            </View>
           </View>
-          <View style={styles.playerLabelPill}>
-            <Text style={styles.playerLabelText}>YOU</Text>
-          </View>
-        </View>
+        </Animated.View>
       </View>
 
       {/* Map Controls */}
       <View style={styles.controlsRow}>
         <TouchableOpacity
-          style={styles.controlBtn}
-          onPress={() => {
-            triggerHaptic('medium');
-            if (onRecenter) onRecenter();
-          }}
+          style={[
+            styles.controlBtn,
+            (activeTourTarget === 'map_crosshair' || activeTourTarget === 'map_controls') &&
+              styles.tourTargetGlow,
+          ]}
+          onPress={handleRecenterGps}
           activeOpacity={0.8}
         >
           <MaterialCommunityIcons name="crosshairs-gps" size={16} color={colors.accent.gold} />
           <Text style={styles.controlText}>Recenter GPS</Text>
         </TouchableOpacity>
 
-        <View style={styles.zoomGroup}>
+        <View
+          style={[
+            styles.zoomGroup,
+            (activeTourTarget === 'map_zoom' || activeTourTarget === 'map_controls') &&
+              styles.tourTargetGlow,
+          ]}
+        >
           <TouchableOpacity
             style={styles.zoomBtn}
             onPress={() => {
@@ -469,10 +563,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   mapBoard: {
+    width: '100%',
     height: MAP_HEIGHT,
     backgroundColor: '#110D20',
     position: 'relative',
     overflow: 'hidden',
+  },
+  mapCanvas: {
+    width: MAP_WIDTH,
+    height: MAP_HEIGHT,
+    position: 'relative',
   },
   gridOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -669,5 +769,14 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: colors.accent.gold,
     lineHeight: 18,
+  },
+  tourTargetGlow: {
+    borderColor: colors.accent.gold,
+    borderWidth: 2,
+    shadowColor: colors.accent.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 12,
   },
 });
