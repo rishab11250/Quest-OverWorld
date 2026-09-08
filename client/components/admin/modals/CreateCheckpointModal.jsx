@@ -18,6 +18,7 @@ export default function CreateCheckpointModal({
   onOpenCreateQuest,
 }) {
   const [modalStep, setModalStep] = useState('map');
+  const [mapPanning, setMapPanning] = useState(false);
 
   const selectedLoc =
     form.latitude && form.longitude
@@ -47,6 +48,7 @@ export default function CreateCheckpointModal({
       <View style={styles.modalOverlay}>
         <View style={[styles.modalCard, { maxHeight: '92%' }]}>
           <ScrollView
+            scrollEnabled={!mapPanning}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ gap: spacing.sm }}
           >
@@ -121,6 +123,8 @@ export default function CreateCheckpointModal({
                   radius={Number(form.radius) || 50}
                   onRadiusChange={handleRadiusChange}
                   readOnly={false}
+                  onPanStart={() => setMapPanning(true)}
+                  onPanEnd={() => setMapPanning(false)}
                 />
 
                 <TouchableOpacity

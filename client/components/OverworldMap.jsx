@@ -32,6 +32,8 @@ export default function OverworldMap({
   isCompleted = false,
   onSelectPin,
   onRecenter,
+  onPanStart,
+  onPanEnd,
 }) {
   const { activeTourTarget } = useTour() || {};
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -42,16 +44,26 @@ export default function OverworldMap({
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const currentPan = useRef({ x: 0, y: 0 });
 
+  useEffect(() => {
+    const id = pan.addListener((val) => {
+      currentPan.current = val;
+    });
+    return () => {
+      pan.removeListener(id);
+    };
+  }, [pan]);
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onStartShouldSetPanResponderCapture: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) =>
-        Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3,
+        Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2,
       onMoveShouldSetPanResponderCapture: (_, gestureState) =>
-        Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3,
+        Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2,
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
+        if (onPanStart) onPanStart();
         pan.setOffset({
           x: currentPan.current.x,
           y: currentPan.current.y,
@@ -61,13 +73,13 @@ export default function OverworldMap({
       onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
         useNativeDriver: false,
       }),
-      onPanResponderRelease: (_, gestureState) => {
-        currentPan.current.x += gestureState.dx;
-        currentPan.current.y += gestureState.dy;
+      onPanResponderRelease: () => {
         pan.flattenOffset();
+        if (onPanEnd) onPanEnd();
       },
       onPanResponderTerminate: () => {
         pan.flattenOffset();
+        if (onPanEnd) onPanEnd();
       },
     })
   ).current;
@@ -156,7 +168,7 @@ export default function OverworldMap({
     const allLats = validPoints.map((p) => p.latitude);
     const allLngs = validPoints.map((p) => p.longitude);
 
-    if (userLocation?.latitude) {
+    if (userLocation?.latitude && userLocation?.longitude) {
       allLats.push(userLocation.latitude);
       allLngs.push(userLocation.longitude);
     }
@@ -166,11 +178,23 @@ export default function OverworldMap({
     const minLng = Math.min(...allLngs);
     const maxLng = Math.max(...allLngs);
 
-    const latSpan = Math.max(maxLat - minLat, 0.001);
-    const lngSpan = Math.max(maxLng - minLng, 0.001);
+    const rawLatSpan = maxLat - minLat;
+    const rawLngSpan = maxLng - minLng;
 
-    const PADDING_X = 50;
-    const PADDING_Y = 50;
+    // Add 35% breathing room buffer so nodes never hit the viewport edges
+    const latBuffer = Math.max(rawLatSpan * 0.35, 0.0008);
+    const lngBuffer = Math.max(rawLngSpan * 0.35, 0.0008);
+
+    const effectiveMinLat = minLat - latBuffer;
+    const effectiveMaxLat = maxLat + latBuffer;
+    const effectiveMinLng = minLng - lngBuffer;
+    const effectiveMaxLng = maxLng + lngBuffer;
+
+    const latSpan = Math.max(effectiveMaxLat - effectiveMinLat, 0.001);
+    const lngSpan = Math.max(effectiveMaxLng - effectiveMinLng, 0.001);
+
+    const PADDING_X = 40;
+    const PADDING_Y = 45;
     const USABLE_W = MAP_WIDTH - PADDING_X * 2;
     const USABLE_H = MAP_HEIGHT - PADDING_Y * 2;
 
@@ -179,8 +203,8 @@ export default function OverworldMap({
       let y = MAP_CENTER_Y;
 
       if (cp.latitude && cp.longitude) {
-        x = PADDING_X + ((cp.longitude - minLng) / lngSpan) * USABLE_W;
-        y = MAP_HEIGHT - PADDING_Y - ((cp.latitude - minLat) / latSpan) * USABLE_H;
+        x = PADDING_X + ((cp.longitude - effectiveMinLng) / lngSpan) * USABLE_W;
+        y = MAP_HEIGHT - PADDING_Y - ((cp.latitude - effectiveMinLat) / latSpan) * USABLE_H;
       } else {
         // Fallback evenly distributed if coordinates are pending
         x = PADDING_X + (idx / Math.max(checkpoints.length - 1, 1)) * USABLE_W;
@@ -198,12 +222,12 @@ export default function OverworldMap({
       });
     });
 
-    if (userLocation?.latitude) {
+    if (userLocation?.latitude && userLocation?.longitude) {
       playerCanvasX = Math.round(
-        PADDING_X + ((userLocation.longitude - minLng) / lngSpan) * USABLE_W
+        PADDING_X + ((userLocation.longitude - effectiveMinLng) / lngSpan) * USABLE_W
       );
       playerCanvasY = Math.round(
-        MAP_HEIGHT - PADDING_Y - ((userLocation.latitude - minLat) / latSpan) * USABLE_H
+        MAP_HEIGHT - PADDING_Y - ((userLocation.latitude - effectiveMinLat) / latSpan) * USABLE_H
       );
     }
   }
@@ -276,7 +300,12 @@ export default function OverworldMap({
       </View>
 
       {/* Map Board Viewport */}
-      <View style={styles.mapBoard} {...panResponder.panHandlers}>
+      <View
+        style={styles.mapBoard}
+        onTouchStart={onPanStart}
+        onTouchEnd={onPanEnd}
+        {...panResponder.panHandlers}
+      >
         <Animated.View
           style={[
             styles.mapCanvas,
@@ -358,16 +387,16 @@ export default function OverworldMap({
           {/* Real User GPS Position Marker */}
           <View
             style={[
-              styles.playerMarker,
+              styles.playerNode,
               {
-                left: playerCanvasX - 16,
-                top: playerCanvasY - 16,
+                left: playerCanvasX,
+                top: playerCanvasY,
               },
             ]}
           >
             <Animated.View
               style={[
-                styles.sonarRing,
+                styles.sonarWave,
                 {
                   transform: [
                     {
@@ -673,6 +702,7 @@ const styles = StyleSheet.create({
   playerNode: {
     position: 'absolute',
     alignItems: 'center',
+    width: 40,
     marginLeft: -20,
     marginTop: -20,
     zIndex: 10,
@@ -680,7 +710,7 @@ const styles = StyleSheet.create({
   playerRadar: {
     position: 'absolute',
     top: -5,
-    left: -5,
+    left: -3,
     width: 46,
     height: 46,
     borderRadius: 23,
@@ -691,7 +721,7 @@ const styles = StyleSheet.create({
   sonarWave: {
     position: 'absolute',
     top: -15,
-    left: -15,
+    left: -13,
     width: 66,
     height: 66,
     borderRadius: 33,
@@ -713,11 +743,12 @@ const styles = StyleSheet.create({
   },
   playerLabelPill: {
     backgroundColor: colors.accent.gold,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
     borderRadius: 3,
     marginTop: 3,
     zIndex: 11,
+    alignSelf: 'center',
   },
   playerLabelText: {
     fontSize: 8,

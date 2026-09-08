@@ -32,6 +32,7 @@ export default function MapScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [selectedPin, setSelectedPin] = useState(null);
+  const [mapPanning, setMapPanning] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -122,6 +123,7 @@ export default function MapScreen() {
   return (
     <ScrollView
       ref={scrollRef}
+      scrollEnabled={!mapPanning}
       style={styles.container}
       contentContainerStyle={[
         styles.content,
@@ -162,6 +164,8 @@ export default function MapScreen() {
           isCompleted={Boolean(quest?.isCompleted)}
           onSelectPin={setSelectedPin}
           onRecenter={handleRecenter}
+          onPanStart={() => setMapPanning(true)}
+          onPanEnd={() => setMapPanning(false)}
         />
       </View>
 

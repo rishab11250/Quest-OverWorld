@@ -15,6 +15,8 @@ export default function AdminQuestsTab({
   onDeleteQuest,
   onDeleteCheckpoint,
   onViewQr,
+  onPanStart,
+  onPanEnd,
 }) {
   const [selectedMapPoint, setSelectedMapPoint] = useState(null);
 
@@ -41,6 +43,8 @@ export default function AdminQuestsTab({
           existingCheckpoints={checkpoints}
           existingQuests={quests}
           readOnly={true}
+          onPanStart={onPanStart}
+          onPanEnd={onPanEnd}
         />
       </PixelCard>
       {/* Quests Manager */}

@@ -34,6 +34,8 @@ export default function AdminLocationPickerMap({
   radius = 50,
   onRadiusChange,
   readOnly = false,
+  onPanStart,
+  onPanEnd,
 }) {
   const [zoom, setZoom] = useState(16);
   const [mapProvider, setMapProvider] = useState('street');
@@ -113,12 +115,15 @@ export default function AdminLocationPickerMap({
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onStartShouldSetPanResponderCapture: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponderCapture: () => true,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2,
+      onMoveShouldSetPanResponderCapture: (_, gestureState) =>
+        Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2,
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: (evt) => {
         setIsDragging(true);
+        if (onPanStart) onPanStart();
         panStartPosRef.current = {
           x: evt.nativeEvent.pageX,
           y: evt.nativeEvent.pageY,
@@ -138,9 +143,13 @@ export default function AdminLocationPickerMap({
           const newWorldY = worldY - dy;
           const newLatLon = worldPixelsToLatLon(newWorldX, newWorldY, zoomRef.current);
           setCenter(newLatLon);
+          if (!readOnly && onLocationChange) {
+            onLocationChange(newLatLon);
+          }
         }
       },
       onPanResponderRelease: (evt, gestureState) => {
+        if (onPanEnd) onPanEnd();
         // Tap to place checkpoint directly at finger tap coordinates
         if (Math.abs(gestureState.dx) < 6 && Math.abs(gestureState.dy) < 6) {
           const tapX = evt.nativeEvent.locationX;
@@ -169,6 +178,7 @@ export default function AdminLocationPickerMap({
         setIsDragging(false);
       },
       onPanResponderTerminate: () => {
+        if (onPanEnd) onPanEnd();
         panStartPosRef.current = null;
         setIsDragging(false);
       },
@@ -285,6 +295,8 @@ export default function AdminLocationPickerMap({
       {/* Slippy Map Viewport */}
       <View
         style={[styles.mapViewport, { width: mapWidth, height: mapHeight }]}
+        onTouchStart={onPanStart}
+        onTouchEnd={onPanEnd}
         {...panResponder.panHandlers}
       >
         {tiles.map((tile) => (
@@ -341,6 +353,7 @@ export default function AdminLocationPickerMap({
         {/* Geofence Detection Halo */}
         {!readOnly && (
           <View
+            pointerEvents="none"
             style={[
               styles.radiusHalo,
               {
@@ -355,7 +368,10 @@ export default function AdminLocationPickerMap({
         )}
 
         {/* Center Reticle */}
-        <View style={[styles.targetLockContainer, isDragging && styles.targetLockDragging]}>
+        <View
+          pointerEvents="none"
+          style={[styles.targetLockContainer, isDragging && styles.targetLockDragging]}
+        >
           {!readOnly && (
             <View style={styles.targetBadge}>
               <MaterialCommunityIcons name="target" size={12} color={colors.accent.gold} />
