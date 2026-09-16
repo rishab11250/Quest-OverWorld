@@ -24,6 +24,8 @@ import { getSetting } from '../../lib/secureStore';
 import { enqueueScan } from '../../lib/offlineQueue';
 import { triggerHaptic } from '../../lib/haptics';
 import RewardModal from '../../components/RewardModal';
+import PixelButton from '../../components/PixelButton';
+import { useFloatingXp } from '../../context/FloatingXpContext';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
@@ -33,6 +35,7 @@ const SCAN_BOX_SIZE = Math.min(SCREEN_WIDTH * 0.75, 280);
 
 export default function ScannerScreen() {
   const router = useRouter();
+  const { showFloatingXp } = useFloatingXp();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -106,6 +109,12 @@ export default function ScannerScreen() {
         // 3. Trigger Reward Celebration!
         setRewardData(res);
         setRewardVisible(true);
+        showFloatingXp({
+          amount: res?.pointsAwarded || res?.points || 100,
+          label: 'WAYPOINT CLEARED!',
+          icon: 'sword-cross',
+          variant: 'gold',
+        });
       } catch (reqErr) {
         if (!reqErr.status) {
           // Network failure - queue scan offline!
@@ -362,30 +371,24 @@ export default function ScannerScreen() {
             />
 
             <View style={styles.manualActions}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
+              <PixelButton
+                variant="dusk"
+                title="CANCEL"
                 onPress={() => {
                   setError('');
                   setManualMode(false);
                 }}
-                activeOpacity={0.8}
                 disabled={verifying}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
+                style={{ flex: 1 }}
+              />
 
-              <TouchableOpacity
-                style={styles.modalVerifyBtn}
+              <PixelButton
+                variant="gold"
+                title={verifying ? 'VERIFYING...' : 'VERIFY CODE'}
                 onPress={handleManualSubmit}
                 disabled={verifying}
-                activeOpacity={0.8}
-              >
-                {verifying ? (
-                  <ActivityIndicator size="small" color={colors.bg.dusk} />
-                ) : (
-                  <Text style={styles.modalVerifyText}>Verify Code</Text>
-                )}
-              </TouchableOpacity>
+                style={{ flex: 1 }}
+              />
             </View>
           </View>
         </KeyboardAvoidingView>

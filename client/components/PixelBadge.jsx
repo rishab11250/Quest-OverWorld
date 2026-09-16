@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 import { fonts } from '../theme/typography';
+import { useTheme } from '../context/ThemeContext';
 
 export default function PixelBadge({
   label,
@@ -9,6 +10,7 @@ export default function PixelBadge({
   variant = 'gold', // 'gold' | 'green' | 'coral' | 'neutral' | 'dusk'
   size = 'md', // 'sm' | 'md'
 }) {
+  const { theme: appTheme, isLight } = useTheme();
   const isGold = variant === 'gold';
   const isGreen = variant === 'green';
   const isCoral = variant === 'coral';
@@ -17,28 +19,57 @@ export default function PixelBadge({
   const badgeStyles = [
     styles.badge,
     size === 'sm' && styles.badgeSm,
-    isGold && styles.badgeGold,
-    isGreen && styles.badgeGreen,
-    isCoral && styles.badgeCoral,
-    isDusk && styles.badgeDusk,
+    {
+      backgroundColor: isGold
+        ? isLight
+          ? '#F5E6CC'
+          : 'rgba(242, 200, 75, 0.15)'
+        : isGreen
+          ? isLight
+            ? '#E0F2E9'
+            : 'rgba(95, 191, 122, 0.15)'
+          : isCoral
+            ? 'rgba(232, 102, 75, 0.15)'
+            : isDusk
+              ? appTheme?.accent?.gold || colors.accent.gold
+              : appTheme?.bg?.surface || '#262040',
+      borderColor: isGold
+        ? appTheme?.accent?.gold || colors.accent.gold
+        : isGreen
+          ? appTheme?.accent?.green || colors.accent.green
+          : isCoral
+            ? appTheme?.accent?.coral || colors.accent.coral
+            : isDusk
+              ? appTheme?.accent?.gold || colors.accent.gold
+              : appTheme?.border?.subtle || '#3D3560',
+    },
   ];
 
   const textStyles = [
     styles.text,
     size === 'sm' && styles.textSm,
-    isGold && styles.textGold,
-    isGreen && styles.textGreen,
-    isCoral && styles.textCoral,
-    isDusk && styles.textDusk,
+    {
+      color: isGold
+        ? appTheme?.accent?.gold || colors.accent.gold
+        : isGreen
+          ? appTheme?.accent?.green || colors.accent.green
+          : isCoral
+            ? appTheme?.accent?.coral || colors.accent.coral
+            : isDusk
+              ? isLight
+                ? '#1E1A33'
+                : appTheme?.bg?.dusk || colors.bg.dusk
+              : appTheme?.text?.primary || colors.text.onDark.primary,
+    },
   ];
 
   const iconColor = isGold
-    ? colors.accent.gold
+    ? appTheme?.accent?.gold || colors.accent.gold
     : isGreen
-      ? colors.accent.green
+      ? appTheme?.accent?.green || colors.accent.green
       : isCoral
-        ? colors.accent.coral
-        : colors.text.onDark.secondary;
+        ? appTheme?.accent?.coral || colors.accent.coral
+        : appTheme?.text?.secondary || colors.text.onDark.secondary;
 
   return (
     <View style={badgeStyles}>

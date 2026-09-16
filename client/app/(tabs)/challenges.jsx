@@ -12,12 +12,14 @@ import StatusBanner from '../../components/StatusBanner';
 import ChallengeCard from '../../components/challenge/ChallengeCard';
 import { triggerHaptic } from '../../lib/haptics';
 import { useTour } from '../../context/TourContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const CATEGORIES = ['ALL', 'PHOTO', 'RIDDLE', 'TRIVIA', 'CREATIVE'];
 
 export default function ChallengesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { theme, isLight } = useTheme();
   const { isTourActive, activeTourTarget } = useTour() || {};
   const [challenges, setChallenges] = useState([]);
   const [team, setTeam] = useState(null);
@@ -75,7 +77,7 @@ export default function ChallengesScreen() {
   return (
     <ScrollView
       ref={scrollRef}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg.dusk }]}
       contentContainerStyle={[
         styles.content,
         {
@@ -87,31 +89,33 @@ export default function ChallengesScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={colors.accent.gold}
+          tintColor={theme.accent.gold}
         />
       }
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.pixelTitle}>BOUNTY BOARD</Text>
-        <Text style={styles.subtitle}>SPECIAL CAMPUS CHALLENGES</Text>
+        <Text style={[styles.pixelTitle, { color: theme.accent.gold }]}>BOUNTY BOARD</Text>
+        <Text style={[styles.subtitle, { color: theme.text.secondary }]}>SPECIAL CAMPUS CHALLENGES</Text>
       </View>
 
       <StatusBanner type="error" message={error} />
 
       {/* No Team State */}
       {!team ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Party Required for Bounties</Text>
-          <Text style={styles.emptySub}>
+        <View style={[styles.emptyCard, { backgroundColor: theme.bg.card, borderColor: theme.border.subtle }]}>
+          <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>Party Required for Bounties</Text>
+          <Text style={[styles.emptySub, { color: theme.text.secondary }]}>
             Join or form an adventuring party to unlock side quests and submit photo bounties.
           </Text>
           <TouchableOpacity
-            style={styles.primaryButton}
+            style={[styles.primaryButton, { backgroundColor: theme.accent.gold }]}
             onPress={() => router.push('/(tabs)/team')}
             activeOpacity={0.8}
           >
-            <Text style={styles.primaryButtonText}>Head to Party HQ</Text>
+            <Text style={[styles.primaryButtonText, { color: isLight ? '#1E1A33' : theme.bg.dusk }]}>
+              Head to Party HQ
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -123,26 +127,41 @@ export default function ChallengesScreen() {
             contentContainerStyle={styles.categoryScroll}
             style={[activeTourTarget === 'bounty_tabs' && styles.tourTargetGlow]}
           >
-            {CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.categoryPill, selectedCategory === cat && styles.categoryPillActive]}
-                onPress={() => {
-                  triggerHaptic('light');
-                  setSelectedCategory(cat);
-                }}
-                activeOpacity={0.8}
-              >
-                <Text
+            {CATEGORIES.map((cat) => {
+              const isSelected = selectedCategory === cat;
+              return (
+                <TouchableOpacity
+                  key={cat}
                   style={[
-                    styles.categoryPillText,
-                    selectedCategory === cat && styles.categoryPillTextActive,
+                    styles.categoryPill,
+                    {
+                      backgroundColor: isSelected ? theme.accent.gold : theme.bg.surface,
+                      borderColor: isSelected ? theme.accent.gold : theme.border.subtle,
+                    },
                   ]}
+                  onPress={() => {
+                    triggerHaptic('light');
+                    setSelectedCategory(cat);
+                  }}
+                  activeOpacity={0.8}
                 >
-                  {cat}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.categoryPillText,
+                      {
+                        color: isSelected
+                          ? isLight
+                            ? '#1E1A33'
+                            : theme.bg.dusk
+                          : theme.text.secondary,
+                      },
+                    ]}
+                  >
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
 
           {/* Challenges List */}
@@ -153,9 +172,9 @@ export default function ChallengesScreen() {
             ]}
           >
             {filteredChallenges.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>No Bounties in Category</Text>
-                <Text style={styles.emptySub}>
+              <View style={[styles.emptyCard, { backgroundColor: theme.bg.card, borderColor: theme.border.subtle }]}>
+                <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>No Bounties in Category</Text>
+                <Text style={[styles.emptySub, { color: theme.text.secondary }]}>
                   Switch category filters or check back later for new guild challenges.
                 </Text>
               </View>

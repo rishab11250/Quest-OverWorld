@@ -3,8 +3,11 @@ import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
 import PixelBadge from '../PixelBadge';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function LeaderboardRow({ item, rank, isMyTeam }) {
+  const { theme, isLight } = useTheme();
+
   const renderMedal = (r) => {
     if (r === 1) {
       return (
@@ -28,29 +31,41 @@ export default function LeaderboardRow({ item, rank, isMyTeam }) {
       );
     }
     return (
-      <View style={styles.rankNumCircle}>
-        <Text style={styles.rankNumText}>#{r}</Text>
+      <View style={[styles.rankNumCircle, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}>
+        <Text style={[styles.rankNumText, { color: theme.text.secondary }]}>#{r}</Text>
       </View>
     );
   };
 
   return (
-    <View style={[styles.row, isMyTeam && styles.myTeamRow]}>
+    <View
+      style={[
+        styles.row,
+        {
+          backgroundColor: isMyTeam
+            ? isLight
+              ? '#FFF8E7'
+              : '#272044'
+            : theme.bg.card,
+          borderColor: isMyTeam ? theme.accent.gold : theme.border.subtle,
+        },
+      ]}
+    >
       {renderMedal(rank)}
 
       <View style={styles.partyDetails}>
         <View style={styles.partyNameRow}>
-          <Text style={styles.partyName}>{item.name}</Text>
-          {isMyTeam ? <PixelBadge label="YOU" variant="dusk" size="sm" /> : null}
+          <Text style={[styles.partyName, { color: theme.text.primary }]}>{item.name}</Text>
+          {isMyTeam ? <PixelBadge label="YOU" variant="gold" size="sm" /> : null}
         </View>
-        <Text style={styles.statsSubtitle}>
+        <Text style={[styles.statsSubtitle, { color: theme.text.secondary }]}>
           📍 {item.checkpointsCount || 0} Stations • ⚡ {item.challengesCount || 0} Bounties
         </Text>
       </View>
 
       <View style={styles.scoreBox}>
-        <Text style={styles.scoreText}>+{item.score || 0}</Text>
-        <Text style={styles.scoreLabel}>PTS</Text>
+        <Text style={[styles.scoreText, { color: theme.accent.gold }]}>+{item.score || 0}</Text>
+        <Text style={[styles.scoreLabel, { color: theme.accent.goldDim || theme.text.secondary }]}>PTS</Text>
       </View>
     </View>
   );

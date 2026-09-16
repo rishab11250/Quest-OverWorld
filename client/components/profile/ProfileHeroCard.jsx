@@ -5,47 +5,49 @@ import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
 import { AVATAR_ICONS } from './EditHeroModal';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function ProfileHeroCard({ user, team, onOpenEdit }) {
   const router = useRouter();
+  const { theme, isLight } = useTheme();
   const initial = (user?.name || user?.username || 'A').charAt(0).toUpperCase();
   const isValidAvatar = user?.avatar && AVATAR_ICONS.includes(user.avatar);
 
   return (
     <View style={styles.container}>
       {/* Hero Avatar & Identity Card */}
-      <View style={styles.heroCard}>
-        <View style={styles.avatarGlow}>
+      <View style={[styles.heroCard, { backgroundColor: theme.bg.card, borderColor: theme.border.subtle }]}>
+        <View style={[styles.avatarGlow, { backgroundColor: theme.bg.surface, borderColor: theme.accent.gold }]}>
           {isValidAvatar ? (
-            <MaterialCommunityIcons name={user.avatar} size={28} color={colors.accent.gold} />
+            <MaterialCommunityIcons name={user.avatar} size={28} color={theme.accent.gold} />
           ) : (
-            <Text style={styles.avatarText}>{initial}</Text>
+            <Text style={[styles.avatarText, { color: theme.accent.gold }]}>{initial}</Text>
           )}
         </View>
 
         <View style={styles.heroInfo}>
           <View style={styles.heroNameRow}>
-            <Text style={styles.heroName}>{user?.name || 'Adventurer'}</Text>
+            <Text style={[styles.heroName, { color: theme.text.primary }]}>{user?.name || 'Adventurer'}</Text>
             <TouchableOpacity
-              style={styles.editHeroBtn}
+              style={[styles.editHeroBtn, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}
               onPress={onOpenEdit}
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <MaterialCommunityIcons name="pencil-outline" size={16} color={colors.accent.gold} />
+              <MaterialCommunityIcons name="pencil-outline" size={16} color={theme.accent.gold} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.heroEmail}>{user?.email || 'hero@overworld.realm'}</Text>
+          <Text style={[styles.heroEmail, { color: theme.text.secondary }]}>{user?.email || 'hero@overworld.realm'}</Text>
 
           {team ? (
-            <View style={styles.partyBadge}>
-              <Text style={styles.partyBadgeText}>
+            <View style={[styles.partyBadge, { backgroundColor: isLight ? '#FFF4D6' : 'rgba(242, 200, 75, 0.15)', borderColor: theme.accent.gold }]}>
+              <Text style={[styles.partyBadgeText, { color: theme.accent.gold }]}>
                 {team.name.toUpperCase()} • LVL {Math.floor((team.score || 0) / 250) + 1}
               </Text>
             </View>
           ) : (
-            <View style={[styles.partyBadge, styles.soloBadge]}>
-              <Text style={[styles.partyBadgeText, styles.soloBadgeText]}>LONE ADVENTURER</Text>
+            <View style={[styles.partyBadge, styles.soloBadge, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}>
+              <Text style={[styles.partyBadgeText, styles.soloBadgeText, { color: theme.text.secondary }]}>LONE ADVENTURER</Text>
             </View>
           )}
         </View>
@@ -54,18 +56,18 @@ export default function ProfileHeroCard({ user, team, onOpenEdit }) {
       {/* Admin Panel Quick Entry if authorized */}
       {user?.isAdmin || user?.role === 'admin' ? (
         <TouchableOpacity
-          style={styles.adminEntryCard}
+          style={[styles.adminEntryCard, { backgroundColor: isLight ? '#FFF8E7' : '#281E10', borderColor: theme.accent.gold }]}
           onPress={() => router.push('/admin/dashboard')}
           activeOpacity={0.8}
         >
           <View style={styles.adminEntryLeft}>
-            <MaterialCommunityIcons name="shield-crown" size={24} color={colors.accent.gold} />
+            <MaterialCommunityIcons name="shield-crown" size={24} color={theme.accent.gold} />
             <View>
-              <Text style={styles.adminEntryTitle}>Guild Master Console</Text>
-              <Text style={styles.adminEntrySub}>Manage Quests, Checkpoints & Bounties</Text>
+              <Text style={[styles.adminEntryTitle, { color: theme.accent.gold }]}>Guild Master Console</Text>
+              <Text style={[styles.adminEntrySub, { color: theme.text.secondary }]}>Manage Quests, Checkpoints & Bounties</Text>
             </View>
           </View>
-          <Text style={styles.adminEntryArrow}>›</Text>
+          <Text style={[styles.adminEntryArrow, { color: theme.accent.gold }]}>›</Text>
         </TouchableOpacity>
       ) : null}
     </View>

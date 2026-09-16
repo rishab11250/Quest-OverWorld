@@ -5,6 +5,8 @@ import colors from '../theme/colors';
 import typography from '../theme/typography';
 import spacing from '../theme/spacing';
 import { triggerHaptic } from '../lib/haptics';
+import PixelConfetti from './PixelConfetti';
+import PixelButton from './PixelButton';
 
 export default function RewardModal({
   visible,
@@ -138,14 +140,19 @@ export default function RewardModal({
             </View>
           ) : null}
 
-          {/* Dismiss Button */}
-          <TouchableOpacity style={styles.continueButton} onPress={onDismiss} activeOpacity={0.8}>
-            <Text style={styles.continueButtonText}>
-              {isQuestCompleted ? 'VIEW RANKINGS' : 'CONTINUE QUEST'}
-            </Text>
-          </TouchableOpacity>
+          {/* 3D Tactile Pixel Button */}
+          <PixelButton
+            variant="gold"
+            icon={isQuestCompleted ? 'crown' : 'arrow-right-bold'}
+            title={isQuestCompleted ? 'VIEW RANKINGS' : 'CONTINUE QUEST'}
+            onPress={onDismiss}
+            style={{ width: '100%', marginTop: spacing.xs }}
+          />
         </Animated.View>
       </TouchableOpacity>
+
+      {/* 8-Bit Celebratory Particle Burst */}
+      <PixelConfetti active={visible} />
     </Modal>
   );
 }

@@ -18,6 +18,7 @@ import { setToken, setUserData } from '../../lib/secureStore';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+import PixelButton from '../../components/PixelButton';
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -125,18 +126,14 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+          <PixelButton
+            variant="gold"
+            icon="sword-cross"
+            title={loading ? 'ENTERING OVERWORLD...' : 'LOG IN'}
             onPress={handleLogin}
             disabled={loading}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.bg.dusk} />
-            ) : (
-              <Text style={styles.buttonText}>Log In</Text>
-            )}
-          </TouchableOpacity>
+            style={{ marginTop: spacing.sm }}
+          />
         </View>
 
         <View style={styles.footer}>

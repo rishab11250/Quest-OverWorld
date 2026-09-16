@@ -180,3 +180,23 @@ export const getBearingAndDirection = (lat1, lon1, lat2, lon2) => {
     label: fullNames[index],
   };
 };
+
+// Subscribe to live hardware compass heading (0-360°) as user turns phone
+export const startHeadingWatcher = async (onHeadingUpdate) => {
+  try {
+    const perm = await requestLocationPermission();
+    if (!perm.granted) return null;
+
+    const subscription = await Location.watchHeadingAsync((headingData) => {
+      const heading =
+        headingData.trueHeading >= 0 ? headingData.trueHeading : headingData.magHeading;
+      if (heading != null && !isNaN(heading)) {
+        onHeadingUpdate(Math.round(heading));
+      }
+    });
+
+    return subscription;
+  } catch (err) {
+    return null;
+  }
+};

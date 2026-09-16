@@ -3,14 +3,17 @@ import { useEffect, useRef } from 'react';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 import spacing from '../theme/spacing';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ProgressBar({
   current = 0,
   max = 250,
   label = 'XP PROGRESS',
-  color = colors.accent.gold,
+  color = null,
   height = 12,
 }) {
+  const { theme: appTheme, isLight } = useTheme();
+  const barColor = color || appTheme?.accent?.gold || colors.accent.gold;
   const percent = Math.min(Math.max((current % max) / max, 0), 1);
   const fillAnim = useRef(new Animated.Value(0)).current;
   const shimmerAnim = useRef(new Animated.Value(0)).current;
@@ -51,19 +54,40 @@ export default function ProgressBar({
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.label}>{label}</Text>
-        <Text style={styles.counter}>
+        <Text
+          style={[
+            styles.label,
+            { color: appTheme?.text?.secondary || colors.text.onDark.secondary },
+          ]}
+        >
+          {label}
+        </Text>
+        <Text
+          style={[
+            styles.counter,
+            { color: appTheme?.text?.secondary || colors.text.onDark.secondary },
+          ]}
+        >
           {current % max} / {max} XP
         </Text>
       </View>
 
-      <View style={[styles.track, { height }]}>
+      <View
+        style={[
+          styles.track,
+          {
+            height,
+            backgroundColor: isLight ? '#E5DCBD' : appTheme?.bg?.surface || '#131022',
+            borderColor: appTheme?.border?.subtle || '#352C54',
+          },
+        ]}
+      >
         <Animated.View
           style={[
             styles.fill,
             {
               width: widthInterpolated,
-              backgroundColor: color,
+              backgroundColor: barColor,
             },
           ]}
         >

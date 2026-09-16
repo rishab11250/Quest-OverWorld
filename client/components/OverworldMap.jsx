@@ -13,7 +13,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 import spacing from '../theme/spacing';
-import { formatDistance, getDistanceInMeters, getBearingAndDirection } from '../lib/location';
+import {
+  formatDistance,
+  getDistanceInMeters,
+  getBearingAndDirection,
+  startHeadingWatcher,
+} from '../lib/location';
 import { triggerHaptic } from '../lib/haptics';
 import { getTimeOfDayAtmosphere } from '../theme/atmosphere';
 import { useTour } from '../context/TourContext';
@@ -43,6 +48,20 @@ export default function OverworldMap({
 
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const currentPan = useRef({ x: 0, y: 0 });
+  const [deviceHeading, setDeviceHeading] = useState(0);
+
+  useEffect(() => {
+    let sub = null;
+    startHeadingWatcher((heading) => {
+      setDeviceHeading(heading);
+    }).then((s) => {
+      sub = s;
+    });
+
+    return () => {
+      if (sub?.remove) sub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const id = pan.addListener((val) => {
@@ -247,16 +266,41 @@ export default function OverworldMap({
       <View style={styles.hudHeader}>
         <View style={styles.hudLeft}>
           <View style={styles.compassDial}>
+            {/* Live True North marker */}
+            <View
+              style={[
+                StyleSheet.absoluteFillObject,
+                {
+                  transform: [{ rotate: `${(360 - deviceHeading) % 360}deg` }],
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                },
+              ]}
+              pointerEvents="none"
+            >
+              <Text style={styles.compassDialN}>N</Text>
+            </View>
+
+            {/* Target Station Vector Needle */}
             <View
               style={[
                 styles.compassNeedle,
-                { transform: [{ rotate: `${compassInfo?.bearing || 0}deg` }] },
+                {
+                  transform: [
+                    {
+                      rotate: `${
+                        compassInfo?.bearing != null
+                          ? (compassInfo.bearing - deviceHeading + 360) % 360
+                          : (360 - deviceHeading) % 360
+                      }deg`,
+                    },
+                  ],
+                },
               ]}
             >
               <View style={styles.compassNeedleNorth} />
               <View style={styles.compassNeedleSouth} />
             </View>
-            <Text style={styles.compassDialN}>N</Text>
           </View>
 
           <View style={styles.hudTextContainer}>

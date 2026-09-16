@@ -1,15 +1,9 @@
 import React from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  TouchableWithoutFeedback,
-} from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 import spacing from '../theme/spacing';
+import PixelButton from './PixelButton';
 
 export default function ConfirmModal({
   visible,
@@ -33,31 +27,19 @@ export default function ConfirmModal({
               {message ? <Text style={styles.message}>{message}</Text> : null}
 
               <View style={styles.buttonRow}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
+                <PixelButton
+                  variant="dusk"
+                  title={cancelText.toUpperCase()}
                   onPress={onCancel}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.cancelButtonText}>{cancelText}</Text>
-                </TouchableOpacity>
+                  style={{ flex: 1 }}
+                />
 
-                <TouchableOpacity
-                  style={[
-                    styles.confirmButton,
-                    isDestructive ? styles.destructiveButton : styles.goldButton,
-                  ]}
+                <PixelButton
+                  variant={isDestructive ? 'coral' : 'gold'}
+                  title={confirmText.toUpperCase()}
                   onPress={onConfirm}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.confirmButtonText,
-                      isDestructive ? styles.destructiveButtonText : styles.goldButtonText,
-                    ]}
-                  >
-                    {confirmText}
-                  </Text>
-                </TouchableOpacity>
+                  style={{ flex: 1 }}
+                />
               </View>
             </View>
           </TouchableWithoutFeedback>

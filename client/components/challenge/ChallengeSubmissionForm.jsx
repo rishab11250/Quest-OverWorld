@@ -11,6 +11,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+import PixelButton from '../PixelButton';
 
 export default function ChallengeSubmissionForm({
   challenge,
@@ -180,26 +181,21 @@ export default function ChallengeSubmissionForm({
 
       {/* Submit Action */}
       {!isLocked ? (
-        <TouchableOpacity
-          style={[styles.submitBtn, (submitting || inCooldown) && styles.submitBtnDisabled]}
+        <PixelButton
+          variant={inCooldown ? 'dusk' : 'gold'}
+          icon={isAutoTrivia ? 'check-decagram' : 'send'}
+          title={
+            inCooldown
+              ? `LOCKED (${formatTimer(cooldownSeconds)})`
+              : submitting
+                ? 'VERIFYING...'
+                : isAutoTrivia
+                  ? 'VERIFY ANSWER'
+                  : 'SUBMIT FOR REVIEW'
+          }
           onPress={onSubmit}
           disabled={submitting || inCooldown}
-          activeOpacity={0.8}
-        >
-          {submitting ? (
-            <ActivityIndicator size="small" color={colors.bg.dusk} />
-          ) : (
-            <Text
-              style={[styles.submitBtnText, inCooldown && { color: colors.text.onDark.secondary }]}
-            >
-              {inCooldown
-                ? `Locked (${formatTimer(cooldownSeconds)})`
-                : isAutoTrivia
-                  ? 'Verify Answer'
-                  : 'Submit for Review'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        />
       ) : null}
     </View>
   );

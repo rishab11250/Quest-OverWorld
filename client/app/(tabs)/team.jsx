@@ -21,9 +21,11 @@ import TransferCaptainModal from '../../components/team/TransferCaptainModal';
 import PendingRequestsModal from '../../components/team/PendingRequestsModal';
 import PendingAdmissionCard from '../../components/team/PendingAdmissionCard';
 import { useTour } from '../../context/TourContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function TeamScreen() {
   const insets = useSafeAreaInsets();
+  const { theme, isLight } = useTheme();
   const { isTourActive, activeTourTarget } = useTour() || {};
   const scrollRef = useRef(null);
 
@@ -384,7 +386,7 @@ export default function TeamScreen() {
   return (
     <ScrollView
       ref={scrollRef}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg.dusk }]}
       contentContainerStyle={[
         styles.scrollContent,
         {
@@ -396,7 +398,7 @@ export default function TeamScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={colors.accent.gold}
+          tintColor={theme.accent.gold}
         />
       }
     >

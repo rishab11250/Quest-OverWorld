@@ -9,8 +9,9 @@ import {
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
-
+import PixelButton from '../PixelButton';
 import { triggerHaptic } from '../../lib/haptics';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function TeamAuthCard({
   activeTab,
@@ -23,33 +24,40 @@ export default function TeamAuthCard({
   onCreate,
   submitting,
 }) {
+  const { theme, isLight } = useTheme();
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Party Headquarters</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: theme.accent.gold }]}>Party Headquarters</Text>
+        <Text style={[styles.subtitle, { color: theme.text.secondary }]}>
           Form or join an adventuring party to take on campus quests together
         </Text>
       </View>
 
       {/* Tab Switcher */}
-      <View style={styles.tabBar}>
+      <View style={[styles.tabBar, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'join' && styles.tabButtonActive]}
+          style={[styles.tabButton, activeTab === 'join' && { backgroundColor: theme.accent.gold }]}
           onPress={() => {
             triggerHaptic('light');
             setActiveTab('join');
           }}
           activeOpacity={0.8}
         >
-          <Text style={[styles.tabButtonText, activeTab === 'join' && styles.tabButtonTextActive]}>
+          <Text
+            style={[
+              styles.tabButtonText,
+              { color: activeTab === 'join' ? (isLight ? '#1E1A33' : theme.bg.dusk) : theme.text.secondary },
+            ]}
+          >
             Join Party
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'create' && styles.tabButtonActive]}
+          style={[styles.tabButton, activeTab === 'create' && { backgroundColor: theme.accent.gold }]}
           onPress={() => {
             triggerHaptic('light');
             setActiveTab('create');
@@ -57,7 +65,10 @@ export default function TeamAuthCard({
           activeOpacity={0.8}
         >
           <Text
-            style={[styles.tabButtonText, activeTab === 'create' && styles.tabButtonTextActive]}
+            style={[
+              styles.tabButtonText,
+              { color: activeTab === 'create' ? (isLight ? '#1E1A33' : theme.bg.dusk) : theme.text.secondary },
+            ]}
           >
             Create Party
           </Text>
@@ -66,70 +77,68 @@ export default function TeamAuthCard({
 
       {/* Join Card */}
       {activeTab === 'join' ? (
-        <View style={styles.card}>
-          <Text style={styles.cardHeading}>Enter Party Code</Text>
-          <Text style={styles.cardSubtext}>
+        <View style={[styles.card, { backgroundColor: theme.bg.card, borderColor: theme.border.subtle }]}>
+          <Text style={[styles.cardHeading, { color: theme.text.primary }]}>Enter Party Code</Text>
+          <Text style={[styles.cardSubtext, { color: theme.text.secondary }]}>
             Ask your team captain for the 6-character party invite code.
           </Text>
 
           <TextInput
-            style={styles.codeInput}
+            style={[
+              styles.codeInput,
+              {
+                backgroundColor: theme.bg.surface,
+                borderColor: theme.accent.gold,
+                color: theme.accent.gold,
+              },
+            ]}
             placeholder="e.g. AB12CD"
-            placeholderTextColor="#7E75A0"
+            placeholderTextColor={theme.text.muted || '#7E75A0'}
             value={joinCode}
             onChangeText={(t) => setJoinCode(t.toUpperCase())}
             autoCapitalize="characters"
             maxLength={6}
           />
 
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            onPress={() => {
-              triggerHaptic('medium');
-              onJoin();
-            }}
+          <PixelButton
+            variant="gold"
+            icon="account-plus"
+            title={submitting ? 'JOINING...' : 'JOIN PARTY'}
+            onPress={onJoin}
             disabled={submitting}
-            activeOpacity={0.8}
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color={colors.bg.dusk} />
-            ) : (
-              <Text style={styles.primaryBtnText}>Join Party</Text>
-            )}
-          </TouchableOpacity>
+          />
         </View>
       ) : (
         /* Create Card */
-        <View style={styles.card}>
-          <Text style={styles.cardHeading}>Form a New Party</Text>
-          <Text style={styles.cardSubtext}>
+        <View style={[styles.card, { backgroundColor: theme.bg.card, borderColor: theme.border.subtle }]}>
+          <Text style={[styles.cardHeading, { color: theme.text.primary }]}>Form a New Party</Text>
+          <Text style={[styles.cardSubtext, { color: theme.text.secondary }]}>
             Choose a guild party name. You'll get an invite code for your friends.
           </Text>
 
           <TextInput
-            style={styles.textInput}
+            style={[
+              styles.textInput,
+              {
+                backgroundColor: theme.bg.surface,
+                borderColor: theme.border.subtle,
+                color: theme.text.primary,
+              },
+            ]}
             placeholder="e.g. Aegis Explorers"
-            placeholderTextColor="#7E75A0"
+            placeholderTextColor={theme.text.muted || '#7E75A0'}
             value={teamName}
             onChangeText={setTeamName}
             maxLength={30}
           />
 
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            onPress={() => {
-              triggerHaptic('medium');
-              onCreate();
-            }}
+          <PixelButton
+            variant="gold"
+            icon="shield-plus"
+            title={submitting ? 'CREATING...' : 'CREATE PARTY'}
+            onPress={onCreate}
             disabled={submitting}
-            activeOpacity={0.8}
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color={colors.bg.dusk} />
-            ) : (
-              <Text style={styles.primaryBtnText}>Create Party</Text>
-            )}
-          </TouchableOpacity>
+          />
         </View>
       )}
     </View>

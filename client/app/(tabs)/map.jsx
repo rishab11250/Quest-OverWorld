@@ -18,12 +18,15 @@ import spacing from '../../theme/spacing';
 import LoadingScreen from '../../components/LoadingScreen';
 import StatusBanner from '../../components/StatusBanner';
 import PixelCard from '../../components/PixelCard';
+import PixelButton from '../../components/PixelButton';
 import { triggerHaptic } from '../../lib/haptics';
 import { useTour } from '../../context/TourContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { theme, isLight } = useTheme();
   const { isTourActive, activeTourTarget } = useTour() || {};
   const [data, setData] = useState(null);
   const [location, setLocation] = useState(null);
@@ -124,7 +127,7 @@ export default function MapScreen() {
     <ScrollView
       ref={scrollRef}
       scrollEnabled={!mapPanning}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg.dusk }]}
       contentContainerStyle={[
         styles.content,
         {
@@ -136,14 +139,14 @@ export default function MapScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={colors.accent.gold}
+          tintColor={theme.accent.gold}
         />
       }
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.pixelTitle}>OVERWORLD ATLAS</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.pixelTitle, { color: theme.text.primary }]}>OVERWORLD ATLAS</Text>
+        <Text style={[styles.subtitle, { color: theme.accent.gold }]}>
           {quest
             ? quest.campus?.toUpperCase()
             : team
@@ -171,21 +174,23 @@ export default function MapScreen() {
 
       {/* Contextual Action & Clue Cards below Map */}
       {!team ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Party Required for Waypoints</Text>
-          <Text style={styles.emptySubtitle}>
+        <View style={[styles.emptyCard, { backgroundColor: theme.bg.card, borderColor: theme.border.subtle }]}>
+          <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>Party Required for Waypoints</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.text.secondary }]}>
             Join or form an adventuring party to view waypoint radar and unlock secret coordinates.
           </Text>
           <TouchableOpacity
-            style={styles.primaryButton}
+            style={[styles.primaryButton, { backgroundColor: theme.accent.gold }]}
             onPress={() => {
               triggerHaptic('medium');
               router.push('/(tabs)/team');
             }}
             activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="account-group" size={18} color={colors.bg.dusk} />
-            <Text style={styles.primaryButtonText}>Head to Party HQ</Text>
+            <MaterialCommunityIcons name="account-group" size={18} color={isLight ? '#1E1A33' : theme.bg.dusk} />
+            <Text style={[styles.primaryButtonText, { color: isLight ? '#1E1A33' : theme.bg.dusk }]}>
+              Head to Party HQ
+            </Text>
           </TouchableOpacity>
         </View>
       ) : !quest ? (
@@ -195,11 +200,13 @@ export default function MapScreen() {
               <View style={styles.liveGreenDot} />
               <Text style={styles.radarStatusText}>EXPLORATION RADAR ONLINE</Text>
             </View>
-            <Text style={styles.teamBadgeText}>PARTY {team.name.toUpperCase()}</Text>
+            <Text style={[styles.teamBadgeText, { color: theme.accent.gold }]}>
+              PARTY {team.name.toUpperCase()}
+            </Text>
           </View>
 
-          <Text style={styles.explorationTitle}>Perimeter Scanning Active</Text>
-          <Text style={styles.explorationSubtitle}>
+          <Text style={[styles.explorationTitle, { color: theme.text.primary }]}>Perimeter Scanning Active</Text>
+          <Text style={[styles.explorationSubtitle, { color: theme.text.secondary }]}>
             Your party is standing by on the grid. No main quest event is active in this sector.
             Hunt side bounties or explore the campus perimeter.
           </Text>
@@ -209,9 +216,9 @@ export default function MapScreen() {
               <MaterialCommunityIcons
                 name="map-marker-radius"
                 size={14}
-                color={colors.accent.gold}
+                color={theme.accent.gold}
               />
-              <Text style={styles.addressText} numberOfLines={1}>
+              <Text style={[styles.addressText, { color: theme.accent.gold }]} numberOfLines={1}>
                 {address}
               </Text>
             </View>
@@ -219,54 +226,64 @@ export default function MapScreen() {
 
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={styles.bountyButton}
+              style={[styles.bountyButton, { backgroundColor: theme.accent.gold }]}
               onPress={() => {
                 triggerHaptic('medium');
                 router.push('/(tabs)/challenges');
               }}
               activeOpacity={0.8}
             >
-              <MaterialCommunityIcons name="sword-cross" size={16} color={colors.bg.dusk} />
-              <Text style={styles.bountyButtonText}>Hunt Side Bounties</Text>
+              <MaterialCommunityIcons name="sword-cross" size={16} color={isLight ? '#1E1A33' : theme.bg.dusk} />
+              <Text style={[styles.bountyButtonText, { color: isLight ? '#1E1A33' : theme.bg.dusk }]}>
+                Hunt Side Bounties
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.secondaryButton}
+              style={[
+                styles.secondaryButton,
+                {
+                  backgroundColor: theme.bg.surface,
+                  borderColor: theme.border.subtle,
+                },
+              ]}
               onPress={() => {
                 triggerHaptic('light');
                 router.push('/(tabs)/team');
               }}
               activeOpacity={0.8}
             >
-              <MaterialCommunityIcons name="shield-account" size={16} color={colors.accent.gold} />
-              <Text style={styles.secondaryButtonText}>Party HQ</Text>
+              <MaterialCommunityIcons name="shield-account" size={16} color={theme.accent.gold} />
+              <Text style={[styles.secondaryButtonText, { color: theme.accent.gold }]}>Party HQ</Text>
             </TouchableOpacity>
           </View>
         </PixelCard>
       ) : quest?.isCompleted ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>All Stations Unlocked!</Text>
-          <Text style={styles.emptySubtitle}>
+        <View style={[styles.emptyCard, { backgroundColor: theme.bg.card, borderColor: theme.border.subtle }]}>
+          <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>All Stations Unlocked!</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.text.secondary }]}>
             You have reached every mapped waypoint in this territory.
           </Text>
         </View>
       ) : (
         <PixelCard variant="gold" glow style={styles.clueCard}>
           <View style={styles.clueHeaderRow}>
-            <View style={styles.orderBadge}>
-              <Text style={styles.orderBadgeText}>
+            <View style={[styles.orderBadge, { backgroundColor: theme.accent.gold }]}>
+              <Text style={[styles.orderBadgeText, { color: isLight ? '#1E1A33' : theme.bg.dusk }]}>
                 STATION #{currentClue?.order || quest?.currentOrder || 1}
               </Text>
             </View>
-            <Text style={styles.cluePoints}>+{currentClue?.points || 100} PTS</Text>
+            <Text style={[styles.cluePoints, { color: theme.accent.gold }]}>
+              +{currentClue?.points || 100} PTS
+            </Text>
           </View>
 
-          <Text style={styles.clueTitle}>
+          <Text style={[styles.clueTitle, { color: theme.text.primary }]}>
             {currentClue?.title ||
               (quest?.checkpoints && quest.checkpoints[0]?.title) ||
               'Active Waypoint'}
           </Text>
-          <Text style={styles.clueBody}>
+          <Text style={[styles.clueBody, { color: theme.text.secondary }]}>
             {currentClue?.clue || 'Navigate to the waypoint beacon marked on your radar.'}
           </Text>
 
@@ -275,28 +292,28 @@ export default function MapScreen() {
               <MaterialCommunityIcons
                 name="map-marker-radius"
                 size={14}
-                color={colors.accent.gold}
+                color={theme.accent.gold}
               />
-              <Text style={styles.addressText} numberOfLines={1}>
+              <Text style={[styles.addressText, { color: theme.accent.gold }]} numberOfLines={1}>
                 {address}
               </Text>
             </View>
           ) : null}
 
-          <TouchableOpacity
-            style={[
-              styles.scanButton,
-              activeTourTarget === 'map_controls' && styles.tourTargetGlow,
-            ]}
+          <PixelButton
+            variant="gold"
+            icon="qrcode-scan"
+            iconSize={18}
+            title="SCAN STATION QR"
             onPress={() => {
               triggerHaptic('medium');
               router.push('/camera/scanner');
             }}
-            activeOpacity={0.8}
-          >
-            <MaterialCommunityIcons name="qrcode-scan" size={18} color={colors.bg.dusk} />
-            <Text style={styles.scanButtonText}>Scan Station QR</Text>
-          </TouchableOpacity>
+            style={[
+              styles.scanButton,
+              activeTourTarget === 'map_controls' && styles.tourTargetGlow,
+            ]}
+          />
         </PixelCard>
       )}
     </ScrollView>
@@ -469,20 +486,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.accent.gold,
-    paddingVertical: 12,
-    borderRadius: 6,
     marginTop: spacing.xs,
-  },
-  scanButtonText: {
-    ...typography.button,
-    color: colors.bg.dusk,
-    fontSize: 14,
-    fontWeight: '800',
   },
   emptyCard: {
     backgroundColor: '#1E1933',

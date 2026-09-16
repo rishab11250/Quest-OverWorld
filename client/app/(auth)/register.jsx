@@ -18,6 +18,7 @@ import { setToken, setUserData } from '../../lib/secureStore';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+import PixelButton from '../../components/PixelButton';
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
@@ -255,18 +256,14 @@ export default function RegisterScreen() {
             )}
           </View>
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+          <PixelButton
+            variant="gold"
+            icon="shield-account"
+            title={loading ? 'INITIALIZING HERO...' : 'REGISTER ACCOUNT'}
             onPress={handleRegister}
             disabled={loading}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.bg.dusk} />
-            ) : (
-              <Text style={styles.buttonText}>Register Account</Text>
-            )}
-          </TouchableOpacity>
+            style={{ marginTop: spacing.sm }}
+          />
         </View>
 
         <View style={styles.footer}>

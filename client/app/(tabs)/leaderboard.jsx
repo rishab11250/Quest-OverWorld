@@ -13,9 +13,11 @@ import StatusBanner from '../../components/StatusBanner';
 import LeaderboardRow from '../../components/leaderboard/LeaderboardRow';
 import PixelCard from '../../components/PixelCard';
 import { useTour } from '../../context/TourContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function LeaderboardScreen() {
   const insets = useSafeAreaInsets();
+  const { theme, isLight } = useTheme();
   const { isTourActive, activeTourTarget } = useTour() || {};
   const [rankings, setRankings] = useState([]);
   const [myTeam, setMyTeam] = useState(null);
@@ -82,7 +84,7 @@ export default function LeaderboardScreen() {
   return (
     <ScrollView
       ref={scrollRef}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg.dusk }]}
       contentContainerStyle={[
         styles.content,
         {
@@ -94,14 +96,14 @@ export default function LeaderboardScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={colors.accent.gold}
+          tintColor={theme.accent.gold}
         />
       }
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.pixelTitle}>HALL OF FAME</Text>
-        <Text style={styles.subtitle}>CAMPUS GUILD RANKINGS</Text>
+        <Text style={[styles.pixelTitle, { color: theme.accent.gold }]}>HALL OF FAME</Text>
+        <Text style={[styles.subtitle, { color: theme.text.secondary }]}>CAMPUS GUILD RANKINGS</Text>
       </View>
 
       <StatusBanner type="error" message={error} />
@@ -113,16 +115,17 @@ export default function LeaderboardScreen() {
           glow
           style={[
             styles.standingBanner,
+            { backgroundColor: theme.bg.card, borderColor: theme.accent.gold },
             activeTourTarget === 'leaderboard_podium' && styles.tourTargetGlow,
           ]}
         >
           <View style={styles.standingLeft}>
-            <Text style={styles.standingLabel}>YOUR PARTY STANDING</Text>
-            <Text style={styles.standingName}>{myTeam.name}</Text>
+            <Text style={[styles.standingLabel, { color: theme.accent.gold }]}>YOUR PARTY STANDING</Text>
+            <Text style={[styles.standingName, { color: theme.text.primary }]}>{myTeam.name}</Text>
           </View>
           <View style={styles.standingRight}>
-            <Text style={styles.standingRank}>#{myTeamRank}</Text>
-            <Text style={styles.standingPoints}>+{myTeam.score || 0} PTS</Text>
+            <Text style={[styles.standingRank, { color: theme.accent.gold }]}>#{myTeamRank}</Text>
+            <Text style={[styles.standingPoints, { color: theme.text.secondary }]}>+{myTeam.score || 0} PTS</Text>
           </View>
         </PixelCard>
       ) : null}
@@ -135,9 +138,9 @@ export default function LeaderboardScreen() {
         ]}
       >
         {rankings.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>The Hall is Quiet</Text>
-            <Text style={styles.emptySub}>
+          <View style={[styles.emptyCard, { backgroundColor: theme.bg.card, borderColor: theme.border.subtle }]}>
+            <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>The Hall is Quiet</Text>
+            <Text style={[styles.emptySub, { color: theme.text.secondary }]}>
               No parties have earned points yet. Scan checkpoints or claim bounties to lead the
               ranks!
             </Text>
@@ -155,33 +158,33 @@ export default function LeaderboardScreen() {
       </View>
 
       {/* Season 1 Realm League & Archives */}
-      <PixelCard variant="dusk" style={styles.leagueCard}>
-        <View style={styles.leagueHeader}>
-          <Text style={styles.leagueTitle}>SEASON 1 REALM EXPEDITION</Text>
-          <Text style={styles.leagueBadge}>ACTIVE</Text>
+      <PixelCard variant={isLight ? 'parchment' : 'dusk'} style={styles.leagueCard}>
+        <View style={[styles.leagueHeader, { borderBottomColor: theme.border.subtle }]}>
+          <Text style={[styles.leagueTitle, { color: theme.accent.gold }]}>SEASON 1 REALM EXPEDITION</Text>
+          <Text style={[styles.leagueBadge, { color: theme.accent.green }]}>ACTIVE</Text>
         </View>
 
         <View style={styles.leagueStatsGrid}>
-          <View style={styles.leagueStatBox}>
-            <Text style={styles.statLabel}>GUILDS</Text>
-            <Text style={styles.statVal}>{Math.max(rankings.length, 1)}</Text>
+          <View style={[styles.leagueStatBox, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}>
+            <Text style={[styles.statLabel, { color: theme.text.secondary }]}>GUILDS</Text>
+            <Text style={[styles.statVal, { color: theme.accent.gold }]}>{Math.max(rankings.length, 1)}</Text>
           </View>
-          <View style={styles.leagueStatBox}>
-            <Text style={styles.statLabel}>WAYPOINTS</Text>
-            <Text style={styles.statVal}>4</Text>
+          <View style={[styles.leagueStatBox, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}>
+            <Text style={[styles.statLabel, { color: theme.text.secondary }]}>WAYPOINTS</Text>
+            <Text style={[styles.statVal, { color: theme.accent.gold }]}>4</Text>
           </View>
-          <View style={styles.leagueStatBox}>
-            <Text style={styles.statLabel}>TOP SCORE</Text>
-            <Text style={styles.statVal}>{rankings[0]?.score || 0} XP</Text>
+          <View style={[styles.leagueStatBox, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}>
+            <Text style={[styles.statLabel, { color: theme.text.secondary }]}>TOP SCORE</Text>
+            <Text style={[styles.statVal, { color: theme.accent.gold }]}>{rankings[0]?.score || 0} XP</Text>
           </View>
         </View>
 
-        <View style={styles.leagueRulesBox}>
-          <Text style={styles.ruleItem}>
+        <View style={[styles.leagueRulesBox, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}>
+          <Text style={[styles.ruleItem, { color: theme.text.secondary }]}>
             🏆 Top guild claims the Mythic Grand Arch-Master Title.
           </Text>
-          <Text style={styles.ruleItem}>📍 Waypoint Discoveries: +100-250 PTS per station.</Text>
-          <Text style={styles.ruleItem}>
+          <Text style={[styles.ruleItem, { color: theme.text.secondary }]}>📍 Waypoint Discoveries: +100-250 PTS per station.</Text>
+          <Text style={[styles.ruleItem, { color: theme.text.secondary }]}>
             ⚡ Photo & Riddle Bounties: +100-300 PTS on verification.
           </Text>
         </View>

@@ -9,6 +9,7 @@ import ProgressBar from '../ProgressBar';
 import PixelBadge from '../PixelBadge';
 import PixelCard from '../PixelCard';
 import { triggerHaptic } from '../../lib/haptics';
+import { useTheme } from '../../context/ThemeContext';
 
 export const GUILD_PERKS = [
   {
@@ -62,6 +63,7 @@ export default function TeamHubView({
   onManageMember,
   onOpenRequestsModal,
 }) {
+  const { theme, isLight } = useTheme();
   const leaderId = typeof team.leader === 'object' ? team.leader._id : team.leader;
   const level = Math.floor((team.score || 0) / 250) + 1;
   const activeBuffsCount = GUILD_PERKS.filter((p) => level >= p.minLevel).length;
@@ -132,10 +134,10 @@ export default function TeamHubView({
       <PixelCard variant="gold" glow style={styles.headerCard}>
         <View style={styles.headerTop}>
           <View style={styles.nameGroup}>
-            <Text style={styles.teamName}>{team.name}</Text>
+            <Text style={[styles.teamName, { color: theme.text.primary }]}>{team.name}</Text>
             {isCaptain ? (
               <TouchableOpacity
-                style={styles.renameBtn}
+                style={[styles.renameBtn, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}
                 onPress={() => {
                   triggerHaptic('light');
                   if (onOpenRenameModal) onOpenRenameModal();
@@ -146,7 +148,7 @@ export default function TeamHubView({
                 <MaterialCommunityIcons
                   name="pencil-outline"
                   size={15}
-                  color={colors.accent.gold}
+                  color={theme.accent.gold}
                 />
               </TouchableOpacity>
             ) : null}
@@ -155,7 +157,7 @@ export default function TeamHubView({
         </View>
 
         <View style={styles.xpRow}>
-          <Text style={styles.xpText}>+{team.score || 0} PTS</Text>
+          <Text style={[styles.xpText, { color: theme.accent.gold }]}>+{team.score || 0} PTS</Text>
         </View>
 
         <ProgressBar
@@ -166,55 +168,57 @@ export default function TeamHubView({
       </PixelCard>
 
       {/* Invite / Join Code Card */}
-      <PixelCard variant="dusk" style={styles.codeCard}>
+      <PixelCard variant={isLight ? 'parchment' : 'dusk'} style={styles.codeCard}>
         <View style={styles.codeHeader}>
-          <Text style={styles.codeLabel}>PARTY INVITE CODE</Text>
-          <Text style={styles.codeSub}>Share with friends to join your party</Text>
+          <Text style={[styles.codeLabel, { color: theme.accent.gold }]}>PARTY INVITE CODE</Text>
+          <Text style={[styles.codeSub, { color: theme.text.secondary }]}>Share with friends to join your party</Text>
         </View>
-        <Text style={styles.codeValue}>{team.code}</Text>
+        <Text style={[styles.codeValue, { color: theme.accent.gold }]}>{team.code}</Text>
 
         <View style={styles.codeActions}>
           <TouchableOpacity
-            style={styles.actionBtn}
+            style={[styles.actionBtn, { backgroundColor: theme.accent.gold }]}
             onPress={() => {
               triggerHaptic('success');
               onCopyCode();
             }}
             activeOpacity={0.8}
           >
-            <Text style={styles.actionBtnText}>{copied ? 'COPIED!' : 'COPY CODE'}</Text>
+            <Text style={[styles.actionBtnText, { color: isLight ? '#1E1A33' : theme.bg.dusk }]}>
+              {copied ? 'COPIED!' : 'COPY CODE'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionBtn, styles.actionBtnOutline]}
+            style={[styles.actionBtn, styles.actionBtnOutline, { borderColor: theme.accent.gold }]}
             onPress={() => {
               triggerHaptic('light');
               onShareCode();
             }}
             activeOpacity={0.8}
           >
-            <Text style={styles.actionBtnTextOutline}>SHARE</Text>
+            <Text style={[styles.actionBtnTextOutline, { color: theme.accent.gold }]}>SHARE</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionBtn, styles.actionBtnContacts]}
+            style={[styles.actionBtn, styles.actionBtnContacts, { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle }]}
             onPress={() => {
               triggerHaptic('light');
               onInviteContacts();
             }}
             activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="contacts" size={14} color={colors.accent.gold} />
-            <Text style={styles.actionBtnTextContacts}>CONTACTS</Text>
+            <MaterialCommunityIcons name="contacts" size={14} color={theme.accent.gold} />
+            <Text style={[styles.actionBtnTextContacts, { color: theme.accent.gold }]}>CONTACTS</Text>
           </TouchableOpacity>
         </View>
       </PixelCard>
 
       {/* Party Roster */}
-      <PixelCard variant="dusk" style={styles.rosterCard}>
+      <PixelCard variant={isLight ? 'parchment' : 'dusk'} style={styles.rosterCard}>
         <View style={styles.rosterHeader}>
-          <Text style={styles.rosterTitle}>PARTY ROSTER</Text>
-          <Text style={styles.memberCount}>{team.members?.length || 1} ADVENTURERS</Text>
+          <Text style={[styles.rosterTitle, { color: theme.accent.gold }]}>PARTY ROSTER</Text>
+          <Text style={[styles.memberCount, { color: theme.text.secondary }]}>{team.members?.length || 1} ADVENTURERS</Text>
         </View>
 
         <View style={styles.membersList}>
@@ -230,16 +234,16 @@ export default function TeamHubView({
               (isViceCaptain && !isMemberLeader && !isMemberViceCaptain && !isSelf);
 
             return (
-              <View key={memberId || index} style={styles.memberRow}>
-                <View style={styles.avatarCircle}>
-                  <Text style={styles.avatarLetter}>
+              <View key={memberId || index} style={[styles.memberRow, { backgroundColor: theme.bg.surface }]}>
+                <View style={[styles.avatarCircle, { backgroundColor: theme.bg.card, borderColor: theme.accent.gold }]}>
+                  <Text style={[styles.avatarLetter, { color: theme.accent.gold }]}>
                     {(member.name || 'P').charAt(0).toUpperCase()}
                   </Text>
                 </View>
 
                 <View style={styles.memberDetails}>
                   <View style={styles.memberNameRow}>
-                    <Text style={styles.memberName}>{member.name}</Text>
+                    <Text style={[styles.memberName, { color: theme.text.primary }]}>{member.name}</Text>
                     {isMemberLeader ? (
                       <View style={styles.leaderBadge}>
                         <Text style={styles.leaderBadgeText}>CAPTAIN</Text>
@@ -250,7 +254,7 @@ export default function TeamHubView({
                       </View>
                     ) : null}
                   </View>
-                  <Text style={styles.memberRoleSub}>
+                  <Text style={[styles.memberRoleSub, { color: theme.text.secondary }]}>
                     {isMemberLeader
                       ? 'Party Vanguard · Lead Scout'
                       : isMemberViceCaptain
@@ -261,7 +265,7 @@ export default function TeamHubView({
 
                 {canManage ? (
                   <TouchableOpacity
-                    style={styles.manageMemberBtn}
+                    style={[styles.manageMemberBtn, { backgroundColor: theme.bg.card, borderColor: theme.border.subtle }]}
                     onPress={() => {
                       triggerHaptic('light');
                       if (onManageMember) onManageMember(member);
@@ -272,7 +276,7 @@ export default function TeamHubView({
                     <MaterialCommunityIcons
                       name="dots-vertical"
                       size={18}
-                      color={colors.accent.gold}
+                      color={theme.accent.gold}
                     />
                   </TouchableOpacity>
                 ) : null}
@@ -283,10 +287,10 @@ export default function TeamHubView({
       </PixelCard>
 
       {/* Active Party Buffs & Dynamic Guild Perks */}
-      <PixelCard variant="dusk" style={styles.perksCard}>
+      <PixelCard variant={isLight ? 'parchment' : 'dusk'} style={styles.perksCard}>
         <View style={styles.rosterHeader}>
-          <Text style={styles.rosterTitle}>GUILD PERKS & BUFFS</Text>
-          <Text style={styles.memberCount}>
+          <Text style={[styles.rosterTitle, { color: theme.accent.gold }]}>GUILD PERKS & BUFFS</Text>
+          <Text style={[styles.memberCount, { color: theme.text.secondary }]}>
             {activeBuffsCount} / {GUILD_PERKS.length} UNLOCKED
           </Text>
         </View>
@@ -295,17 +299,30 @@ export default function TeamHubView({
           {GUILD_PERKS.map((buff) => {
             const isUnlocked = level >= buff.minLevel;
             return (
-              <View key={buff.id} style={[styles.perkRow, !isUnlocked && styles.perkRowLocked]}>
-                <View style={[styles.perkIconBox, !isUnlocked && styles.perkIconBoxLocked]}>
+              <View
+                key={buff.id}
+                style={[
+                  styles.perkRow,
+                  { backgroundColor: theme.bg.surface, borderColor: theme.border.subtle },
+                  !isUnlocked && styles.perkRowLocked,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.perkIconBox,
+                    { backgroundColor: theme.bg.card, borderColor: isUnlocked ? theme.accent.gold : theme.border.subtle },
+                    !isUnlocked && styles.perkIconBoxLocked,
+                  ]}
+                >
                   <MaterialCommunityIcons
                     name={isUnlocked ? buff.icon : 'lock-outline'}
                     size={16}
-                    color={isUnlocked ? colors.accent.gold : colors.text.onDark.secondary}
+                    color={isUnlocked ? theme.accent.gold : theme.text.secondary}
                   />
                 </View>
                 <View style={styles.perkInfo}>
                   <View style={styles.perkHeaderRow}>
-                    <Text style={[styles.perkName, !isUnlocked && styles.perkNameLocked]}>
+                    <Text style={[styles.perkName, { color: theme.text.primary }, !isUnlocked && styles.perkNameLocked]}>
                       {buff.name}
                     </Text>
                     <View
@@ -324,7 +341,7 @@ export default function TeamHubView({
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.perkDesc}>{buff.desc}</Text>
+                  <Text style={[styles.perkDesc, { color: theme.text.secondary }]}>{buff.desc}</Text>
                 </View>
               </View>
             );
@@ -334,13 +351,13 @@ export default function TeamHubView({
 
       {/* Party Badges & Trophies */}
       <PixelCard variant="gold" glow style={styles.activityCard}>
-        <View style={styles.feedHeaderRow}>
-          <Text style={styles.feedTitle}>PARTY TROPHIES & BADGES</Text>
-          <Text style={styles.feedBadgeCount}>{achievements.length} UNLOCKED</Text>
+        <View style={[styles.feedHeaderRow, { borderBottomColor: theme.border.subtle }]}>
+          <Text style={[styles.feedTitle, { color: theme.accent.gold }]}>PARTY TROPHIES & BADGES</Text>
+          <Text style={[styles.feedBadgeCount, { color: theme.accent.gold }]}>{achievements.length} UNLOCKED</Text>
         </View>
 
         {achievements.length === 0 ? (
-          <Text style={styles.emptyFeedText}>
+          <Text style={[styles.emptyFeedText, { color: theme.text.secondary }]}>
             No badges unlocked yet. Clear checkpoints, solve bounties on first try, and recruit
             adventurers!
           </Text>
@@ -350,8 +367,8 @@ export default function TeamHubView({
               <View key={ach._id || ach.achievementId} style={styles.badgeRow}>
                 <Text style={styles.badgeRowIcon}>🏆</Text>
                 <View style={styles.badgeRowText}>
-                  <Text style={styles.badgeRowTitle}>{ach.title}</Text>
-                  <Text style={styles.badgeRowDesc}>{ach.description}</Text>
+                  <Text style={[styles.badgeRowTitle, { color: theme.text.primary }]}>{ach.title}</Text>
+                  <Text style={[styles.badgeRowDesc, { color: theme.text.secondary }]}>{ach.description}</Text>
                 </View>
               </View>
             ))}
@@ -360,14 +377,14 @@ export default function TeamHubView({
       </PixelCard>
 
       {/* In-Team Activity Feed */}
-      <PixelCard variant="dusk" style={styles.activityCard}>
-        <View style={styles.feedHeaderRow}>
-          <Text style={styles.feedTitle}>PARTY ACTIVITY FEED</Text>
+      <PixelCard variant={isLight ? 'parchment' : 'dusk'} style={styles.activityCard}>
+        <View style={[styles.feedHeaderRow, { borderBottomColor: theme.border.subtle }]}>
+          <Text style={[styles.feedTitle, { color: theme.accent.gold }]}>PARTY ACTIVITY FEED</Text>
           <Text style={styles.feedLiveDot}>● LIVE</Text>
         </View>
 
         {activities.length === 0 ? (
-          <Text style={styles.emptyFeedText}>No party events recorded yet.</Text>
+          <Text style={[styles.emptyFeedText, { color: theme.text.secondary }]}>No party events recorded yet.</Text>
         ) : (
           <View style={styles.activityList}>
             {activities.slice(0, 10).map((act) => (
@@ -386,8 +403,8 @@ export default function TeamHubView({
                             : '⚡'}
                 </Text>
                 <View style={styles.activityRowText}>
-                  <Text style={styles.activityMessage}>{act.message}</Text>
-                  <Text style={styles.activityTime}>
+                  <Text style={[styles.activityMessage, { color: theme.text.primary }]}>{act.message}</Text>
+                  <Text style={[styles.activityTime, { color: theme.text.secondary }]}>
                     {new Date(act.createdAt).toLocaleTimeString([], {
                       hour: '2-digit',
                       minute: '2-digit',
@@ -401,8 +418,18 @@ export default function TeamHubView({
       </PixelCard>
 
       {/* Leave Team Button */}
-      <TouchableOpacity style={styles.leaveButton} onPress={onRequestLeave} activeOpacity={0.8}>
-        <Text style={styles.leaveButtonText}>Leave Party</Text>
+      <TouchableOpacity
+        style={[
+          styles.leaveButton,
+          {
+            backgroundColor: isLight ? '#FDF2F0' : 'rgba(232, 102, 75, 0.15)',
+            borderColor: theme.accent.coral,
+          },
+        ]}
+        onPress={onRequestLeave}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.leaveButtonText, { color: theme.accent.coral }]}>Leave Party</Text>
       </TouchableOpacity>
     </View>
   );

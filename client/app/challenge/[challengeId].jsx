@@ -15,11 +15,13 @@ import RewardModal from '../../components/RewardModal';
 import ChallengeHeader from '../../components/challenge/ChallengeHeader';
 import ChallengeStatusCard from '../../components/challenge/ChallengeStatusCard';
 import ChallengeSubmissionForm from '../../components/challenge/ChallengeSubmissionForm';
+import { useFloatingXp } from '../../context/FloatingXpContext';
 
 export default function ChallengeDetailScreen() {
   const insets = useSafeAreaInsets();
   const { challengeId } = useLocalSearchParams();
   const router = useRouter();
+  const { showFloatingXp } = useFloatingXp();
   const [challenge, setChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -174,8 +176,15 @@ export default function ChallengeDetailScreen() {
         });
 
         if (res.success && res.correct) {
-          setRewardPoints(res.awardedPoints || challenge.points);
+          const pts = res.awardedPoints || challenge.points;
+          setRewardPoints(pts);
           setRewardVisible(true);
+          showFloatingXp({
+            amount: pts,
+            label: 'CHALLENGE SOLVED!',
+            icon: 'seal-variant',
+            variant: 'gold',
+          });
         }
       } else {
         // Use Photo Submit Endpoint
@@ -187,8 +196,15 @@ export default function ChallengeDetailScreen() {
         const res = await api.post(`/challenges/${challenge._id}/submit`, payload);
 
         if (res.approved) {
-          setRewardPoints(res.pointsAwarded || challenge.points);
+          const pts = res.pointsAwarded || challenge.points;
+          setRewardPoints(pts);
           setRewardVisible(true);
+          showFloatingXp({
+            amount: pts,
+            label: 'BOUNTY CLAIMED!',
+            icon: 'seal-variant',
+            variant: 'green',
+          });
         } else {
           setSuccessMsg(res.message || 'Submission sent for Guild review!');
           fetchChallenge();

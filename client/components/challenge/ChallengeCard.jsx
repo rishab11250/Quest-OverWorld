@@ -3,6 +3,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
+import { useTheme } from '../../context/ThemeContext';
 
 const CATEGORY_ICONS = {
   photo: 'camera',
@@ -12,18 +13,42 @@ const CATEGORY_ICONS = {
 };
 
 export default function ChallengeCard({ challenge, onPress }) {
+  const { theme, isLight } = useTheme();
   const submissionStatus = challenge.submission?.status;
   const isApproved = submissionStatus === 'approved';
   const isPending = submissionStatus === 'pending';
   const isRejected = submissionStatus === 'rejected';
 
+  const cardBg = isApproved
+    ? isLight
+      ? '#EBF7EE'
+      : 'rgba(75, 181, 67, 0.08)'
+    : isPending
+    ? isLight
+      ? '#FFF8E7'
+      : 'rgba(242, 200, 75, 0.08)'
+    : isRejected
+    ? isLight
+      ? '#FDF2F0'
+      : 'rgba(232, 102, 75, 0.08)'
+    : theme.bg.card;
+
+  const cardBorder = isApproved
+    ? theme.accent.green
+    : isPending
+    ? theme.accent.gold
+    : isRejected
+    ? theme.accent.coral
+    : theme.border.subtle;
+
   return (
     <TouchableOpacity
       style={[
         styles.card,
-        isApproved && styles.cardApproved,
-        isPending && styles.cardPending,
-        isRejected && styles.cardRejected,
+        {
+          backgroundColor: cardBg,
+          borderColor: cardBorder,
+        },
       ]}
       onPress={() => onPress(challenge._id)}
       activeOpacity={0.8}
@@ -33,6 +58,7 @@ export default function ChallengeCard({ challenge, onPress }) {
         style={[
           styles.corner,
           styles.cornerTL,
+          { backgroundColor: theme.accent.gold },
           isApproved && styles.cornerGreen,
           isRejected && styles.cornerCoral,
         ]}
@@ -41,6 +67,7 @@ export default function ChallengeCard({ challenge, onPress }) {
         style={[
           styles.corner,
           styles.cornerTR,
+          { backgroundColor: theme.accent.gold },
           isApproved && styles.cornerGreen,
           isRejected && styles.cornerCoral,
         ]}
@@ -49,6 +76,7 @@ export default function ChallengeCard({ challenge, onPress }) {
         style={[
           styles.corner,
           styles.cornerBL,
+          { backgroundColor: theme.accent.gold },
           isApproved && styles.cornerGreen,
           isRejected && styles.cornerCoral,
         ]}
@@ -57,6 +85,7 @@ export default function ChallengeCard({ challenge, onPress }) {
         style={[
           styles.corner,
           styles.cornerBR,
+          { backgroundColor: theme.accent.gold },
           isApproved && styles.cornerGreen,
           isRejected && styles.cornerCoral,
         ]}
@@ -64,23 +93,35 @@ export default function ChallengeCard({ challenge, onPress }) {
 
       {/* Top Meta Row */}
       <View style={styles.topRow}>
-        <View style={styles.categoryChip}>
+        <View style={[styles.categoryChip, { backgroundColor: theme.bg.surface }]}>
           <MaterialCommunityIcons
             name={CATEGORY_ICONS[challenge.category] || 'trophy-outline'}
             size={14}
-            color={colors.accent.gold}
+            color={theme.accent.gold}
           />
-          <Text style={styles.categoryChipText}>{challenge.category.toUpperCase()}</Text>
+          <Text style={[styles.categoryChipText, { color: theme.accent.gold }]}>
+            {challenge.category.toUpperCase()}
+          </Text>
         </View>
 
-        <View style={styles.pointsBadge}>
-          <Text style={styles.pointsBadgeText}>+{challenge.points} PTS</Text>
+        <View
+          style={[
+            styles.pointsBadge,
+            {
+              backgroundColor: isLight ? '#FFF4D6' : 'rgba(242, 200, 75, 0.15)',
+              borderColor: theme.accent.gold,
+            },
+          ]}
+        >
+          <Text style={[styles.pointsBadgeText, { color: theme.accent.gold }]}>
+            +{challenge.points} PTS
+          </Text>
         </View>
       </View>
 
       {/* Title & Description */}
-      <Text style={styles.title}>{challenge.title}</Text>
-      <Text style={styles.description} numberOfLines={2}>
+      <Text style={[styles.title, { color: theme.text.primary }]}>{challenge.title}</Text>
+      <Text style={[styles.description, { color: theme.text.secondary }]} numberOfLines={2}>
         {challenge.description}
       </Text>
 
@@ -89,22 +130,22 @@ export default function ChallengeCard({ challenge, onPress }) {
         <View style={styles.statusPill}>
           {isApproved ? (
             <View style={styles.statusApproved}>
-              <MaterialCommunityIcons name="check-circle" size={14} color={colors.accent.green} />
-              <Text style={styles.statusApprovedText}>CLAIMED</Text>
+              <MaterialCommunityIcons name="check-circle" size={14} color={theme.accent.green} />
+              <Text style={[styles.statusApprovedText, { color: theme.accent.green }]}>CLAIMED</Text>
             </View>
           ) : isPending ? (
             <View style={styles.statusPending}>
-              <MaterialCommunityIcons name="clock-outline" size={14} color={colors.accent.gold} />
-              <Text style={styles.statusPendingText}>UNDER REVIEW</Text>
+              <MaterialCommunityIcons name="clock-outline" size={14} color={theme.accent.gold} />
+              <Text style={[styles.statusPendingText, { color: theme.accent.gold }]}>UNDER REVIEW</Text>
             </View>
           ) : isRejected ? (
             <View style={styles.statusRejected}>
-              <MaterialCommunityIcons name="alert-circle" size={14} color={colors.accent.coral} />
-              <Text style={styles.statusRejectedText}>RESUBMIT SOLUTION</Text>
+              <MaterialCommunityIcons name="alert-circle" size={14} color={theme.accent.coral} />
+              <Text style={[styles.statusRejectedText, { color: theme.accent.coral }]}>RESUBMIT SOLUTION</Text>
             </View>
           ) : (
             <View style={styles.statusOpen}>
-              <Text style={styles.statusOpenText}>OPEN BOUNTY ›</Text>
+              <Text style={[styles.statusOpenText, { color: theme.accent.gold }]}>OPEN BOUNTY ›</Text>
             </View>
           )}
         </View>

@@ -1,5 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+  Animated,
+  Easing,
+} from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -15,9 +24,12 @@ import DialogueBox from '../../components/DialogueBox';
 import ProgressBar from '../../components/ProgressBar';
 import PixelBadge from '../../components/PixelBadge';
 import PixelCard from '../../components/PixelCard';
+import PixelButton from '../../components/PixelButton';
 import { triggerHaptic } from '../../lib/haptics';
 import { subscribeUnlockedCheckpoints } from '../../lib/offlineQueue';
 import { useTour } from '../../context/TourContext';
+import { useFloatingXp } from '../../context/FloatingXpContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const getTimeRemaining = (endTime) => {
   if (!endTime) return null;
@@ -33,12 +45,37 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { isTourActive, openTourSelector, activeTourTarget, currentStepData } = useTour();
+  const { showFloatingXp } = useFloatingXp();
+  const { theme, isLight } = useTheme();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const scrollRef = useRef(null);
   const sectionLayouts = useRef({});
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Active Waypoint Node Pulse Animation
+  useEffect(() => {
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.15,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulseLoop.start();
+    return () => pulseLoop.stop();
+  }, [pulseAnim]);
 
   const handleSectionLayout = useCallback(
     (key) => (event) => {
@@ -126,11 +163,19 @@ export default function HomeScreen() {
   }, [fetchAnnouncement]);
 
   useEffect(() => {
-    const unsub = subscribeUnlockedCheckpoints(() => {
+    const unsub = subscribeUnlockedCheckpoints((unlocked) => {
+      if (unlocked && (Array.isArray(unlocked) ? unlocked.length > 0 : true)) {
+        showFloatingXp({
+          amount: 100,
+          label: 'OFFLINE SYNC XP!',
+          icon: 'cloud-check',
+          variant: 'gold',
+        });
+      }
       fetchActiveQuest(true);
     });
     return unsub;
-  }, [fetchActiveQuest]);
+  }, [fetchActiveQuest, showFloatingXp]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -150,7 +195,7 @@ export default function HomeScreen() {
     <>
       <ScrollView
         ref={scrollRef}
-        style={styles.container}
+        style={[styles.container, { backgroundColor: theme?.bg?.dusk || colors.bg.dusk }]}
         contentContainerStyle={[
           styles.content,
           {
@@ -162,25 +207,49 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.accent.gold}
+            tintColor={theme?.accent?.gold || colors.accent.gold}
           />
         }
       >
         {/* Brand & Party XP Header */}
         <View style={styles.header}>
           <View style={styles.headerTopRow}>
-            <Text style={styles.pixelTitle}>QUEST OVERWORLD</Text>
+            <Text style={[styles.pixelTitle, { color: theme?.accent?.gold || colors.accent.gold }]}>
+              QUEST OVERWORLD
+            </Text>
             <TouchableOpacity
-              style={styles.guideBadgeBtn}
+              style={[
+                styles.guideBadgeBtn,
+                {
+                  borderColor: theme?.border?.highlight || colors.accent.gold,
+                  backgroundColor: theme?.bg?.surface || 'rgba(242, 200, 75, 0.12)',
+                },
+              ]}
               onPress={openTourSelector}
               activeOpacity={0.8}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <MaterialCommunityIcons name="compass-outline" size={13} color={colors.accent.gold} />
-              <Text style={styles.guideBadgeBtnText}>TOUR</Text>
+              <MaterialCommunityIcons
+                name="compass-outline"
+                size={13}
+                color={theme?.accent?.gold || colors.accent.gold}
+              />
+              <Text
+                style={[
+                  styles.guideBadgeBtnText,
+                  { color: theme?.accent?.gold || colors.accent.gold },
+                ]}
+              >
+                TOUR
+              </Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.pixelSubtitle}>
+          <Text
+            style={[
+              styles.pixelSubtitle,
+              { color: theme?.text?.secondary || colors.text.onDark.secondary },
+            ]}
+          >
             {team ? `${team.name.toUpperCase()} • LVL ${level}` : 'CAMPUS EXPLORATION'}
           </Text>
         </View>
@@ -218,8 +287,17 @@ export default function HomeScreen() {
           style={[styles.pointsCard, activeTourTarget === 'home_xp_box' && styles.tourTargetGlow]}
           onLayout={handleSectionLayout('home_xp_box')}
         >
-          <Text style={styles.pointsLabel}>PARTY XP</Text>
-          <Text style={styles.pointsValue}>+{team?.score || 0} PTS</Text>
+          <Text
+            style={[
+              styles.pointsLabel,
+              { color: theme?.text?.secondary || colors.text.onDark.secondary },
+            ]}
+          >
+            PARTY XP
+          </Text>
+          <Text style={[styles.pointsValue, { color: theme?.accent?.gold || colors.accent.gold }]}>
+            +{team?.score || 0} PTS
+          </Text>
           <View style={styles.badgeCentered}>
             <PixelBadge label={`LVL ${level}`} variant="gold" />
           </View>
@@ -237,27 +315,50 @@ export default function HomeScreen() {
 
         {/* No Team State */}
         {!team ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No Active Party</Text>
-            <Text style={styles.emptySubtitle}>
+          <PixelCard variant="dusk" style={styles.emptyCard}>
+            <Text
+              style={[
+                styles.emptyTitle,
+                { color: theme?.text?.primary || colors.text.onDark.primary },
+              ]}
+            >
+              No Active Party
+            </Text>
+            <Text
+              style={[
+                styles.emptySubtitle,
+                { color: theme?.text?.secondary || colors.text.onDark.secondary },
+              ]}
+            >
               Join or form an adventuring party to receive quest clues and compete on the
               leaderboard.
             </Text>
             <TouchableOpacity
-              style={styles.primaryButton}
+              style={[
+                styles.primaryButton,
+                { backgroundColor: theme?.accent?.gold || colors.accent.gold },
+              ]}
               onPress={() => {
                 triggerHaptic('light');
                 router.push('/(tabs)/team');
               }}
               activeOpacity={0.8}
             >
-              <Text style={styles.primaryButtonText}>Head to Party HQ</Text>
+              <Text
+                style={[
+                  styles.primaryButtonText,
+                  { color: isLight ? '#1E1A33' : theme?.bg?.dusk || colors.bg.dusk },
+                ]}
+              >
+                Head to Party HQ
+              </Text>
             </TouchableOpacity>
-          </View>
+          </PixelCard>
         ) : quest ? (
           /* Active Quest Content */
           <View style={styles.questContainer}>
-            <View
+            <PixelCard
+              variant="dusk"
               style={[
                 styles.questCard,
                 activeTourTarget === 'home_quest_box' && styles.tourTargetGlow,
@@ -265,29 +366,90 @@ export default function HomeScreen() {
               onLayout={handleSectionLayout('home_quest_box')}
             >
               <View style={styles.questHeaderRow}>
-                <View style={styles.questTag}>
-                  <Text style={styles.questTagText}>ACTIVE QUEST</Text>
+                <View
+                  style={[
+                    styles.questTag,
+                    {
+                      backgroundColor: theme?.bg?.surface || '#1B152E',
+                      borderColor: theme?.border?.subtle || '#44376C',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.questTagText,
+                      { color: theme?.text?.secondary || colors.text.onDark.secondary },
+                    ]}
+                  >
+                    ACTIVE QUEST
+                  </Text>
                 </View>
-                <Text style={styles.questPoints}>+{quest.totalPoints || 700} PTS TOTAL</Text>
+                <Text
+                  style={[styles.questPoints, { color: theme?.accent?.gold || colors.accent.gold }]}
+                >
+                  +{quest.totalPoints || 700} PTS TOTAL
+                </Text>
               </View>
 
-              <Text style={styles.questName}>{quest.name}</Text>
-              <Text style={styles.questDesc}>{quest.description}</Text>
+              <Text
+                style={[
+                  styles.questName,
+                  { color: theme?.text?.primary || colors.text.onDark.primary },
+                ]}
+              >
+                {quest.name}
+              </Text>
+              <Text
+                style={[
+                  styles.questDesc,
+                  { color: theme?.text?.secondary || colors.text.onDark.secondary },
+                ]}
+              >
+                {quest.description}
+              </Text>
 
               <View style={styles.stationMetaRow}>
-                <View style={styles.stationCounterBox}>
-                  <Text style={styles.stationCounterText}>
+                <View
+                  style={[
+                    styles.stationCounterBox,
+                    {
+                      backgroundColor: theme?.bg?.surface || '#1A142D',
+                      borderColor: theme?.border?.subtle || '#362E52',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.stationCounterText,
+                      { color: theme?.text?.secondary || colors.text.onDark.secondary },
+                    ]}
+                  >
                     📍 Station {quest?.currentOrder || 1} of{' '}
                     {quest?.totalCheckpoints || quest?.checkpoints?.length || 4}
                   </Text>
                 </View>
                 {quest?.endAt ? (
-                  <View style={styles.timerBadge}>
-                    <Text style={styles.timerBadgeText}>⏳ {getTimeRemaining(quest.endAt)}</Text>
+                  <View
+                    style={[
+                      styles.timerBadge,
+                      {
+                        backgroundColor: theme?.bg?.surface || '#1A142D',
+                        borderColor: theme?.border?.subtle || '#362E52',
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.timerBadgeText,
+                        { color: theme?.accent?.gold || colors.accent.gold },
+                      ]}
+                    >
+                      ⏳ {getTimeRemaining(quest.endAt)}
+                    </Text>
                   </View>
                 ) : null}
               </View>
-            </View>
+            </PixelCard>
 
             {/* Current Clue / Objective */}
             {quest?.currentClue ? (
@@ -301,28 +463,64 @@ export default function HomeScreen() {
                 onLayout={handleSectionLayout('home_station_clue')}
               >
                 <View style={styles.clueHeaderRow}>
-                  <View style={styles.questTag}>
-                    <Text style={styles.questTagText}>STATION #{quest.currentClue.order}</Text>
+                  <View
+                    style={[
+                      styles.questTag,
+                      {
+                        backgroundColor: theme?.bg?.surface || '#1B152E',
+                        borderColor: theme?.border?.subtle || '#44376C',
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.questTagText,
+                        { color: theme?.text?.secondary || colors.text.onDark.secondary },
+                      ]}
+                    >
+                      STATION #{quest.currentClue.order}
+                    </Text>
                   </View>
-                  <Text style={styles.questPoints}>+{quest.currentClue.points || 100} PTS</Text>
+                  <Text
+                    style={[
+                      styles.questPoints,
+                      { color: theme?.accent?.gold || colors.accent.gold },
+                    ]}
+                  >
+                    +{quest.currentClue.points || 100} PTS
+                  </Text>
                 </View>
-                <Text style={styles.clueTitle}>{quest.currentClue.title}</Text>
-                <Text style={styles.clueBody}>{quest.currentClue.clue}</Text>
-
-                <TouchableOpacity
+                <Text
                   style={[
-                    styles.scanButton,
-                    activeTourTarget === 'home_station_clue' && styles.tourTargetGlow,
+                    styles.clueTitle,
+                    { color: theme?.text?.primary || colors.text.onDark.primary },
                   ]}
+                >
+                  {quest.currentClue.title}
+                </Text>
+                <Text
+                  style={[
+                    styles.clueBody,
+                    { color: theme?.text?.secondary || colors.text.onDark.secondary },
+                  ]}
+                >
+                  {quest.currentClue.clue}
+                </Text>
+
+                <PixelButton
+                  variant="gold"
+                  icon="qrcode-scan"
+                  iconSize={18}
+                  title="SCAN STATION QR CODE"
                   onPress={() => {
                     triggerHaptic('medium');
                     router.push('/camera/scanner');
                   }}
-                  activeOpacity={0.8}
-                >
-                  <MaterialCommunityIcons name="qrcode-scan" size={18} color={colors.bg.dusk} />
-                  <Text style={styles.scanButtonText}>Scan Station QR Code</Text>
-                </TouchableOpacity>
+                  style={[
+                    styles.scanButton,
+                    activeTourTarget === 'home_station_clue' && styles.tourTargetGlow,
+                  ]}
+                />
               </PixelCard>
             ) : (
               <DialogueBox
@@ -340,91 +538,266 @@ export default function HomeScreen() {
               ]}
               onLayout={handleSectionLayout('home_waypoints_card')}
             >
-              <View style={styles.roadmapHeader}>
-                <Text style={styles.roadmapTitle}>EXPEDITION WAYPOINTS</Text>
-                <Text style={styles.roadmapSub}>
-                  {Math.max(
-                    0,
-                    Math.min((quest?.currentOrder || 1) - 1, quest?.totalCheckpoints || 0)
-                  )}{' '}
-                  / {quest?.totalCheckpoints || 0} CLEARED
-                </Text>
+              <View
+                style={[
+                  styles.roadmapHeader,
+                  { borderBottomColor: theme?.border?.subtle || '#362E52' },
+                ]}
+              >
+                <View style={styles.roadmapHeaderLeft}>
+                  <MaterialCommunityIcons
+                    name="map-marker-path"
+                    size={14}
+                    color={theme?.accent?.gold || colors.accent.gold}
+                  />
+                  <Text
+                    style={[
+                      styles.roadmapTitle,
+                      { color: theme?.accent?.gold || colors.accent.gold },
+                    ]}
+                  >
+                    EXPEDITION TRAIL
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.roadmapProgressPill,
+                    {
+                      backgroundColor: theme?.bg?.surface || '#161326',
+                      borderColor: theme?.border?.subtle || '#352D50',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.roadmapSub,
+                      { color: theme?.text?.secondary || colors.text.onDark.secondary },
+                    ]}
+                  >
+                    {Math.max(
+                      0,
+                      Math.min((quest?.currentOrder || 1) - 1, quest?.totalCheckpoints || 0)
+                    )}{' '}
+                    / {quest?.totalCheckpoints || 0} CLEARED
+                  </Text>
+                </View>
               </View>
 
-              <View style={styles.waypointList}>
+              <View style={styles.dungeonTrailList}>
                 {(quest?.checkpoints && quest.checkpoints.length > 0
                   ? quest.checkpoints
                   : quest?.currentClue
                     ? [quest.currentClue]
                     : []
-                ).map((wp) => {
+                ).map((wp, index, arr) => {
                   const isCleared = wp.order < (quest?.currentOrder || 1);
                   const isActive = wp.order === (quest?.currentOrder || 1);
                   const isLocked = wp.order > (quest?.currentOrder || 1);
+                  const isFirst = index === 0;
+                  const isLast = index === arr.length - 1;
+                  const prevWp = index > 0 ? arr[index - 1] : null;
+                  const prevCleared = prevWp ? prevWp.order < (quest?.currentOrder || 1) : false;
                   const waypointTitle = wp.title || wp.name || `Station #${wp.order}`;
 
                   return (
-                    <View
-                      key={wp._id || wp.order}
-                      style={[
-                        styles.waypointRow,
-                        isActive && styles.waypointRowActive,
-                        isCleared && styles.waypointRowCleared,
-                      ]}
-                    >
-                      <View style={styles.waypointLeft}>
+                    <View key={wp._id || wp.order} style={styles.trailRow}>
+                      {/* Left Dungeon Spine (Connector -> Node -> Connector) */}
+                      <View style={styles.spineColumn}>
+                        {/* Top Line Segment */}
                         <View
                           style={[
-                            styles.waypointIconCircle,
-                            isCleared && styles.iconCircleCleared,
-                            isActive && styles.iconCircleActive,
+                            styles.spineLine,
+                            isFirst && styles.spineLineHidden,
+                            prevCleared ? styles.spineLineCleared : styles.spineLineInactive,
                           ]}
-                        >
-                          <MaterialCommunityIcons
-                            name={isCleared ? 'check-bold' : isActive ? 'crosshairs-gps' : 'lock'}
-                            size={13}
-                            color={
-                              isCleared
-                                ? colors.accent.green
-                                : isActive
-                                  ? colors.accent.gold
-                                  : '#5A527A'
-                            }
-                          />
-                        </View>
+                        />
 
-                        <View style={{ flex: 1 }}>
-                          <Text
+                        {/* 8-bit Dungeon Node with Active Pulse */}
+                        {isActive ? (
+                          <Animated.View
                             style={[
-                              styles.waypointName,
-                              isActive && styles.waypointNameActive,
-                              isCleared && styles.waypointNameCleared,
+                              styles.dungeonNode,
+                              styles.nodeActive,
+                              {
+                                backgroundColor: isLight ? '#F2E4C2' : '#2A200B',
+                                borderColor: theme?.accent?.gold || colors.accent.gold,
+                                shadowColor: theme?.accent?.gold || colors.accent.gold,
+                                transform: [{ scale: pulseAnim }],
+                              },
                             ]}
-                            numberOfLines={1}
                           >
-                            #{wp.order} · {waypointTitle}
-                          </Text>
-                          <Text style={styles.waypointPoints}>+{wp.points || 0} PTS</Text>
-                        </View>
+                            <MaterialCommunityIcons
+                              name="crosshairs-gps"
+                              size={15}
+                              color={theme?.accent?.gold || colors.accent.gold}
+                            />
+                          </Animated.View>
+                        ) : (
+                          <View
+                            style={[
+                              styles.dungeonNode,
+                              isCleared ? styles.nodeCleared : styles.nodeLocked,
+                            ]}
+                          >
+                            <MaterialCommunityIcons
+                              name={isCleared ? 'check-bold' : 'lock'}
+                              size={13}
+                              color={isCleared ? colors.accent.green : '#5A527A'}
+                            />
+                          </View>
+                        )}
+
+                        {/* Bottom Line Segment (Cleared=Solid Green, Active=Gold Dotted Trail, Locked=Dim Dashed) */}
+                        <View
+                          style={[
+                            styles.spineLine,
+                            isLast && styles.spineLineHidden,
+                            isCleared
+                              ? styles.spineLineCleared
+                              : isActive
+                                ? styles.spineLineActiveTrail
+                                : styles.spineLineInactive,
+                          ]}
+                        />
                       </View>
 
-                      <View
+                      {/* Right Dungeon Waypoint Card */}
+                      <TouchableOpacity
+                        activeOpacity={isActive ? 0.75 : 1}
+                        onPress={() => {
+                          if (isActive) {
+                            triggerHaptic('medium');
+                            router.push('/camera/scanner');
+                          } else {
+                            triggerHaptic('light');
+                          }
+                        }}
                         style={[
-                          styles.waypointStatusBadge,
-                          isCleared && styles.statusBadgeCleared,
-                          isActive && styles.statusBadgeActive,
+                          styles.trailCard,
+                          {
+                            backgroundColor: isActive
+                              ? isLight
+                                ? '#F7F0E1'
+                                : 'rgba(242, 200, 75, 0.08)'
+                              : isCleared
+                                ? isLight
+                                  ? '#EDF7EE'
+                                  : 'rgba(95, 191, 122, 0.06)'
+                                : theme?.bg?.surface || '#161226',
+                            borderColor: isActive
+                              ? theme?.accent?.gold || colors.accent.gold
+                              : isCleared
+                                ? theme?.accent?.green || colors.accent.green
+                                : theme?.border?.subtle || '#2C2548',
+                          },
+                          isActive && styles.trailCardActive,
+                          isCleared && styles.trailCardCleared,
+                          isLocked && styles.trailCardLocked,
                         ]}
                       >
+                        <View style={styles.trailCardHeader}>
+                          <View
+                            style={[
+                              styles.trailOrderBadge,
+                              {
+                                backgroundColor: theme?.bg?.surface || '#1A152E',
+                                borderColor: theme?.border?.subtle || '#362E52',
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.trailOrderText,
+                                { color: theme?.text?.muted || '#7E75A0' },
+                              ]}
+                            >
+                              STAGE {String(wp.order).padStart(2, '0')}
+                            </Text>
+                          </View>
+
+                          <View
+                            style={[
+                              styles.trailStatusPill,
+                              isCleared && styles.statusPillCleared,
+                              isActive && styles.statusPillActive,
+                              isLocked && styles.statusPillLocked,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.trailStatusPillText,
+                                isCleared && styles.statusTextCleared,
+                                isActive && styles.statusTextActive,
+                                isLocked && styles.statusTextLocked,
+                              ]}
+                            >
+                              {isCleared ? 'CLEARED' : isActive ? 'ACTIVE TARGET' : 'LOCKED'}
+                            </Text>
+                          </View>
+                        </View>
+
                         <Text
                           style={[
-                            styles.waypointStatusText,
-                            isCleared && styles.statusTextCleared,
-                            isActive && styles.statusTextActive,
+                            styles.trailCardTitle,
+                            {
+                              color: isActive
+                                ? theme?.accent?.gold || colors.accent.gold
+                                : isCleared
+                                  ? theme?.accent?.green || colors.accent.green
+                                  : theme?.text?.muted || '#6C648A',
+                            },
                           ]}
+                          numberOfLines={1}
                         >
-                          {isCleared ? 'CLEARED' : isActive ? 'TARGET' : 'LOCKED'}
+                          {waypointTitle}
                         </Text>
-                      </View>
+
+                        {isActive && (wp.clue || quest?.currentClue?.clue) ? (
+                          <Text
+                            style={[
+                              styles.trailClueText,
+                              { color: theme?.text?.secondary || colors.text.onDark.secondary },
+                            ]}
+                            numberOfLines={2}
+                          >
+                            💬 &ldquo;{wp.clue || quest.currentClue.clue}&rdquo;
+                          </Text>
+                        ) : null}
+
+                        <View style={styles.trailCardFooter}>
+                          <Text
+                            style={[styles.trailPointsText, isActive && styles.trailPointsActive]}
+                          >
+                            +{wp.points || 0} XP
+                          </Text>
+
+                          {isActive ? (
+                            <View
+                              style={[
+                                styles.trailActionBtn,
+                                {
+                                  backgroundColor: theme?.bg?.surface || '#272044',
+                                  borderColor: theme?.accent?.gold || colors.accent.gold,
+                                },
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.trailActionBtnText,
+                                  { color: theme?.accent?.gold || colors.accent.gold },
+                                ]}
+                              >
+                                SCAN QR
+                              </Text>
+                              <MaterialCommunityIcons
+                                name="arrow-right"
+                                size={12}
+                                color={theme?.accent?.gold || colors.accent.gold}
+                              />
+                            </View>
+                          ) : null}
+                        </View>
+                      </TouchableOpacity>
                     </View>
                   );
                 })}
@@ -543,11 +916,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   pointsCard: {
-    backgroundColor: colors.bg.duskRaised,
     borderRadius: 8,
     padding: spacing.cardPadding,
-    borderWidth: 1.5,
-    borderColor: colors.accent.gold,
     gap: spacing.xs,
     alignItems: 'center',
   },
@@ -570,12 +940,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   emptyCard: {
-    backgroundColor: colors.bg.duskRaised,
     borderRadius: 8,
     padding: spacing.xl,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#3D3560',
     gap: spacing.sm,
   },
   emptyTitle: {
@@ -603,11 +970,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   questCard: {
-    backgroundColor: colors.bg.duskRaised,
     borderRadius: 8,
     padding: spacing.cardPadding,
-    borderWidth: 1,
-    borderColor: '#3D3560',
     gap: spacing.xs,
   },
   questHeaderRow: {
@@ -673,11 +1037,8 @@ const styles = StyleSheet.create({
     fontSize: 8,
   },
   clueCard: {
-    backgroundColor: '#272044',
     borderRadius: 8,
     padding: spacing.cardPadding,
-    borderWidth: 1.5,
-    borderColor: colors.accent.gold,
     gap: spacing.xs,
   },
   clueHeaderRow: {
@@ -708,23 +1069,9 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   scanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.accent.gold,
-    paddingVertical: 12,
-    borderRadius: 6,
     marginTop: spacing.xs,
   },
-  scanButtonText: {
-    ...typography.displayPixelSm,
-    fontSize: 11,
-    color: colors.bg.dusk,
-    letterSpacing: 0.5,
-  },
   roadmapCard: {
-    backgroundColor: colors.bg.duskRaised,
     gap: spacing.sm,
     marginTop: spacing.xs,
   },
@@ -734,7 +1081,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#362E52',
-    paddingBottom: 6,
+    paddingBottom: 8,
+    marginBottom: 4,
+  },
+  roadmapHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   roadmapTitle: {
     ...typography.displayPixelXs,
@@ -742,100 +1095,196 @@ const styles = StyleSheet.create({
     color: colors.accent.gold,
     letterSpacing: 1.2,
   },
+  roadmapProgressPill: {
+    backgroundColor: '#161326',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#352D50',
+  },
   roadmapSub: {
+    ...typography.displayPixelXs,
+    fontSize: 7.5,
+    color: colors.text.onDark.secondary,
+  },
+  dungeonTrailList: {
+    paddingVertical: 4,
+  },
+  trailRow: {
+    flexDirection: 'row',
+    minHeight: 74,
+    marginBottom: 6,
+  },
+  spineColumn: {
+    width: 28,
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  spineLine: {
+    width: 2,
+    flex: 1,
+  },
+  spineLineHidden: {
+    opacity: 0,
+  },
+  spineLineCleared: {
+    backgroundColor: colors.accent.green,
+    width: 2,
+  },
+  spineLineActiveTrail: {
+    borderLeftWidth: 2,
+    borderLeftColor: colors.accent.gold,
+    borderStyle: 'dashed',
+    backgroundColor: 'transparent',
+  },
+  spineLineInactive: {
+    borderLeftWidth: 2,
+    borderLeftColor: '#362E52',
+    borderStyle: 'dashed',
+    backgroundColor: 'transparent',
+  },
+  dungeonNode: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  nodeActive: {
+    backgroundColor: '#2A200B',
+    borderWidth: 2,
+    borderColor: colors.accent.gold,
+    shadowColor: colors.accent.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  nodeCleared: {
+    backgroundColor: 'rgba(75, 181, 67, 0.2)',
+    borderWidth: 1.5,
+    borderColor: colors.accent.green,
+  },
+  nodeLocked: {
+    backgroundColor: '#151224',
+    borderWidth: 1,
+    borderColor: '#352D50',
+  },
+  trailCard: {
+    flex: 1,
+    borderRadius: 8,
+    padding: 10,
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  trailCardActive: {
+    borderWidth: 1.5,
+  },
+  trailCardCleared: {
+    borderWidth: 1,
+  },
+  trailCardLocked: {
+    opacity: 0.65,
+  },
+  trailCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  trailOrderBadge: {
+    backgroundColor: '#120F22',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  trailOrderText: {
+    ...typography.displayPixelXs,
+    fontSize: 7,
+    color: colors.text.onDark.secondary,
+    letterSpacing: 1,
+  },
+  trailStatusPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  statusPillActive: {
+    borderColor: colors.accent.gold,
+    backgroundColor: 'rgba(242, 200, 75, 0.2)',
+  },
+  statusPillCleared: {
+    borderColor: colors.accent.green,
+    backgroundColor: 'rgba(75, 181, 67, 0.15)',
+  },
+  statusPillLocked: {
+    borderColor: '#352D50',
+    backgroundColor: '#131024',
+  },
+  trailStatusPillText: {
+    ...typography.displayPixelXs,
+    fontSize: 6.5,
+    letterSpacing: 0.8,
+  },
+  trailCardTitle: {
+    ...typography.bodyMdBold,
+    fontSize: 13,
+    color: colors.text.onDark.primary,
+  },
+  cardTitleActive: {
+    color: colors.accent.gold,
+  },
+  cardTitleCleared: {
+    color: colors.text.onDark.secondary,
+  },
+  trailClueText: {
+    ...typography.caption,
+    fontSize: 10,
+    color: colors.text.onDark.secondary,
+    fontStyle: 'italic',
+    marginTop: 3,
+  },
+  trailCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  trailPointsText: {
     ...typography.displayPixelXs,
     fontSize: 8,
     color: colors.text.onDark.secondary,
   },
-  waypointList: {
-    gap: 6,
-  },
-  waypointRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#1E1A33',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 8,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#362E52',
-  },
-  waypointRowActive: {
-    borderColor: colors.accent.gold,
-    backgroundColor: 'rgba(242, 200, 75, 0.08)',
-  },
-  waypointRowCleared: {
-    borderColor: 'rgba(75, 181, 67, 0.4)',
-  },
-  waypointLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    flex: 1,
-  },
-  waypointIconCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#161326',
-    borderWidth: 1,
-    borderColor: '#3D3560',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconCircleActive: {
-    borderColor: colors.accent.gold,
-    backgroundColor: 'rgba(242, 200, 75, 0.15)',
-  },
-  iconCircleCleared: {
-    borderColor: colors.accent.green,
-    backgroundColor: 'rgba(75, 181, 67, 0.15)',
-  },
-  waypointName: {
-    ...typography.bodyMd,
-    color: colors.text.onDark.primary,
-    fontSize: 12,
-  },
-  waypointNameActive: {
-    ...typography.bodyMdBold,
+  trailPointsActive: {
     color: colors.accent.gold,
   },
-  waypointNameCleared: {
-    color: colors.text.onDark.secondary,
-  },
-  waypointPoints: {
-    ...typography.displayPixelXs,
-    fontSize: 7,
-    color: colors.text.onDark.secondary,
-    marginTop: 2,
-  },
-  waypointStatusBadge: {
-    paddingHorizontal: 6,
+  trailActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(242, 200, 75, 0.15)',
+    borderWidth: 1,
+    borderColor: colors.accent.gold,
+    paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
-    backgroundColor: '#161326',
-    borderWidth: 1,
-    borderColor: '#3D3560',
   },
-  statusBadgeActive: {
-    backgroundColor: 'rgba(242, 200, 75, 0.15)',
-    borderColor: colors.accent.gold,
-  },
-  statusBadgeCleared: {
-    backgroundColor: 'rgba(75, 181, 67, 0.15)',
-    borderColor: colors.accent.green,
-  },
-  waypointStatusText: {
+  trailActionBtnText: {
     ...typography.displayPixelXs,
     fontSize: 7,
-    color: colors.text.onDark.secondary,
+    color: colors.accent.gold,
   },
   statusTextActive: {
     color: colors.accent.gold,
   },
   statusTextCleared: {
     color: colors.accent.green,
+  },
+  statusTextLocked: {
+    color: '#6A628B',
   },
   tourTargetGlow: {
     borderColor: colors.accent.gold,

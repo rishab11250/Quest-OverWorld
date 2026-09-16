@@ -16,10 +16,12 @@ import ProfileSettingsCard from '../../components/profile/ProfileSettingsCard';
 import ProfileRealmCard from '../../components/profile/ProfileRealmCard';
 import EditHeroModal from '../../components/profile/EditHeroModal';
 import { useTour } from '../../context/TourContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { theme, isLight } = useTheme();
   const { isTourActive, openTourSelector, activeTourTarget } = useTour() || {};
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState(null);
@@ -162,7 +164,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView
       ref={scrollRef}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg.dusk }]}
       contentContainerStyle={[
         styles.content,
         {
@@ -174,13 +176,13 @@ export default function ProfileScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={colors.accent.gold}
+          tintColor={theme.accent.gold}
         />
       }
     >
       <View style={styles.header}>
-        <Text style={styles.pixelTitle}>HERO CODEX</Text>
-        <Text style={styles.subtitle}>PLAYER ACCOUNT & PREFERENCES</Text>
+        <Text style={[styles.pixelTitle, { color: theme.accent.gold }]}>HERO CODEX</Text>
+        <Text style={[styles.subtitle, { color: theme.text.secondary }]}>PLAYER ACCOUNT & PREFERENCES</Text>
       </View>
 
       <View style={[activeTourTarget === 'profile_hero' && styles.tourTargetGlow]}>
