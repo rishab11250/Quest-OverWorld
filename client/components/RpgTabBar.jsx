@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { triggerHaptic } from '../lib/haptics';
+import { playSound } from '../lib/sound';
 import { useRpgDrawer } from '../context/DrawerContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -74,6 +75,7 @@ export default function RpgTabBar({ state, descriptors, navigation }) {
           const isFocused = state.index === routeIndex;
 
           const onPress = () => {
+            playSound('tap');
             triggerHaptic('light');
             if (routeIndex !== -1) {
               const route = state.routes[routeIndex];
@@ -137,6 +139,7 @@ export default function RpgTabBar({ state, descriptors, navigation }) {
         {/* 4th Slot: Codex / Side-Drawer Trigger (#6) */}
         <TouchableOpacity
           onPress={() => {
+            playSound('tap');
             triggerHaptic('medium');
             openDrawer();
           }}

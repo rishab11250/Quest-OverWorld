@@ -20,6 +20,7 @@ import {
   startHeadingWatcher,
 } from '../lib/location';
 import { triggerHaptic } from '../lib/haptics';
+import { playSound } from '../lib/sound';
 import { getTimeOfDayAtmosphere } from '../theme/atmosphere';
 import { useTour } from '../context/TourContext';
 
@@ -104,6 +105,7 @@ export default function OverworldMap({
   ).current;
 
   const handleRecenterGps = () => {
+    playSound('radar');
     triggerHaptic('medium');
     Animated.spring(pan, {
       toValue: { x: 0, y: 0 },
@@ -404,6 +406,7 @@ export default function OverworldMap({
                     activeTourTarget === 'map_pins' && styles.tourTargetGlow,
                   ]}
                   onPress={() => {
+                    playSound('radar');
                     triggerHaptic('light');
                     if (onSelectPin) onSelectPin(node);
                   }}

@@ -16,6 +16,7 @@ import ChallengeHeader from '../../components/challenge/ChallengeHeader';
 import ChallengeStatusCard from '../../components/challenge/ChallengeStatusCard';
 import ChallengeSubmissionForm from '../../components/challenge/ChallengeSubmissionForm';
 import { useFloatingXp } from '../../context/FloatingXpContext';
+import { playSound } from '../../lib/sound';
 
 export default function ChallengeDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -157,11 +158,13 @@ export default function ChallengeDetailScreen() {
       challenge.category === 'riddle';
 
     if (challenge.category === 'photo' && !photoBase64 && !photoUri) {
+      playSound('error');
       setError('Please provide a photo submission.');
       return;
     }
 
     if (isAutoTrivia && !textResponse.trim()) {
+      playSound('error');
       setError('Please enter your answer.');
       return;
     }
@@ -176,6 +179,7 @@ export default function ChallengeDetailScreen() {
         });
 
         if (res.success && res.correct) {
+          playSound('fanfare');
           const pts = res.awardedPoints || challenge.points;
           setRewardPoints(pts);
           setRewardVisible(true);
@@ -196,6 +200,7 @@ export default function ChallengeDetailScreen() {
         const res = await api.post(`/challenges/${challenge._id}/submit`, payload);
 
         if (res.approved) {
+          playSound('fanfare');
           const pts = res.pointsAwarded || challenge.points;
           setRewardPoints(pts);
           setRewardVisible(true);
@@ -211,6 +216,7 @@ export default function ChallengeDetailScreen() {
         }
       }
     } catch (err) {
+      playSound('error');
       setError(err.message || 'Failed to submit answer.');
 
       // If server returned cooldown (429 or attempt penalty)

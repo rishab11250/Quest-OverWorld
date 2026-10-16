@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useRef, useCallback } from 
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { triggerHaptic } from '../lib/haptics';
+import { playSound } from '../lib/sound';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 
@@ -17,6 +18,7 @@ export function FloatingXpProvider({ children }) {
 
   const showFloatingXp = useCallback(
     ({ amount = 100, label = 'EXPEDITION XP', icon = 'star-shooting', variant = 'gold' } = {}) => {
+      playSound('coin');
       triggerHaptic('notification');
       setActiveItem({
         id: Date.now(),

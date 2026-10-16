@@ -15,6 +15,8 @@ export default function ProfileSettingsCard({
   onTogglePolling,
   hapticFeedback,
   onToggleHaptic,
+  soundEffects,
+  onToggleSound,
   cacheCleared,
   onClearCache,
   onOpenGuide,
@@ -149,6 +151,21 @@ export default function ProfileSettingsCard({
           onValueChange={onToggleHaptic}
           trackColor={{ false: theme.border.subtle, true: theme.accent.gold }}
           thumbColor={hapticFeedback ? (isLight ? '#1E1A33' : theme.bg.dusk) : theme.text.muted}
+        />
+      </View>
+
+      <View style={[styles.divider, { backgroundColor: theme.border.subtle }]} />
+
+      <View style={styles.settingRow}>
+        <View style={styles.settingInfo}>
+          <Text style={[styles.settingTitle, { color: theme.text.primary }]}>8-Bit Sound Effects</Text>
+          <Text style={[styles.settingSub, { color: theme.text.secondary }]}>Chiptune audio on taps, scans & rewards</Text>
+        </View>
+        <Switch
+          value={soundEffects}
+          onValueChange={onToggleSound}
+          trackColor={{ false: theme.border.subtle, true: theme.accent.gold }}
+          thumbColor={soundEffects ? (isLight ? '#1E1A33' : theme.bg.dusk) : theme.text.muted}
         />
       </View>
 

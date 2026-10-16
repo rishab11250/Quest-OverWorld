@@ -1,10 +1,18 @@
+import { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 import spacing from '../theme/spacing';
+import { playSound } from '../lib/sound';
 
 export default function StatusBanner({ type = 'error', message, onDismiss }) {
+  useEffect(() => {
+    if (message && type === 'error') {
+      playSound('error');
+    }
+  }, [message, type]);
+
   if (!message) return null;
 
   const isSuccess = type === 'success';

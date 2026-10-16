@@ -5,6 +5,7 @@ import colors from '../theme/colors';
 import typography from '../theme/typography';
 import spacing from '../theme/spacing';
 import { triggerHaptic } from '../lib/haptics';
+import { playSound } from '../lib/sound';
 import PixelConfetti from './PixelConfetti';
 import PixelButton from './PixelButton';
 
@@ -23,6 +24,11 @@ export default function RewardModal({
 
   useEffect(() => {
     if (visible) {
+      if (isQuestCompleted) {
+        playSound('fanfare');
+      } else {
+        playSound('coin');
+      }
       triggerHaptic('success');
       Animated.parallel([
         Animated.timing(opacityAnim, {

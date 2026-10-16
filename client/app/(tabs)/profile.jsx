@@ -7,6 +7,7 @@ import { getUserData, clearAuth, setUserData, getSetting, setSetting } from '../
 import ConfirmModal from '../../components/ConfirmModal';
 import LoadingScreen from '../../components/LoadingScreen';
 import { triggerHaptic, setHapticGlobalState } from '../../lib/haptics';
+import { playSound, setSoundState } from '../../lib/sound';
 import colors from '../../theme/colors';
 import typography from '../../theme/typography';
 import spacing from '../../theme/spacing';
@@ -53,6 +54,7 @@ export default function ProfileScreen() {
   const [autoTorch, setAutoTorch] = useState(false);
   const [livePolling, setLivePolling] = useState(true);
   const [hapticFeedback, setHapticFeedback] = useState(true);
+  const [soundEffects, setSoundEffects] = useState(true);
   const [cacheCleared, setCacheCleared] = useState(false);
 
   const fetchProfile = useCallback(async () => {
@@ -72,16 +74,18 @@ export default function ProfileScreen() {
       }
 
       // Load settings
-      const [gpsVal, torchVal, pollVal, hapticVal] = await Promise.all([
+      const [gpsVal, torchVal, pollVal, hapticVal, soundVal] = await Promise.all([
         getSetting('high_accuracy_gps', true),
         getSetting('auto_torch', false),
         getSetting('live_polling', true),
         getSetting('haptic_feedback', true),
+        getSetting('sound_effects', true),
       ]);
       setHighAccuracyGps(gpsVal);
       setAutoTorch(torchVal);
       setLivePolling(pollVal);
       setHapticFeedback(hapticVal);
+      setSoundEffects(soundVal);
     } catch (error) {
       console.error('Failed to load profile:', error);
     } finally {
@@ -139,6 +143,10 @@ export default function ProfileScreen() {
 
   const handleToggleSetting = async (key, val, setter) => {
     if (key === 'haptic_feedback') setHapticGlobalState(val);
+    if (key === 'sound_effects') {
+      await setSoundState(val);
+      if (val) playSound('coin');
+    }
     triggerHaptic('light');
     setter(val);
     await setSetting(key, val);
@@ -199,6 +207,8 @@ export default function ProfileScreen() {
           onTogglePolling={(val) => handleToggleSetting('live_polling', val, setLivePolling)}
           hapticFeedback={hapticFeedback}
           onToggleHaptic={(val) => handleToggleSetting('haptic_feedback', val, setHapticFeedback)}
+          soundEffects={soundEffects}
+          onToggleSound={(val) => handleToggleSetting('sound_effects', val, setSoundEffects)}
           cacheCleared={cacheCleared}
           onClearCache={handleClearCache}
           onOpenGuide={openTourSelector}

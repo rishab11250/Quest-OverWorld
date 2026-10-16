@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 import { triggerHaptic } from '../lib/haptics';
+import { playSound } from '../lib/sound';
 import { useTheme } from '../context/ThemeContext';
 
 /**
@@ -20,6 +21,7 @@ export default function RadialActionMenu() {
   const anim = useRef(new Animated.Value(0)).current;
 
   const toggleMenu = () => {
+    playSound('tap');
     triggerHaptic('medium');
     const toVal = expanded ? 0 : 1;
     Animated.spring(anim, {
@@ -32,6 +34,7 @@ export default function RadialActionMenu() {
   };
 
   const handleAction = (route) => {
+    playSound('radar');
     triggerHaptic('light');
     toggleMenu();
     setTimeout(() => {

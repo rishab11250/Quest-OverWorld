@@ -11,6 +11,7 @@ import {
 import { useFonts } from 'expo-font';
 import colors from '../theme/colors';
 import { initOfflineQueue } from '../lib/offlineQueue';
+import { initAudioEngine } from '../lib/sound';
 import OfflineSyncBanner from '../components/OfflineSyncBanner';
 import AtmosphericBackground from '../components/AtmosphericBackground';
 import { FloatingXpProvider } from '../context/FloatingXpContext';
@@ -57,6 +58,7 @@ function RootNavigator() {
 export default function RootLayout() {
   useEffect(() => {
     initOfflineQueue();
+    initAudioEngine();
   }, []);
 
   const [fontsLoaded, fontError] = useFonts({

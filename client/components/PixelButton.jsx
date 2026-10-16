@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 import { triggerHaptic } from '../lib/haptics';
+import { playSound } from '../lib/sound';
 import { useTheme } from '../context/ThemeContext';
 
 /**
@@ -23,6 +24,7 @@ export default function PixelButton({
   textStyle,
   children,
   haptic = 'medium',
+  sound = 'tap',
   ...rest
 }) {
   const { theme: appTheme, isLight } = useTheme();
@@ -49,6 +51,7 @@ export default function PixelButton({
 
   const handlePress = (e) => {
     if (disabled) return;
+    if (sound) playSound(sound);
     if (haptic) triggerHaptic(haptic);
     if (onPress) onPress(e);
   };

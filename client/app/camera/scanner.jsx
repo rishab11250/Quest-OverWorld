@@ -23,6 +23,7 @@ import { getCurrentLocation, getLastKnownLocation } from '../../lib/location';
 import { getSetting } from '../../lib/secureStore';
 import { enqueueScan } from '../../lib/offlineQueue';
 import { triggerHaptic } from '../../lib/haptics';
+import { playSound } from '../../lib/sound';
 import RewardModal from '../../components/RewardModal';
 import PixelButton from '../../components/PixelButton';
 import { useFloatingXp } from '../../context/FloatingXpContext';
@@ -140,6 +141,7 @@ export default function ScannerScreen() {
         }
       }
     } catch (err) {
+      playSound('error');
       setError(err.message || 'Verification failed. Please try again.');
       setScanned(false);
     } finally {
@@ -149,6 +151,7 @@ export default function ScannerScreen() {
 
   const onBarcodeScanned = ({ data }) => {
     if (scanned || verifying) return;
+    playSound('laser');
     triggerHaptic('success');
     setScanned(true);
     handleVerifyPayload(data);
@@ -156,9 +159,11 @@ export default function ScannerScreen() {
 
   const handleManualSubmit = () => {
     if (!manualCode.trim()) {
+      playSound('error');
       setError('Please enter a valid QR string code.');
       return;
     }
+    playSound('laser');
     handleVerifyPayload(manualCode.trim());
   };
 
