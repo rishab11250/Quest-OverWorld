@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { triggerHaptic } from '../lib/haptics';
@@ -12,9 +12,25 @@ const FloatingXpContext = createContext({
 
 export const useFloatingXp = () => useContext(FloatingXpContext);
 
+const COIN_COUNT = 6;
+
 export function FloatingXpProvider({ children }) {
   const [activeItem, setActiveItem] = useState(null);
   const anim = useRef(new Animated.Value(0)).current;
+
+  // Precomputed coin radial angles
+  const coins = useMemo(() => {
+    return Array.from({ length: COIN_COUNT }).map((_, i) => {
+      const angle = (i * (360 / COIN_COUNT) * Math.PI) / 180;
+      const radius = 45 + (i % 2) * 15;
+      return {
+        id: i,
+        dx: Math.cos(angle) * radius,
+        dyPeak: Math.sin(angle) * radius - 20,
+        dyDrop: Math.sin(angle) * radius + 35,
+      };
+    });
+  }, []);
 
   const showFloatingXp = useCallback(
     ({ amount = 100, label = 'EXPEDITION XP', icon = 'star-shooting', variant = 'gold' } = {}) => {
@@ -78,6 +94,46 @@ export function FloatingXpProvider({ children }) {
 
       {activeItem ? (
         <View style={styles.overlayContainer} pointerEvents="none">
+          {/* Radial GPU Coin Physics Fountain */}
+          {coins.map((c) => {
+            const coinX = anim.interpolate({
+              inputRange: [0, 0.4, 1, 2],
+              outputRange: [0, c.dx * 0.7, c.dx, 0],
+            });
+            const coinY = anim.interpolate({
+              inputRange: [0, 0.35, 1, 2],
+              outputRange: [0, c.dyPeak, c.dyDrop, -40],
+            });
+            const coinRotate = anim.interpolate({
+              inputRange: [0, 1, 2],
+              outputRange: ['0deg', '360deg', '720deg'],
+            });
+            const coinOpacity = anim.interpolate({
+              inputRange: [0, 0.15, 0.8, 1.6, 2],
+              outputRange: [0, 1, 1, 0.7, 0],
+            });
+
+            return (
+              <Animated.View
+                key={c.id}
+                style={[
+                  styles.microCoin,
+                  {
+                    transform: [
+                      { perspective: 400 },
+                      { translateX: coinX },
+                      { translateY: coinY },
+                      { rotateY: coinRotate },
+                    ],
+                    opacity: coinOpacity,
+                  },
+                ]}
+              >
+                <View style={styles.microCoinInner} />
+              </Animated.View>
+            );
+          })}
+
           <Animated.View
             style={[
               styles.particleCard,
@@ -133,41 +189,71 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 25,
     position: 'relative',
+    zIndex: 10,
+  },
+  microCoin: {
+    position: 'absolute',
+    top: 135,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#F2C84B',
+    borderWidth: 1.5,
+    borderColor: '#FFF4D6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 5,
+    shadowColor: '#F2C84B',
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+  },
+  microCoinInner: {
+    width: 5,
+    height: 5,
+    backgroundColor: '#B8860B',
+    borderRadius: 1,
   },
   corner: {
     position: 'absolute',
     width: 4,
     height: 4,
   },
-  cornerTL: { top: -2, left: -2 },
-  cornerTR: { top: -2, right: -2 },
-  cornerBL: { bottom: -2, left: -2 },
-  cornerBR: { bottom: -2, right: -2 },
+  cornerTL: {
+    top: -2,
+    left: -2,
+  },
+  cornerTR: {
+    top: -2,
+    right: -2,
+  },
+  cornerBL: {
+    bottom: -2,
+    left: -2,
+  },
+  cornerBR: {
+    bottom: -2,
+    right: -2,
+  },
   iconCircle: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   textWrap: {
-    alignItems: 'flex-start',
+    gap: 2,
   },
   xpText: {
     ...typography.displayPixelSm,
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 1,
-    textShadowColor: 'rgba(0,0,0,0.75)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
+    fontSize: 14,
+    letterSpacing: 0.5,
   },
   labelText: {
     ...typography.captionBold,
-    fontSize: 8.5,
-    color: colors.text.onDark.secondary,
+    fontSize: 10,
+    color: '#D8D4E8',
     letterSpacing: 0.8,
-    marginTop: 1,
   },
 });

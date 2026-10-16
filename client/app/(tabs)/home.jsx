@@ -320,6 +320,7 @@ export default function HomeScreen() {
         <PixelCard
           variant="gold"
           glow
+          interactive
           style={[styles.pointsCard, activeTourTarget === 'home_xp_box' && styles.tourTargetGlow]}
           onLayout={handleSectionLayout('home_xp_box')}
         >
@@ -492,6 +493,7 @@ export default function HomeScreen() {
               <PixelCard
                 variant="gold"
                 glow
+                interactive
                 style={[
                   styles.clueCard,
                   activeTourTarget === 'home_station_clue' && styles.tourTargetGlow,

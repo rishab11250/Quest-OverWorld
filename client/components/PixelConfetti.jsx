@@ -22,13 +22,14 @@ const PARTICLE_SIZES = [
 ];
 
 /**
- * PixelConfetti - 8-Bit Retro Particle Burst
- * Shoots square confetti particles outward in a celebratory victory fountain.
+ * PixelConfetti - 8-Bit Retro GPU Particle Physics Shrapnel
+ * Parabolic gravitational trajectory with 3D axis tumbling (rotateX, rotateY, rotateZ)
+ * and ground impact bounce restitution.
  */
 export default function PixelConfetti({
   active = false,
-  particleCount = 38,
-  duration = 2400,
+  particleCount = 42,
+  duration = 2600,
   onComplete,
 }) {
   const anim = useRef(new Animated.Value(0)).current;
@@ -36,23 +37,34 @@ export default function PixelConfetti({
   // Generate deterministic randomized particle trajectories
   const particles = useMemo(() => {
     return Array.from({ length: particleCount }).map((_, i) => {
-      // Fan upward between -150 deg and -30 deg
-      const angleDeg = -150 + Math.random() * 120;
+      // Fan upward between -165 deg and -15 deg
+      const angleDeg = -165 + Math.random() * 150;
       const angleRad = (angleDeg * Math.PI) / 180;
-      const force = 80 + Math.random() * 160;
-      const dx = Math.cos(angleRad) * force * 1.2;
-      const dyPeak = Math.sin(angleRad) * force - 40;
-      const dyFall = dyPeak + 220 + Math.random() * 260;
-      const spin = (Math.random() > 0.5 ? 1 : -1) * (180 + Math.random() * 720);
+      const velocity = 100 + Math.random() * 180;
+
+      const dx = Math.cos(angleRad) * velocity * 1.3;
+      const dyApex = Math.sin(angleRad) * velocity - 60; // Upward peak
+      const dyGround = dyApex + 240 + Math.random() * 260; // Fall to ground
+      const dyBounce = dyGround - 35 - Math.random() * 45; // Elastic bounce peak
+      const dyFinal = dyGround + 20;
+
+      const spinX = (Math.random() > 0.5 ? 1 : -1) * (360 + Math.random() * 720);
+      const spinY = (Math.random() > 0.5 ? 1 : -1) * (360 + Math.random() * 720);
+      const spinZ = (Math.random() > 0.5 ? 1 : -1) * (180 + Math.random() * 540);
+
       const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
       const size = PARTICLE_SIZES[i % PARTICLE_SIZES.length];
 
       return {
         id: i,
         dx,
-        dyPeak,
-        dyFall,
-        spin,
+        dyApex,
+        dyGround,
+        dyBounce,
+        dyFinal,
+        spinX,
+        spinY,
+        spinZ,
         color,
         size,
       };
@@ -65,7 +77,7 @@ export default function PixelConfetti({
       Animated.timing(anim, {
         toValue: 1,
         duration,
-        easing: Easing.out(Easing.cubic),
+        easing: Easing.linear,
         useNativeDriver: true,
       }).start(({ finished }) => {
         if (finished && onComplete) onComplete();
@@ -80,28 +92,41 @@ export default function PixelConfetti({
   return (
     <View style={styles.overlay} pointerEvents="none">
       {particles.map((p) => {
+        // Horizontal drift with subtle deceleration
         const translateX = anim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, p.dx],
+          inputRange: [0, 0.4, 0.7, 1],
+          outputRange: [0, p.dx * 0.65, p.dx * 0.9, p.dx],
         });
 
+        // Parabolic gravitational arc + ground bounce restitution
         const translateY = anim.interpolate({
-          inputRange: [0, 0.3, 1],
-          outputRange: [0, p.dyPeak, p.dyFall],
+          inputRange: [0, 0.28, 0.68, 0.82, 1],
+          outputRange: [0, p.dyApex, p.dyGround, p.dyBounce, p.dyFinal],
         });
 
-        const rotate = anim.interpolate({
+        // 3D Axis Tumbling on the GPU
+        const rotateX = anim.interpolate({
           inputRange: [0, 1],
-          outputRange: ['0deg', `${p.spin}deg`],
+          outputRange: ['0deg', `${p.spinX}deg`],
+        });
+
+        const rotateY = anim.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['0deg', `${p.spinY}deg`],
+        });
+
+        const rotateZ = anim.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['0deg', `${p.spinZ}deg`],
         });
 
         const scale = anim.interpolate({
-          inputRange: [0, 0.15, 0.8, 1],
-          outputRange: [0.2, 1.2, 1, 0.6],
+          inputRange: [0, 0.12, 0.8, 1],
+          outputRange: [0.15, 1.25, 1.0, 0.45],
         });
 
         const opacity = anim.interpolate({
-          inputRange: [0, 0.1, 0.75, 1],
+          inputRange: [0, 0.08, 0.75, 1],
           outputRange: [0, 1, 1, 0],
         });
 
@@ -114,9 +139,17 @@ export default function PixelConfetti({
                 width: p.size.w,
                 height: p.size.h,
                 backgroundColor: p.color,
-                borderColor: 'rgba(0, 0, 0, 0.3)',
-                borderWidth: 1,
-                transform: [{ translateX }, { translateY }, { rotate }, { scale }],
+                borderColor: 'rgba(0, 0, 0, 0.25)',
+                borderWidth: 0.8,
+                transform: [
+                  { perspective: 600 },
+                  { translateX },
+                  { translateY },
+                  { scale },
+                  { rotateX },
+                  { rotateY },
+                  { rotateZ },
+                ],
                 opacity,
               },
             ]}
@@ -136,6 +169,6 @@ const styles = StyleSheet.create({
   },
   particle: {
     position: 'absolute',
-    borderRadius: 1, // Slight 8-bit bevel
+    borderRadius: 1, // Retro 8-bit square particle
   },
 });
