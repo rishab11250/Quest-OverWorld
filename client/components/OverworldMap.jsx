@@ -36,6 +36,7 @@ export default function OverworldMap({
   userLocation,
   currentOrder = 1,
   isCompleted = false,
+  teammates = [],
   onSelectPin,
   onRecenter,
   onPanStart,
@@ -181,19 +182,27 @@ export default function OverworldMap({
 
   // Dynamic GPS Projection: Project real lat/lng coordinates onto canvas
   const nodesToRender = [];
+  const teammatesToRender = [];
   let playerCanvasX = MAP_CENTER_X;
   let playerCanvasY = MAP_CENTER_Y;
 
-  if (hasCheckpoints) {
-    const validPoints = checkpoints.filter((cp) => cp.latitude && cp.longitude);
-    const allLats = validPoints.map((p) => p.latitude);
-    const allLngs = validPoints.map((p) => p.longitude);
+  const validPoints = checkpoints.filter((cp) => cp.latitude && cp.longitude);
+  const allLats = validPoints.map((p) => p.latitude);
+  const allLngs = validPoints.map((p) => p.longitude);
 
-    if (userLocation?.latitude && userLocation?.longitude) {
-      allLats.push(userLocation.latitude);
-      allLngs.push(userLocation.longitude);
+  if (userLocation?.latitude && userLocation?.longitude) {
+    allLats.push(userLocation.latitude);
+    allLngs.push(userLocation.longitude);
+  }
+
+  (teammates || []).forEach((tm) => {
+    if (tm.latitude && tm.longitude) {
+      allLats.push(tm.latitude);
+      allLngs.push(tm.longitude);
     }
+  });
 
+  if (allLats.length > 0 && allLngs.length > 0) {
     const minLat = Math.min(...allLats);
     const maxLat = Math.max(...allLats);
     const minLng = Math.min(...allLngs);
@@ -251,6 +260,22 @@ export default function OverworldMap({
         MAP_HEIGHT - PADDING_Y - ((userLocation.latitude - effectiveMinLat) / latSpan) * USABLE_H
       );
     }
+
+    (teammates || []).forEach((tm) => {
+      if (tm.latitude && tm.longitude) {
+        const x = Math.round(
+          PADDING_X + ((tm.longitude - effectiveMinLng) / lngSpan) * USABLE_W
+        );
+        const y = Math.round(
+          MAP_HEIGHT - PADDING_Y - ((tm.latitude - effectiveMinLat) / latSpan) * USABLE_H
+        );
+        teammatesToRender.push({
+          ...tm,
+          x,
+          y,
+        });
+      }
+    });
   }
 
   const sonarScale = sonarAnim.interpolate({
@@ -468,6 +493,30 @@ export default function OverworldMap({
               <Text style={styles.playerLabelText}>YOU</Text>
             </View>
           </View>
+
+          {/* Live Squad Teammate Presence Markers */}
+          {teammatesToRender.map((tm) => (
+            <View
+              key={tm.userId}
+              style={[
+                styles.playerNode,
+                {
+                  left: tm.x,
+                  top: tm.y,
+                },
+              ]}
+            >
+              <View style={styles.teammateRadar} />
+              <View style={styles.teammateAvatar}>
+                <MaterialCommunityIcons name="account-group" size={13} color="#FFFFFF" />
+              </View>
+              <View style={styles.teammateLabelPill}>
+                <Text style={styles.teammateLabelText} numberOfLines={1}>
+                  {tm.userName.toUpperCase()}
+                </Text>
+              </View>
+            </View>
+          ))}
         </Animated.View>
       </View>
 
@@ -485,6 +534,15 @@ export default function OverworldMap({
           <MaterialCommunityIcons name="crosshairs-gps" size={16} color={colors.accent.gold} />
           <Text style={styles.controlText}>Recenter GPS</Text>
         </TouchableOpacity>
+
+        {teammatesToRender.length > 0 ? (
+          <View style={styles.squadTelemetryBadge}>
+            <View style={styles.squadPingDot} />
+            <Text style={styles.squadTelemetryText}>
+              {teammatesToRender.length} SQUAD LIVE
+            </Text>
+          </View>
+        ) : null}
 
         <View
           style={[
@@ -801,6 +859,68 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: '900',
     color: colors.bg.dusk,
+  },
+  teammateAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#0E7A5D',
+    borderWidth: 1.5,
+    borderColor: '#48E59B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9,
+  },
+  teammateRadar: {
+    position: 'absolute',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(72, 229, 155, 0.4)',
+    backgroundColor: 'rgba(72, 229, 155, 0.1)',
+    top: -7,
+    left: -7,
+  },
+  teammateLabelPill: {
+    backgroundColor: '#0E7A5D',
+    borderWidth: 0.5,
+    borderColor: '#48E59B',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+    marginTop: 2,
+    zIndex: 11,
+    alignSelf: 'center',
+    maxWidth: 70,
+  },
+  teammateLabelText: {
+    fontSize: 7.5,
+    fontWeight: '800',
+    color: '#E0FFF2',
+  },
+  squadTelemetryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(72, 229, 155, 0.15)',
+    borderWidth: 1,
+    borderColor: '#48E59B',
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 4,
+    gap: 4,
+  },
+  squadPingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#48E59B',
+  },
+  squadTelemetryText: {
+    ...typography.captionBold,
+    fontSize: 9,
+    color: '#48E59B',
+    letterSpacing: 0.5,
   },
   controlsRow: {
     flexDirection: 'row',

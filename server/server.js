@@ -114,11 +114,17 @@ app.use((err, req, res, _next) => {
   res.status(status).json({ message });
 });
 
+const http = require('http');
+const { initSocketService } = require('./services/socketService');
+
 const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+const io = initSocketService(server);
+app.io = io;
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} (0.0.0.0)`);
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server & Socket.io running on port ${PORT} (0.0.0.0)`);
   });
 }
 

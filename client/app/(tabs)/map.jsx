@@ -20,6 +20,13 @@ import StatusBanner from '../../components/StatusBanner';
 import PixelCard from '../../components/PixelCard';
 import PixelButton from '../../components/PixelButton';
 import { triggerHaptic } from '../../lib/haptics';
+import { getUserData } from '../../lib/secureStore';
+import {
+  getSocket,
+  joinSquadRoom,
+  leaveSquadRoom,
+  sendSquadTelemetry,
+} from '../../lib/socket';
 import { useTour } from '../../context/TourContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -36,6 +43,8 @@ export default function MapScreen() {
   const [error, setError] = useState('');
   const [selectedPin, setSelectedPin] = useState(null);
   const [mapPanning, setMapPanning] = useState(false);
+  const [user, setUser] = useState(null);
+  const [teammates, setTeammates] = useState([]);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -54,12 +63,14 @@ export default function MapScreen() {
       const cached = await getLastKnownLocation();
       if (cached) setLocation(cached);
 
-      const [questRes, locRes] = await Promise.all([
+      const [questRes, locRes, cachedUser] = await Promise.all([
         api.get('/quests/active'),
         getCurrentLocation(),
+        getUserData(),
       ]);
 
       setData(questRes);
+      if (cachedUser) setUser(cachedUser);
       if (locRes) {
         setLocation(locRes);
         const currentClue = questRes?.quest?.currentClue;
@@ -90,10 +101,62 @@ export default function MapScreen() {
     }, [fetchMapData])
   );
 
+  // Live Squad Presence Room Subscription
+  useEffect(() => {
+    const teamId = data?.team?._id;
+    if (!teamId || !user?._id) return;
+
+    const socket = getSocket();
+    joinSquadRoom(teamId, user);
+
+    const handleRosterSnapshot = (members) => {
+      setTeammates(members || []);
+    };
+
+    const handleMemberTelemetry = (member) => {
+      setTeammates((prev) => {
+        const filtered = prev.filter((m) => m.userId !== member.userId);
+        return [...filtered, member];
+      });
+    };
+
+    const handleMemberJoined = (member) => {
+      setTeammates((prev) => {
+        if (prev.some((m) => m.userId === member.userId)) return prev;
+        return [...prev, member];
+      });
+    };
+
+    const handleMemberLeft = ({ userId }) => {
+      setTeammates((prev) => prev.filter((m) => m.userId !== userId));
+    };
+
+    socket.on('squad:roster_snapshot', handleRosterSnapshot);
+    socket.on('squad:member_telemetry', handleMemberTelemetry);
+    socket.on('squad:member_joined', handleMemberJoined);
+    socket.on('squad:member_left', handleMemberLeft);
+
+    return () => {
+      socket.off('squad:roster_snapshot', handleRosterSnapshot);
+      socket.off('squad:member_telemetry', handleMemberTelemetry);
+      socket.off('squad:member_joined', handleMemberJoined);
+      socket.off('squad:member_left', handleMemberLeft);
+      leaveSquadRoom(teamId, user._id);
+    };
+  }, [data?.team?._id, user?._id, user]);
+
   useEffect(() => {
     let watcherSub = null;
     startLocationWatcher((freshCoords) => {
       setLocation(freshCoords);
+      if (data?.team?._id && user?._id) {
+        sendSquadTelemetry({
+          teamId: data.team._id,
+          user,
+          latitude: freshCoords.latitude,
+          longitude: freshCoords.longitude,
+        });
+      }
     }).then((sub) => {
       watcherSub = sub;
     });
@@ -103,7 +166,7 @@ export default function MapScreen() {
         watcherSub.remove();
       }
     };
-  }, []);
+  }, [data?.team?._id, user]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -165,6 +228,7 @@ export default function MapScreen() {
           userLocation={location}
           currentOrder={quest?.currentOrder || 1}
           isCompleted={Boolean(quest?.isCompleted)}
+          teammates={teammates}
           onSelectPin={setSelectedPin}
           onRecenter={handleRecenter}
           onPanStart={() => setMapPanning(true)}

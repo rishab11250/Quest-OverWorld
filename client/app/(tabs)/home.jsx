@@ -26,10 +26,16 @@ import PixelBadge from '../../components/PixelBadge';
 import PixelCard from '../../components/PixelCard';
 import PixelButton from '../../components/PixelButton';
 import { triggerHaptic } from '../../lib/haptics';
+import {
+  startLocationWatcher,
+  startHeadingWatcher,
+  getLastKnownLocation,
+} from '../../lib/location';
 import { subscribeUnlockedCheckpoints } from '../../lib/offlineQueue';
 import { useTour } from '../../context/TourContext';
 import { useFloatingXp } from '../../context/FloatingXpContext';
 import { useTheme } from '../../context/ThemeContext';
+import WaypointCompassHud from '../../components/WaypointCompassHud';
 
 const getTimeRemaining = (endTime) => {
   if (!endTime) return null;
@@ -48,6 +54,8 @@ export default function HomeScreen() {
   const { showFloatingXp } = useFloatingXp();
   const { theme, isLight } = useTheme();
   const [data, setData] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [deviceHeading, setDeviceHeading] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -152,6 +160,30 @@ export default function HomeScreen() {
     useCallback(() => {
       fetchActiveQuest(true);
       fetchAnnouncement();
+
+      let locSub = null;
+      let headSub = null;
+
+      getLastKnownLocation().then((cached) => {
+        if (cached) setUserLocation(cached);
+      });
+
+      startLocationWatcher((loc) => {
+        setUserLocation(loc);
+      }).then((sub) => {
+        locSub = sub;
+      });
+
+      startHeadingWatcher((heading) => {
+        setDeviceHeading(heading);
+      }).then((sub) => {
+        headSub = sub;
+      });
+
+      return () => {
+        if (locSub?.remove) locSub.remove();
+        if (headSub?.remove) headSub.remove();
+      };
     }, [fetchActiveQuest, fetchAnnouncement])
   );
 
@@ -190,6 +222,10 @@ export default function HomeScreen() {
   const quest = data?.quest;
   const team = data?.team;
   const level = Math.floor((team?.score || 0) / 250) + 1;
+  const activeStation =
+    quest?.currentClue?.latitude && quest?.currentClue?.longitude
+      ? quest.currentClue
+      : (quest?.checkpoints || []).find((c) => c.order === (quest?.currentOrder || 1));
 
   return (
     <>
@@ -506,6 +542,17 @@ export default function HomeScreen() {
                 >
                   {quest.currentClue.clue}
                 </Text>
+
+                {activeStation?.latitude && activeStation?.longitude ? (
+                  <WaypointCompassHud
+                    userLocation={userLocation}
+                    deviceHeading={deviceHeading}
+                    targetLat={activeStation.latitude}
+                    targetLng={activeStation.longitude}
+                    targetTitle={activeStation.title}
+                    onPress={() => router.push('/(tabs)/map')}
+                  />
+                ) : null}
 
                 <PixelButton
                   variant="gold"
